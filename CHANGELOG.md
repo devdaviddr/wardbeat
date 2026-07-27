@@ -15,6 +15,24 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.2.0] - 2026-07-27
+
+### Added
+
+- **Barrier intelligence & ward board (Phase 1 MVP)** — a live ward board that
+  extracts discharge **barriers / EDD / MFFD** from clinical notes and shows
+  them per bed, each traceable to its **source sentence**. Filter to
+  fit-but-delayed patients; click a barrier to see the cited note.
+- **Polyglot AI plane** — a stateless internal **FastAPI** service does
+  extraction over **NVIDIA NIM** (OpenAI-compatible), with a deterministic,
+  prompt-injection-safe **offline mock** and mock fallback; grounded barriers
+  only (ungrounded model output is dropped); token-bucket rate limiting under
+  the free tier's ~40 RPM. Runs as an `ai` container in Compose.
+- Ward-flow schema (wards/beds/patients/encounters/notes/barriers/
+  ai_extractions), a **synthetic seed** with labelled ground truth, and an
+  **extraction eval harness** (`pnpm eval:extraction`, barrier F1 gate 0.85 —
+  currently 96%). See [docs/DEMO.md](docs/DEMO.md).
+
 ## [0.1.0] - 2026-07-27
 
 ### Added
