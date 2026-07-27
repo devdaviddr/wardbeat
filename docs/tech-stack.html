@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WardBeat — Stack &amp; why</title>
+    <style>
+      :root {
+        --paper: #f6f8f9; --surface: #ffffff; --ink: #0e2028; --muted: #566a72; --faint: #7f9298;
+        --line: #d9e2e5; --accent: #0f766e; --accent-soft: #d6ece9; --nim: #5f9400; --python: #1f5f8b;
+        --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+      .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px; }
+      a { color: var(--accent); }
+      h1, h2, h3 { text-wrap: balance; line-height: 1.15; }
+      .eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0; }
+      header.top { border-bottom: 1px solid var(--line); background: radial-gradient(120% 140% at 88% -20%, rgba(15,118,110,0.07), transparent 60%), var(--surface); }
+      .head-inner { padding: 40px 0 30px; }
+      .wordmark { display: flex; align-items: baseline; gap: 10px; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; margin: 6px 0 0; }
+      .wordmark .beat { color: var(--accent); }
+      h1.title { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; margin: 18px 0 6px; }
+      .lede { font-size: 17px; color: var(--muted); max-width: 68ch; margin: 0; }
+      nav.docnav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+      nav.docnav a { font-family: var(--mono); font-size: 12px; text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--muted); background: var(--surface); }
+      nav.docnav a.here { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+      section { padding: 32px 0; }
+      .sec-label { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); margin: 0 0 14px; }
+      h2 { font-size: 23px; font-weight: 750; letter-spacing: -0.02em; margin: 0 0 10px; }
+      p { max-width: 74ch; }
+      .principle { background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 6px 0 0; }
+      .principle b { color: var(--ink); }
+      .tech { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 18px 20px; margin-top: 14px; }
+      .tech-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+      .tech-head h3 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+      .tag { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+      .tag.next { color: var(--ink); border-color: #c7d0d3; }
+      .tag.py { color: var(--python); border-color: #cfe0ee; }
+      .tag.nim { color: var(--nim); border-color: #cfe39a; }
+      .tag.data { color: #6b46a8; border-color: #e0d5f0; }
+      .tag.ops { color: var(--accent); border-color: #b7ddd6; }
+      .tech .what { font-size: 14px; color: var(--muted); margin: 8px 0 10px; }
+      .tech .why { margin: 0; padding-left: 18px; font-size: 14px; }
+      .tech .why li { margin-bottom: 4px; }
+      .tech .instead { font-size: 13px; color: var(--muted); margin: 10px 0 0; border-top: 1px dashed var(--line); padding-top: 10px; }
+      .tech .instead b { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
+      footer { padding: 28px 0 48px; font-family: var(--mono); font-size: 12px; color: var(--faint); border-top: 1px solid var(--line); }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap head-inner">
+        <p class="eyebrow">Architecture · decisions</p>
+        <div class="wordmark">Ward<span class="beat">Beat</span></div>
+        <h1 class="title">Stack &amp; why</h1>
+        <p class="lede">Every technology in WardBeat, what it does, and — the part that matters — why it was chosen over the obvious alternative. The through-line is <b>right tool per tier</b> and <b>data sovereignty for clinical data</b>.</p>
+        <nav class="docnav">
+          <a href="how-it-works.html">How it works</a>
+          <a href="clinical.html">In the hospital</a>
+          <a class="here" href="tech-stack.html">Stack &amp; why</a>
+          <a href="onepager.html">One-pager</a>
+        </nav>
+      </div>
+    </header>
+
+    <section style="border-bottom:1px solid var(--line);">
+      <div class="wrap">
+        <p class="sec-label">The two decisions behind everything</p>
+        <div class="principle"><b>Polyglot by design.</b> TypeScript runs the product tier; Python runs the AI tier — because the GenAI/ML ecosystem (retrieval, agents, evals, scikit-style models) lives in Python. Not language sprawl: one internal service, behind one front door.</div>
+        <div class="principle" style="margin-top:10px;"><b>On-prem-capable by default.</b> The whole AI stack (NVIDIA NIM) is self-hostable, so patient-adjacent data can stay inside the hospital. For clinical data that's not a preference — it's often the deciding requirement, and it rules out hosted frontier APIs.</div>
+      </div>
+    </section>
+
+    <section style="border-bottom:1px solid var(--line);">
+      <div class="wrap">
+        <p class="sec-label">Product tier</p>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Next.js 16</h3><span class="tag next">Experience · BFF</span></div>
+          <p class="what">App Router, React Server Components, and Server Actions — the UI, the auth boundary, and the API-for-the-frontend in one framework.</p>
+          <ul class="why">
+            <li>Server Actions let the browser talk to <em>one</em> front door; the AI service and DB stay server-side and unexposed.</li>
+            <li>RSC keeps the board fast — data assembled on the server, no client data-fetching spaghetti.</li>
+            <li>It's the platform the project was scaffolded on, so auth, RBAC, PWA and the app shell came for free — leaving the build to be about the AI.</li>
+          </ul>
+          <p class="instead"><b>Instead of</b> a separate SPA + standalone API: more surface, duplicated auth, and a second thing to deploy — for no gain here.</p>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Drizzle ORM + PostgreSQL 17</h3><span class="tag data">Data</span></div>
+          <p class="what">Type-safe schema and queries in TypeScript over Postgres; migrations generated from the schema.</p>
+          <ul class="why">
+            <li>End-to-end types from column to component — the read models are compile-checked.</li>
+            <li><b>Single migration authority.</b> One place owns the schema, which keeps the polyglot setup honest (Python reads, never migrates).</li>
+            <li>Postgres is boring in the best way: transactional, ubiquitous, and — with pgvector — does double duty (below).</li>
+          </ul>
+          <p class="instead"><b>Instead of</b> a heavyweight ORM or hand-rolled SQL: Drizzle keeps the types without the magic.</p>
+        </div>
+      </div>
+    </section>
+
+    <section style="border-bottom:1px solid var(--line);">
+      <div class="wrap">
+        <p class="sec-label">AI tier</p>
+
+        <div class="tech">
+          <div class="tech-head"><h3>FastAPI (Python 3.12)</h3><span class="tag py">AI plane · internal</span></div>
+          <p class="what">A small, stateless internal service: extraction, RAG answer, the recommender agent, forecasting, and narration.</p>
+          <ul class="why">
+            <li>Python is where the AI ecosystem lives — retrieval, agent orchestration, evaluation, and scikit-style models. Building that in TypeScript would fight the grain.</li>
+            <li>Stateless pure functions of their inputs → trivially testable, and the DB keeps a single writer (Next.js).</li>
+            <li>Auto-generated OpenAPI gives a typed contract to the TypeScript side.</li>
+          </ul>
+          <p class="instead"><b>Instead of</b> all-TypeScript AI (worse toolchain) or all-Python app (rebuild the auth/PWA/app-shell we already had).</p>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>NVIDIA NIM — Nemotron, embedding &amp; reranking</h3><span class="tag nim">Model · inference</span></div>
+          <p class="what">NVIDIA Inference Microservices: a small <b>Nemotron</b> for reasoning/extraction, <b>nv-embedqa-e5-v5</b> for embeddings, and a reranking NIM — behind an OpenAI-compatible API.</p>
+          <ul class="why">
+            <li><b>Data sovereignty.</b> NIMs are self-hostable containers — they run on the trust's own GPUs, so data never leaves. No hosted frontier API can promise that.</li>
+            <li><b>No lock-in at the app layer.</b> OpenAI-compatible, so models swap without a rewrite and the same code targets hosted or on-prem.</li>
+            <li><b>A free hosted tier</b> for the demo → identical containers on-prem for production: build for £0, deploy where the data must live.</li>
+            <li>TensorRT-optimised, versioned, and a whole family (LLM + embed + rerank + guardrails) under one vendor.</li>
+          </ul>
+          <p class="instead"><b>Instead of</b> a hosted frontier API (can't satisfy on-prem residency) or raw self-hosting with vLLM (you rebuild serving, optimisation, retrieval, and guardrails yourself). NIM is the middle path: self-hostable <em>and</em> batteries-included.</p>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>pgvector</h3><span class="tag data">Retrieval</span></div>
+          <p class="what">A Postgres extension adding a <code>vector</code> column type + ANN indexes — the store for the discharge-policy knowledge base.</p>
+          <ul class="why">
+            <li>Reuses the database already in the stack — no separate vector DB to run, back up, or keep consistent.</li>
+            <li>Vectors sit transactionally alongside the relational data, with an hnsw cosine index for approximate-nearest-neighbour search.</li>
+            <li>Right-sized: a policy KB doesn't need a dedicated vector platform. (Graduate to Milvus only if scale demands it.)</li>
+          </ul>
+          <p class="instead"><b>Instead of</b> Pinecone/Milvus: extra infra and a second source of truth for a corpus this size.</p>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Deterministic ML (logistic + baseline)</h3><span class="tag py">Forecast</span></div>
+          <p class="what">Transparent, monotone functions for discharge probability and demand — not an LLM.</p>
+          <ul class="why">
+            <li>Forecasting a number wants a calibrated, testable model — not a language model that can't be evaluated and drifts.</li>
+            <li>The LLM's job is to <em>narrate</em> those numbers, never to compute them. This split is the clearest statement of "GenAI where it belongs".</li>
+          </ul>
+          <p class="instead"><b>Instead of</b> asking an LLM to predict length-of-stay: the classic anti-pattern — unaccountable and unfalsifiable.</p>
+        </div>
+      </div>
+    </section>
+
+    <section style="border-bottom:1px solid var(--line);">
+      <div class="wrap">
+        <p class="sec-label">Delivery &amp; assurance</p>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Docker Compose</h3><span class="tag ops">Delivery</span></div>
+          <p class="what">The polyglot stack — Postgres (pgvector image), the FastAPI <code>ai</code> service, object storage — as one reproducible set of containers.</p>
+          <ul class="why">
+            <li>One command brings up the whole system; the AI service ships as its own pinned Python image, so the host toolchain is irrelevant.</li>
+            <li>The internal network keeps the AI service off any public surface; only the app is exposed.</li>
+          </ul>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Evaluation harnesses</h3><span class="tag ops">LLMOps</span></div>
+          <p class="what">Scriptable gates: extraction F1, RAG hit-rate + faithfulness, ward-state query-intent accuracy, action appropriateness, forecast ranking + narration numeric-consistency.</p>
+          <ul class="why">
+            <li>Quality is a number, not a vibe — every AI capability has a labelled set and a pass threshold.</li>
+            <li>They caught a bad first model choice and a hung model in development, and turned prompt tuning into a measured 69% → 88% improvement.</li>
+            <li>They're designed to run as CI gates so a model or prompt swap can't silently regress.</li>
+          </ul>
+          <p class="instead"><b>Instead of</b> eyeballing outputs: the difference between "seems fine" and "provably ≥ 0.9".</p>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Auth.js v5 + RBAC</h3><span class="tag next">Security</span></div>
+          <p class="what">Credentials auth (Argon2id, JWT) with role-based access, inherited from the platform.</p>
+          <ul class="why">
+            <li>Auth is enforced once, at the Next.js edge + server; the AI service simply trusts an internal service token.</li>
+            <li>Approvals are attributable — the audit trail ties every action decision to a user.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">WardBeat · stack &amp; why · see also <a href="how-it-works.html">How it works</a> and <a href="clinical.html">In the hospital</a></div>
+    </footer>
+  </body>
+</html>
