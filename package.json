@@ -1,6 +1,6 @@
 {
   "name": "wardbeat",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "license": "MIT",
   "description": "A full-stack, AI-enabled application that helps keep a hospital ward flowing and beds utilised.",
@@ -33,7 +33,10 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
     "db:seed:ward": "tsx src/db/seed-ward.ts",
+    "db:seed:policy": "tsx src/db/seed-policy.ts",
+    "db:extract": "tsx src/db/run-extraction.ts",
     "eval:extraction": "tsx src/eval/extraction-eval.ts",
+    "eval:copilot": "tsx src/eval/copilot-eval.ts",
     "gen:icons": "node scripts/generate-icons.mjs",
     "gen:og": "node scripts/generate-og-image.mjs",
     "docker:db": "docker compose up -d db",

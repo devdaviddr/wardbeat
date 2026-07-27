@@ -71,6 +71,13 @@
       "when": 1785115181594,
       "tag": "0009_classy_machine_man",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785120931814,
+      "tag": "0010_moaning_vision",
+      "breakpoints": true
     }
   ]
 }

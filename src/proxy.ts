@@ -11,7 +11,7 @@ import { authConfig } from '@/lib/auth/config'
 const { auth } = NextAuth(authConfig)
 
 /** Routes that require an authenticated session. */
-const PROTECTED_PREFIXES = ['/dashboard', '/settings', '/ward']
+const PROTECTED_PREFIXES = ['/dashboard', '/settings', '/ward', '/copilot']
 /** Auth pages an already-signed-in user should be bounced away from. */
 const AUTH_ROUTES = ['/login', '/register']
 /**

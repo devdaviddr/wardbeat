@@ -63,3 +63,72 @@ export async function extractNote(input: {
 
   return extractionResultSchema.parse(await res.json())
 }
+
+/** Low-level POST to the internal AI service with the service token. */
+async function aiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${env.WARDBEAT_AI_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...(env.WARDBEAT_AI_SERVICE_TOKEN
+        ? { 'x-service-token': env.WARDBEAT_AI_SERVICE_TOKEN }
+        : {}),
+    },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  })
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(`AI service ${path} ${res.status}: ${detail.slice(0, 200)}`)
+  }
+  return (await res.json()) as T
+}
+
+export async function embedText(
+  text: string,
+  inputType: 'query' | 'passage' = 'query',
+): Promise<number[]> {
+  const res = await aiPost<{ embeddings: number[][] }>('/embed', {
+    texts: [text],
+    input_type: inputType,
+  })
+  const vec = res.embeddings[0]
+  if (!vec) throw new Error('AI service returned no embedding')
+  return vec
+}
+
+export async function rerankPassages(
+  query: string,
+  passages: string[],
+  topN: number,
+): Promise<{ order: number[]; reranked: boolean }> {
+  return aiPost('/copilot/rerank', { query, passages, top_n: topN })
+}
+
+export interface AnswerPassage {
+  id: string
+  text: string
+  source: string
+}
+
+export async function answerFromPassages(
+  question: string,
+  passages: AnswerPassage[],
+  kind: 'policy' | 'ward' = 'policy',
+): Promise<{ answer: string; citations: string[]; grounded: boolean }> {
+  return aiPost('/copilot/answer', { question, passages, kind })
+}
+
+/** NL question → an unvalidated structured-filter intent (validated by the caller). */
+export async function queryIntent(question: string): Promise<unknown> {
+  return aiPost('/copilot/query-intent', { question })
+}
+
+export type CopilotRoute = 'ward_state' | 'policy' | 'out_of_scope'
+
+/** Classify a question into which answer path should handle it. */
+export async function routeQuestion(question: string): Promise<CopilotRoute> {
+  const res = await aiPost<{ path: string }>('/copilot/route', { question })
+  const path = res.path
+  return path === 'ward_state' || path === 'policy' ? path : 'out_of_scope'
+}

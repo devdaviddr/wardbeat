@@ -24,6 +24,8 @@ pnpm install
 pnpm db:migrate
 pnpm db:seed                  # demo login: demo@example.com / Password123
 pnpm db:seed:ward             # Ashcombe Ward — 16 beds, 12 occupied
+pnpm db:seed:policy           # discharge-policy KB, embedded into pgvector (v0.3.0)
+pnpm db:extract               # populate the board headlessly (or use the UI button)
 ```
 
 ## 3. Run the app
@@ -36,6 +38,17 @@ Sign in, open **Ward board** in the nav, and click **Run extraction**. Barrier
 chips appear on each bed; click one to see the **source note** with the cited
 span highlighted. Toggle **Show fit-but-delayed** to see exactly which beds you
 could free today.
+
+Then open **Copilot** (v0.3.0) and ask:
+
+- _"Which patients are fit but waiting on transport?"_ → **ward-state** path: a
+  validated filter over the live board, answer cites the beds (click to jump).
+- _"What are the criteria for discharging a patient on IV antibiotics?"_ →
+  **policy RAG** path: retrieves from the policy KB, answer cites the passage.
+- _"What's the weather?"_ → politely refused (out of scope).
+
+Prove the copilot quality with `pnpm eval:copilot` (retrieval hit-rate,
+grounded rate, and ward-state query-intent accuracy — gate 0.9).
 
 ## 4. Go live on NVIDIA NIM (optional)
 

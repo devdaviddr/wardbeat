@@ -74,7 +74,10 @@ async function main() {
     const result = await extract(note.id, note.text)
     const pred = new Set(result.barriers.map((b) => b.type))
 
-    for (const t of pred) gold.has(t) ? tp++ : fp++
+    for (const t of pred) {
+      if (gold.has(t)) tp++
+      else fp++
+    }
     for (const t of gold) if (!pred.has(t)) fn++
     if (result.mffd_flag === labels.mffd) mffdCorrect++
   }

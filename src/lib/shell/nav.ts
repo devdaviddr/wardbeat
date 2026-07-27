@@ -2,6 +2,7 @@ import {
   Activity,
   LayoutDashboard,
   Settings,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -15,5 +16,6 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Ward board', href: '/ward', icon: Activity },
+  { title: 'Copilot', href: '/copilot', icon: Sparkles },
   { title: 'Settings', href: '/settings', icon: Settings },
 ]
