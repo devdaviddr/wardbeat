@@ -1,8 +1,8 @@
 ---
 release: v0.3.0
 title: Flow copilot — ward-state Q&A + policy RAG
-status: Accepted # Proposed | Accepted | Shipped | Superseded | Rejected
-release_tag: '—'
+status: Shipped # Proposed | Accepted | Shipped | Superseded | Rejected
+release_tag: v0.3.0
 phase: Phase 2 — Retrieval
 created: 2026-07-27
 updated: 2026-07-27
