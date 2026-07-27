@@ -54,6 +54,33 @@ const QUESTIONS: Q[] = [
   },
 ]
 
+// Ward-state path: does the model translate the question into the right
+// structured filter? Each expected key must match the produced intent.
+interface WardQ {
+  q: string
+  expect: Record<string, unknown>
+}
+const WARD_QUESTIONS: WardQ[] = [
+  {
+    q: 'Which patients are fit but waiting on transport?',
+    expect: { mffd: true, barrier: 'transport' },
+  },
+  {
+    q: 'How many beds are free?',
+    expect: { aggregation: 'count', free: true },
+  },
+  { q: 'Who is medically fit for discharge?', expect: { mffd: true } },
+  { q: 'Which patients are waiting on TTOs?', expect: { barrier: 'tto' } },
+  {
+    q: 'Is anyone waiting on social care?',
+    expect: { barrier: 'social_care' },
+  },
+  {
+    q: 'Which fit patients have an EDD of today?',
+    expect: { mffd: true, edd_today: true },
+  },
+]
+
 async function post(path: string, body: unknown) {
   const res = await fetch(`${AI_URL}${path}`, {
     method: 'POST',
@@ -120,21 +147,37 @@ async function main() {
     )
   }
 
+  // Ward-state: query-intent accuracy.
+  let intentOk = 0
+  for (const item of WARD_QUESTIONS) {
+    const got = (await post('/copilot/query-intent', {
+      question: item.q,
+    })) as Record<string, unknown>
+    const ok = Object.entries(item.expect).every(([k, v]) => got[k] === v)
+    if (ok) intentOk++
+    console.log(`${ok ? '✓' : '✗'} intent: ${item.q} → ${JSON.stringify(got)}`)
+  }
+
   const n = QUESTIONS.length
   const hitRate = hits / n
   const groundedRate = grounded / n
+  const intentAcc = intentOk / WARD_QUESTIONS.length
   const pct = (x: number) => `${(x * 100).toFixed(1)}%`
-  console.log('\n── Copilot policy-RAG eval ──────────────────────────')
-  console.log(`  questions       : ${n}`)
-  console.log(`  retrieval hit   : ${pct(hitRate)}  (gate ${pct(GATE)})`)
-  console.log(`  grounded        : ${pct(groundedRate)}  (gate ${pct(GATE)})`)
+  console.log('\n── Copilot eval ─────────────────────────────────────')
+  console.log(`  policy questions   : ${n}`)
+  console.log(`  retrieval hit-rate : ${pct(hitRate)}  (gate ${pct(GATE)})`)
   console.log(
-    `  reranker used   : ${rerankedSeen ? 'yes' : 'no (cosine order)'}`,
+    `  answer grounded    : ${pct(groundedRate)}  (gate ${pct(GATE)})`,
   )
+  console.log(
+    `  reranker used      : ${rerankedSeen ? 'yes' : 'no (cosine order)'}`,
+  )
+  console.log(`  ward-state qs      : ${WARD_QUESTIONS.length}`)
+  console.log(`  query-intent acc   : ${pct(intentAcc)}  (gate ${pct(GATE)})`)
   console.log('─────────────────────────────────────────────────────')
 
   await client.end()
-  if (hitRate < GATE || groundedRate < GATE) {
+  if (hitRate < GATE || groundedRate < GATE || intentAcc < GATE) {
     console.error('\n❌ Copilot eval below gate')
     process.exit(1)
   }

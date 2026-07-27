@@ -114,6 +114,12 @@ export interface AnswerPassage {
 export async function answerFromPassages(
   question: string,
   passages: AnswerPassage[],
+  kind: 'policy' | 'ward' = 'policy',
 ): Promise<{ answer: string; citations: string[]; grounded: boolean }> {
-  return aiPost('/copilot/answer', { question, passages })
+  return aiPost('/copilot/answer', { question, passages, kind })
+}
+
+/** NL question → an unvalidated structured-filter intent (validated by the caller). */
+export async function queryIntent(question: string): Promise<unknown> {
+  return aiPost('/copilot/query-intent', { question })
 }

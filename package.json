@@ -34,6 +34,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:seed:ward": "tsx src/db/seed-ward.ts",
     "db:seed:policy": "tsx src/db/seed-policy.ts",
+    "db:extract": "tsx src/db/run-extraction.ts",
     "eval:extraction": "tsx src/eval/extraction-eval.ts",
     "eval:copilot": "tsx src/eval/copilot-eval.ts",
     "gen:icons": "node scripts/generate-icons.mjs",
