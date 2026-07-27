@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
-import { BriefingStrip } from '@/components/ward/briefing-strip'
 import { CockpitBoard } from '@/components/ward/cockpit-board'
 import { getCurrentSession } from '@/lib/auth/session'
 import { env } from '@/lib/env'
@@ -40,5 +39,5 @@ export default async function DashboardPage() {
     )
   }
 
-  return <CockpitBoard cockpit={cockpit} header={<BriefingStrip />} />
+  return <CockpitBoard cockpit={cockpit} />
 }

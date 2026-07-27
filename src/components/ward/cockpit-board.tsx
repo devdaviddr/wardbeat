@@ -9,16 +9,10 @@ import { runWardExtractionAction } from '@/lib/ward/actions'
 import type { Cockpit, CockpitBed } from '@/lib/ward/cockpit'
 
 import { BedDrawer } from './bed-drawer'
+import { BriefingStrip } from './briefing-strip'
 import { CopilotDock } from './copilot-dock'
 
-export function CockpitBoard({
-  cockpit,
-  header,
-}: {
-  cockpit: Cockpit
-  /** Slot above the grid — the async briefing strip. */
-  header?: React.ReactNode
-}) {
+export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [status, setStatus] = useState<string | null>(null)
@@ -92,7 +86,7 @@ export function CockpitBoard({
         </div>
       </div>
 
-      {header}
+      <BriefingStrip />
 
       {status && (
         <p className="text-sm" role="status">
