@@ -1,24 +1,27 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
 import { getBriefingSummaryAction } from '@/lib/briefing/actions'
 import type { FlowBriefing } from '@/lib/briefing/briefing'
 
 /**
- * The flow briefing, loaded async so it never blocks the grid. Shows the net
- * bed position + the AI-narrated one-liner, expandable to the detail.
+ * The flow briefing. It's the one NIM call on the board and takes a few seconds,
+ * so it's **manual** — the board loads instantly and the briefing is generated
+ * on demand.
  */
 export function BriefingStrip() {
   const [data, setData] = useState<FlowBriefing | null>(null)
-  const [state, setState] = useState<'loading' | 'done' | 'error'>('loading')
+  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>(
+    'idle',
+  )
   const [open, setOpen] = useState(false)
 
-  useEffect(() => {
-    let alive = true
+  function generate() {
+    setState('loading')
     getBriefingSummaryAction()
       .then((d) => {
-        if (!alive) return
         if (d) {
           setData(d)
           setState('done')
@@ -26,18 +29,28 @@ export function BriefingStrip() {
           setState('error')
         }
       })
-      .catch(() => alive && setState('error'))
-    return () => {
-      alive = false
-    }
-  }, [])
+      .catch(() => setState('error'))
+  }
 
-  if (state === 'error') return null
-
-  if (state === 'loading' || !data) {
+  if (state === 'loading') {
     return (
       <div className="bg-muted/40 text-muted-foreground animate-pulse rounded-lg border p-3 text-sm">
-        Generating flow briefing…
+        Generating flow briefing… (forecasts + one narration call)
+      </div>
+    )
+  }
+
+  if (state === 'idle' || !data) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed p-3 text-sm">
+        <span className="text-muted-foreground">
+          {state === 'error'
+            ? "Couldn't generate the briefing."
+            : 'Flow briefing — net bed position + a narrated shift summary.'}
+        </span>
+        <Button size="sm" variant="outline" onClick={generate}>
+          {state === 'error' ? 'Retry' : 'Generate briefing'}
+        </Button>
       </div>
     )
   }
@@ -60,13 +73,22 @@ export function BriefingStrip() {
           likely discharges · {data.stats.expectedAdmissions} expected
           admissions
         </span>
-        <button
-          type="button"
-          className="text-muted-foreground ml-auto text-xs underline-offset-2 hover:underline"
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? 'Hide' : 'Details'}
-        </button>
+        <div className="ml-auto flex items-center gap-3">
+          <button
+            type="button"
+            className="text-muted-foreground text-xs underline-offset-2 hover:underline"
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? 'Hide' : 'Details'}
+          </button>
+          <button
+            type="button"
+            className="text-muted-foreground text-xs underline-offset-2 hover:underline"
+            onClick={generate}
+          >
+            Regenerate
+          </button>
+        </div>
       </div>
       <p className="mt-2 text-sm leading-relaxed">{data.briefing}</p>
       {open && (

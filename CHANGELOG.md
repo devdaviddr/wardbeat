@@ -15,6 +15,15 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.6.4] - 2026-07-27
+
+### Changed
+
+- The flow briefing is now **generated manually** (a Generate/Regenerate
+  button) instead of auto-running on every board load — it is the one NIM call
+  on the board and takes a few seconds, so the board now loads instantly and the
+  briefing is produced on demand.
+
 ## [0.6.3] - 2026-07-27
 
 ### Changed
