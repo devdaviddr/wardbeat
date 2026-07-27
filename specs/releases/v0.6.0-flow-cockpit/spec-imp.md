@@ -1,7 +1,7 @@
 ---
 release: v0.6.0
 title: Flow cockpit — implementation plan
-status: Draft # Draft | In Progress | Ready | Shipped
+status: Shipped # Draft | In Progress | Ready | Shipped
 spec: ./spec.md
 branch: feature/v0.6.0-flow-cockpit
 created: 2026-07-27
@@ -82,14 +82,14 @@ on a NIM call.
 
 ## Definition of Done
 
-- [ ] All `spec.md` acceptance criteria met.
-- [ ] Local gate green: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
-- [ ] Existing evals still pass; no schema change.
-- [ ] `CHANGELOG.md` + docs updated; merged to `main`; `v0.6.0` tagged; specs `Shipped`.
+- [x] All `spec.md` acceptance criteria met.
+- [x] Local gate green: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
+- [x] Existing evals still pass; no schema change.
+- [x] `CHANGELOG.md` + docs updated; merged to `main`; `v0.6.0` tagged; specs `Shipped`.
 
 ## Task checklist
 
-- [ ] M1 — cockpit read model + bed badges/discharge %
-- [ ] M2 — bed detail drawer (barriers/citations + recommendations + forecast)
-- [ ] M3 — briefing header strip (async) + copilot dock with bed highlighting
-- [ ] M4 — nav trim + docs + release
+- [x] M1 — cockpit read model + bed badges/discharge %
+- [x] M2 — bed detail drawer (barriers/citations + recommendations + forecast)
+- [x] M3 — briefing header strip (async) + copilot dock with bed highlighting
+- [x] M4 — nav trim + docs + release

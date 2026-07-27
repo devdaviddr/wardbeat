@@ -82,4 +82,4 @@ Fill `spec.md` first, get it to `Accepted`, then plan in `spec-imp.md`.
 | **v0.3.0** | Flow copilot — ward-state Q&A + policy RAG      | [spec](v0.3.0-flow-copilot/spec.md) — Shipped                    | [plan](v0.3.0-flow-copilot/spec-imp.md) — Shipped                    |
 | **v0.4.0** | Action recommendations (agentic, HITL)          | [spec](v0.4.0-action-recommendations/spec.md) — Shipped          | [plan](v0.4.0-action-recommendations/spec-imp.md) — Shipped          |
 | **v0.5.0** | Forecasting & narration                         | [spec](v0.5.0-forecasting-narration/spec.md) — Shipped           | [plan](v0.5.0-forecasting-narration/spec-imp.md) — Shipped           |
-| **v0.6.0** | Flow cockpit — board-centric UX                 | [spec](v0.6.0-flow-cockpit/spec.md) — Accepted                   | [plan](v0.6.0-flow-cockpit/spec-imp.md) — Draft                      |
+| **v0.6.0** | Flow cockpit — board-centric UX                 | [spec](v0.6.0-flow-cockpit/spec.md) — Shipped                    | [plan](v0.6.0-flow-cockpit/spec-imp.md) — Shipped                    |

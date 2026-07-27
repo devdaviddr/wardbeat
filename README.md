@@ -244,6 +244,7 @@ reference: **[Deployment](docs/deployment.md)**.
 - [x] Natural-language flow copilot — ward-state Q&A + policy RAG ([v0.3.0](specs/releases/v0.3.0-flow-copilot/spec.md))
 - [x] Action recommendations — agentic, policy-grounded, human-in-the-loop ([v0.4.0](specs/releases/v0.4.0-action-recommendations/spec.md))
 - [x] Forecasting & narration — deterministic LOS/demand models + LLM briefing ([v0.5.0](specs/releases/v0.5.0-forecasting-narration/spec.md))
+- [x] Flow cockpit — board-centric UX unifying all of the above ([v0.6.0](specs/releases/v0.6.0-flow-cockpit/spec.md))
 
 ## Contributing
 

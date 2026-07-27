@@ -15,6 +15,26 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.6.0] - 2026-07-27
+
+### Changed
+
+- **Flow cockpit — the ward board is now a single pane of glass.** UX
+  consolidation of v0.2–v0.5 (no new AI capability):
+  - The **flow briefing** is now a header strip on the board (net position +
+    AI-narrated one-liner), loaded async so the grid never blocks on the
+    narration call.
+  - **Click a bed → a detail drawer** unifying that patient's status/EDD,
+    discharge forecast, barriers with cited sources, and recommendations with
+    inline **Approve / Dismiss**.
+  - Beds carry an **⚡action badge** and their **discharge probability**.
+  - **Copilot docks onto the board** and **highlights the beds** a ward-state
+    answer references.
+  - Primary nav trimmed to **Ward + Actions** (copilot/briefing now live on the
+    board; their routes remain reachable).
+- Read model: `getCockpit()` assembles the board + per-bed recommendations +
+  forecast in one cheap pass (no NIM).
+
 ## [0.5.0] - 2026-07-27
 
 ### Added

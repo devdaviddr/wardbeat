@@ -1,8 +1,8 @@
 ---
 release: v0.6.0
 title: Flow cockpit — board-centric UX
-status: Accepted # Proposed | Accepted | Shipped | Superseded | Rejected
-release_tag: '—'
+status: Shipped # Proposed | Accepted | Shipped | Superseded | Rejected
+release_tag: v0.6.0
 phase: Phase 5 — Experience
 created: 2026-07-27
 updated: 2026-07-27
@@ -85,11 +85,11 @@ drawer**. A **copilot dock** (button / ⌘K) answers and highlights beds.
 
 ## Acceptance criteria
 
-- [ ] Board shows the briefing strip (async) + per-bed action badges + discharge %.
-- [ ] Bed drawer unifies barriers/citations + recommendations (approve/dismiss) +
+- [x] Board shows the briefing strip (async) + per-bed action badges + discharge %.
+- [x] Bed drawer unifies barriers/citations + recommendations (approve/dismiss) +
       forecast; approving updates the barrier and the board.
-- [ ] Copilot dock answers and highlights referenced beds on the grid.
-- [ ] Nav trimmed; no dead ends; local gate green; existing evals still pass.
+- [x] Copilot dock answers and highlights referenced beds on the grid.
+- [x] Nav trimmed; no dead ends; local gate green; existing evals still pass.
 
 ## Security & privacy
 

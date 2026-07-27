@@ -1,10 +1,8 @@
 import {
   Activity,
   LayoutDashboard,
-  LineChart,
   ListChecks,
   Settings,
-  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -14,12 +12,15 @@ export interface NavItem {
   icon: LucideIcon
 }
 
-/** Primary navigation shown in the sidebar / mobile drawer. */
+/**
+ * Primary navigation. The product is board-centric (v0.6.0): the copilot and the
+ * flow briefing now live *on* the ward board (dock + header strip), so they're
+ * no longer separate destinations. The Actions queue stays as a focused triage
+ * view. The `/copilot` and `/briefing` routes remain reachable directly.
+ */
 export const navItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Ward board', href: '/ward', icon: Activity },
-  { title: 'Copilot', href: '/copilot', icon: Sparkles },
   { title: 'Actions', href: '/actions', icon: ListChecks },
-  { title: 'Briefing', href: '/briefing', icon: LineChart },
   { title: 'Settings', href: '/settings', icon: Settings },
 ]
