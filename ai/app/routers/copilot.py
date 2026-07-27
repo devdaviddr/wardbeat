@@ -4,12 +4,22 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.answer import answer_from_passages
+from app.classify import classify
 from app.query_intent import build_query_intent
 from app.rerank import rerank
 from app.security import require_service_token
 from app.settings import get_settings
 
 router = APIRouter(prefix="/copilot", dependencies=[Depends(require_service_token)])
+
+
+class RouteRequest(BaseModel):
+    question: str
+
+
+@router.post("/route")
+async def route(req: RouteRequest) -> dict:
+    return {"path": await classify(get_settings(), req.question)}
 
 
 class QueryIntentRequest(BaseModel):

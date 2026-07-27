@@ -123,3 +123,12 @@ export async function answerFromPassages(
 export async function queryIntent(question: string): Promise<unknown> {
   return aiPost('/copilot/query-intent', { question })
 }
+
+export type CopilotRoute = 'ward_state' | 'policy' | 'out_of_scope'
+
+/** Classify a question into which answer path should handle it. */
+export async function routeQuestion(question: string): Promise<CopilotRoute> {
+  const res = await aiPost<{ path: string }>('/copilot/route', { question })
+  const path = res.path
+  return path === 'ward_state' || path === 'policy' ? path : 'out_of_scope'
+}
