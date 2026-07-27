@@ -9,23 +9,23 @@ import { runWardExtractionAction } from '@/lib/ward/actions'
 import type { Cockpit, CockpitBed } from '@/lib/ward/cockpit'
 
 import { BedDrawer } from './bed-drawer'
+import { CopilotDock } from './copilot-dock'
 
 export function CockpitBoard({
   cockpit,
   header,
-  highlighted,
 }: {
   cockpit: Cockpit
-  /** Slot above the grid — the briefing strip + copilot dock (v0.6.0 M3). */
+  /** Slot above the grid — the async briefing strip. */
   header?: React.ReactNode
-  /** Bed labels to emphasise (e.g. the copilot's answer). */
-  highlighted?: Set<string>
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [status, setStatus] = useState<string | null>(null)
   const [mffdOnly, setMffdOnly] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [dockOpen, setDockOpen] = useState(false)
+  const [highlighted, setHighlighted] = useState<Set<string>>(new Set())
 
   // Derived: if the selected bed disappears after a refresh, this becomes null
   // and the drawer closes on its own — no effect needed.
@@ -63,12 +63,28 @@ export function CockpitBoard({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {highlighted.size > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setHighlighted(new Set())}
+            >
+              Clear highlight
+            </Button>
+          )}
           <Button
             variant={mffdOnly ? 'default' : 'outline'}
             size="sm"
             onClick={() => setMffdOnly((v) => !v)}
           >
             {mffdOnly ? 'Showing fit-but-delayed' : 'Show fit-but-delayed'}
+          </Button>
+          <Button
+            variant={dockOpen ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDockOpen((v) => !v)}
+          >
+            Ask copilot
           </Button>
           <Button size="sm" onClick={runExtraction} disabled={pending}>
             {pending ? 'Extracting…' : 'Run extraction'}
@@ -100,6 +116,12 @@ export function CockpitBoard({
         bed={selected}
         onClose={() => setSelectedId(null)}
         onChanged={() => router.refresh()}
+      />
+
+      <CopilotDock
+        open={dockOpen}
+        onClose={() => setDockOpen(false)}
+        onHighlight={(labels) => setHighlighted(new Set(labels))}
       />
     </div>
   )
