@@ -64,6 +64,13 @@
       "when": 1785114741354,
       "tag": "0008_square_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785115181594,
+      "tag": "0009_classy_machine_man",
+      "breakpoints": true
     }
   ]
 }

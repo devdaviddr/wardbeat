@@ -308,6 +308,11 @@ export const encounters = pgTable(
       .notNull()
       .defaultNow(),
     dischargedAt: timestamp('discharged_at', { mode: 'date' }),
+    // Current discharge status, denormalised from the latest note extraction so
+    // the ward board reads without a per-encounter aggregate join.
+    mffdFlag: boolean('mffd_flag').notNull().default(false),
+    edd: text('edd'), // ISO date string
+    lastExtractedAt: timestamp('last_extracted_at', { mode: 'date' }),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   },
   (table) => [index('encounters_bed_idx').on(table.bedId)],
