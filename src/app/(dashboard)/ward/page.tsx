@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 
-import { WardBoardView } from '@/components/ward/ward-board'
+import { CockpitBoard } from '@/components/ward/cockpit-board'
 import { getCurrentSession } from '@/lib/auth/session'
 import { env } from '@/lib/env'
-import { getWardBoard } from '@/lib/ward/queries'
+import { getCockpit } from '@/lib/ward/cockpit'
 
 export const metadata: Metadata = { title: 'Ward board' }
-// Reads live DB state and is mutated by the extraction action — never cache.
+// Reads live DB state and is mutated by extraction/approvals — never cache.
 export const dynamic = 'force-dynamic'
 
 export default async function WardPage() {
@@ -16,8 +16,8 @@ export default async function WardPage() {
   const session = await getCurrentSession()
   if (!session?.user) redirect('/login')
 
-  const board = await getWardBoard()
-  if (!board) {
+  const cockpit = await getCockpit()
+  if (!cockpit) {
     return (
       <div className="space-y-3">
         <h1 className="text-2xl font-semibold">Ward board</h1>
@@ -29,5 +29,5 @@ export default async function WardPage() {
     )
   }
 
-  return <WardBoardView board={board} />
+  return <CockpitBoard cockpit={cockpit} />
 }
