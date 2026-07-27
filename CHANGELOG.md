@@ -15,6 +15,14 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.6.2] - 2026-07-27
+
+### Fixed
+
+- Render the flow briefing strip inside the cockpit board directly instead of
+  threading it through a `header` prop — clearer ownership and removes a React
+  key warning surfaced during development.
+
 ## [0.6.1] - 2026-07-27
 
 ### Changed
