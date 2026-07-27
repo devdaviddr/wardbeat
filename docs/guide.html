@@ -37,6 +37,7 @@
       .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
       .pill { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; color: var(--muted); background: var(--surface); }
       .pill.live { color: var(--fit); border-color: #b7e3c4; background: #dcfce7; }
+      .pill.learn { color: var(--accent); border-color: #a9d5cf; background: var(--accent-soft); }
       .ecg { display: block; width: 100%; height: 30px; margin-top: 24px; color: var(--accent); opacity: 0.8; }
 
       section { padding: 40px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 60px; }
@@ -76,6 +77,29 @@
       .capability { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px 18px; margin-top: 12px; }
       .capability p { font-size: 14px; color: var(--muted); margin: 6px 0 0; }
 
+      /* educational primer */
+      .primer-intro { background: var(--ink); color: #dfeaed; border-radius: 12px; padding: 20px 24px; margin: 8px 0 6px; }
+      .primer-intro p { margin: 0; font-size: 15px; max-width: none; }
+      .primer-intro b { color: #fff; }
+      .concept { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 15px 18px; margin-top: 10px; }
+      .concept .cnum { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.08em; }
+      .concept h3 { font-size: 16px; margin: 2px 0 6px; }
+      .concept .plain { font-size: 14px; margin: 0; }
+      .concept .plain b { color: var(--ink); }
+      .concept .analogy { font-size: 13px; color: var(--muted); font-style: italic; margin: 8px 0 0; padding-left: 12px; border-left: 2px solid var(--accent-soft); max-width: none; }
+      .concept .inapp { font-size: 13px; color: var(--muted); margin: 10px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; max-width: none; }
+      .concept .inapp b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--nim); display: inline-block; margin-right: 4px; }
+
+      /* step walkthrough */
+      .walk { margin-top: 12px; }
+      .wstep { display: grid; grid-template-columns: 26px 1fr; gap: 0 14px; padding-bottom: 12px; }
+      .wstep .n { font-family: var(--mono); font-weight: 700; font-size: 12.5px; color: #fff; background: var(--accent); border-radius: 7px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+      .wstep h4 { margin: 3px 0 2px; font-size: 14px; }
+      .wstep p { margin: 0; font-size: 13.5px; color: var(--muted); max-width: none; }
+      .wstep p b { color: var(--ink); font-weight: 600; }
+      .point { font-size: 13px; color: var(--muted); margin: 4px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; max-width: none; }
+      .point b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
+
       .personas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
       .timeline { border-left: 2px solid var(--line); margin: 8px 0 0; padding-left: 20px; }
       .tstep { position: relative; padding-bottom: 18px; }
@@ -109,23 +133,21 @@
     <div class="topbar">
       <div class="wrap topbar-inner">
         <span class="brand">Ward<span class="beat">Beat</span></span>
-        <a class="jump" href="#overview">Overview</a>
-        <a class="jump" href="#hospital">Hospital</a>
-        <a class="jump" href="#how">How it works</a>
-        <a class="jump" href="#stack">Stack &amp; why</a>
-        <a class="jump" href="#roadmap">Metrics &amp; roadmap</a>
+        <a class="jump" href="#problem">Problem</a>
+        <a class="jump" href="#solution">What it does</a>
+        <a class="jump" href="#architecture">Architecture</a>
+        <a class="jump" href="#stack">Stack</a>
       </div>
     </div>
 
     <header class="hero">
       <div class="wrap hero-inner">
-        <p class="eyebrow">The complete guide</p>
+        <p class="eyebrow">Product guide</p>
         <h1 class="title">WardBeat</h1>
-        <p class="lede">A hospital ward-flow copilot — it reads the ward's notes and shows who's fit to leave and what's blocking them, so a ward runs at full, safe bed utilisation. This is the single guide to the product, how it works, and why it's built the way it is.</p>
+        <p class="lede">WardBeat reads a hospital ward’s notes and shows who is medically fit to leave and what is blocking them, so beds free up sooner and more safely.</p>
         <div class="pills">
           <span class="pill live">● live on NVIDIA NIM</span>
           <span class="pill">Next.js 16 · FastAPI · Postgres/pgvector</span>
-          <span class="pill">Portfolio · generative-AI solution architecture</span>
         </div>
         <svg class="ecg" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,20 380,20 400,20 412,8 424,32 436,20 470,20 482,20 492,4 502,36 512,20 1000,20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
@@ -133,178 +155,164 @@
       </div>
     </header>
 
-    <!-- 1. OVERVIEW -->
-    <section id="overview">
+    <!-- 1. PROBLEM -->
+    <section id="problem">
       <div class="wrap">
         <span class="sec-num">01</span>
-        <h2>Overview</h2>
-        <p>Wards lose bed capacity not because patients can't leave, but because <b>patient flow stalls</b> and the reason is hard to see — the status that matters (who's medically fit, what's blocking them) lives in free-text notes, and coordination is manual. WardBeat turns that into a live, cited, actionable board.</p>
-
-        <div class="thesis">
-          <p style="margin:0;"><b>The thesis — GenAI where it belongs.</b> Generative AI does the language, reasoning, and glue: reading unstructured notes into structured data, grounded question-answering, and turning numbers into prose. Deterministic ML does the forecasting. The system is designed to show <b>when not to use an LLM</b> as much as when to.</p>
-        </div>
-
-        <p class="subhead">The four surfaces (now one cockpit)</p>
+        <h2>The problem</h2>
+        <p>Wards lose bed capacity not because patients cannot leave, but because flow stalls and the reason is hard to see. The status that matters — who is medically fit, and what is blocking their discharge — lives in free-text notes, not structured fields. Finding it means re-reading notes and chasing people by hand.</p>
         <div class="grid2">
-          <div class="card"><h3>Ward board</h3><p>Every bed at a glance — barriers, discharge probability, and an ⚡ action badge. Click a bed for the full detail drawer.</p></div>
-          <div class="card"><h3>Copilot (docked)</h3><p>Ask about live ward state or discharge policy; ward-state answers highlight the beds they reference.</p></div>
-          <div class="card"><h3>Actions</h3><p>Policy-grounded next-best actions per bed, approved/dismissed by a human, audited.</p></div>
-          <div class="card"><h3>Flow briefing</h3><p>Net bed position + an AI-narrated shift summary, from a deterministic forecast.</p></div>
+          <div class="card"><h3>Signal buried in notes</h3><p>Discharge status, the expected date, and every barrier sit in free-text nursing and ward-round notes.</p></div>
+          <div class="card"><h3>Invisible barriers</h3><p>A patient is fit to go but stuck on medications, transport, social care, or a review, with no single view of why.</p></div>
+          <div class="card"><h3>Reactive coordination</h3><p>Teams firefight in the afternoon. Board rounds are assembled by hand, and discharges slip past noon.</p></div>
         </div>
-
-        <div class="safety-callout"><b>Read this first.</b> WardBeat is a <b>decision-support</b> tool: it recommends and drafts; clinicians decide. No model takes an autonomous clinical action, every AI output is grounded and cited, and it runs entirely on <b>synthetic data</b> (zero PHI). That constraint shapes the whole architecture.</div>
       </div>
     </section>
 
-    <!-- 2. IN THE HOSPITAL -->
-    <section id="hospital">
+    <!-- 2. WHAT IT DOES -->
+    <section id="solution">
       <div class="wrap">
         <span class="sec-num">02</span>
-        <h2>In the hospital</h2>
-        <p>What WardBeat is for and how it fits a working day on a ward.</p>
-
-        <p class="subhead">The problem</p>
+        <h2>What WardBeat does</h2>
+        <p>WardBeat reads every note on the ward and turns it into a live board: who is fit to leave, what is blocking each patient, and what to do next. Every answer is grounded in a real note or policy passage you can click through to.</p>
         <div class="grid2">
-          <div class="card"><h3>Invisible barriers</h3><p>A patient is fit for discharge but stuck on TTOs, transport, social care, or a review — with no single current view of why.</p></div>
-          <div class="card"><h3>Signal buried in notes</h3><p>Discharge status, EDD, and barriers live in free-text nursing/ward-round notes, not structured fields.</p></div>
-          <div class="card"><h3>Reactive, not planned</h3><p>Teams firefight in the afternoon; discharge-before-noon slips and delayed transfers of care build up.</p></div>
-          <div class="card"><h3>High-friction coordination</h3><p>Board rounds and handovers are assembled by hand from scattered systems, eating clinical time.</p></div>
+          <div class="card"><h3>Ward board</h3><p>Every bed at a glance, with its barriers and discharge probability. The single view the ward was missing.</p></div>
+          <div class="card"><h3>Copilot</h3><p>Ask about the live ward or discharge policy in plain language. Answers cite their source, or say they do not know.</p></div>
+          <div class="card"><h3>Actions</h3><p>For each barrier, a suggested next step grounded in policy. A person approves it; nothing acts on its own.</p></div>
+          <div class="card"><h3>Flow briefing</h3><p>A short shift summary and the net bed position, with the numbers from a model and the words from the AI.</p></div>
         </div>
-
-        <p class="subhead">Who uses it</p>
-        <div class="personas">
-          <div class="card"><h3>Bed / flow manager</h3><p>"Free the right beds by noon, safely." Lives on the board + action queue.</p></div>
-          <div class="card"><h3>Charge nurse</h3><p>"Know each barrier without re-reading every note." Uses per-bed cards + citations.</p></div>
-          <div class="card"><h3>Discharge coordinator</h3><p>"Chase TTOs, transport, social care before they block a bed." Works the actions.</p></div>
-          <div class="card"><h3>Site / ops manager</h3><p>"See house-wide flow risk for the next 12–24h." Reads the flow briefing.</p></div>
-          <div class="card"><h3>Governance lead</h3><p>"Trust that it's grounded, audited, and safe." Relies on citations + the audit trail.</p></div>
-        </div>
-
-        <p class="subhead">A morning on the ward</p>
-        <div class="timeline">
-          <div class="tstep"><div class="surface">Board</div><h3>08:00 — open the board</h3><p>The whole ward at a glance; fit-but-delayed beds stand out.</p></div>
-          <div class="tstep"><div class="surface">Run extraction</div><h3>Read the overnight notes</h3><p>One click extracts barriers/EDD; each links to the exact source sentence.</p></div>
-          <div class="tstep"><div class="surface">Actions</div><h3>Turn barriers into a worklist</h3><p>Generate policy-grounded recommendations; the coordinator approves the ones to chase — audited, recommend-only.</p></div>
-          <div class="tstep"><div class="surface">Copilot</div><h3>Ask the ward a question</h3><p>"Who's fit but waiting on transport?" highlights those beds; policy questions get grounded, cited answers.</p></div>
-          <div class="tstep"><div class="surface">Briefing</div><h3>Brief the flow huddle</h3><p>Net bed position + likely discharges + beds to chase — numbers from a model, words from the AI.</p></div>
-        </div>
-
-        <p class="subhead">Outcomes it targets · safety · non-goals</p>
-        <div class="grid2">
-          <div class="card"><h3>Outcomes</h3><p>Faster spotting of MFFD-but-delayed patients, higher discharge-before-noon, near-zero board-round prep, better bed utilisation vs the safe ceiling.</p></div>
-          <div class="card"><h3>Safety &amp; governance</h3><p>Decision-support (non-diagnostic), human-in-the-loop, grounded + cited, fully audited, and on synthetic data with a self-hostable model path so real data can stay in the trust.</p></div>
-          <div class="card"><h3>Not an EHR</h3><p>A thin layer on top of systems of record, not a replacement.</p></div>
-          <div class="card"><h3>Not autonomous</h3><p>No diagnosis, no triage, no action without a human — and, in this version, not connected to real data or pharmacy/transport systems.</p></div>
-        </div>
+        <div class="safety-callout"><b>Decision-support, not autonomy.</b> WardBeat recommends and drafts; clinicians decide. Every AI output is grounded and cited, no model takes a clinical action on its own, and the whole system runs on synthetic data with zero patient information.</div>
       </div>
     </section>
 
-    <!-- 3. HOW IT WORKS -->
-    <section id="how">
+    <!-- 3. ARCHITECTURE -->
+    <section id="architecture">
       <div class="wrap">
         <span class="sec-num">03</span>
-        <h2>How it works</h2>
-        <p>Four planes, with generative AI concentrated in structuring, retrieval, and reasoning; deterministic code does the forecasting and the data.</p>
+        <h2>Architecture</h2>
+        <p>Four planes behind a single front door. Next.js is the only thing the browser talks to, and the only thing that writes to the database. The AI work runs in a small internal service that holds no state, so it is easy to scale, test, and move on-prem.</p>
+        <svg viewBox="0 0 760 360" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="archTopoTitle">
+      <title id="archTopoTitle">WardBeat system topology across four planes</title>
+      <defs>
+        <marker id="arrowArch1" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#7f9298"></path>
+        </marker>
+      </defs>
+      <text x="20" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#7f9298" font-weight="600">BROWSER</text>
+      <rect x="20" y="34" width="150" height="46" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+      <text x="95" y="58" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#0e2028" font-weight="600">Clinician browser</text>
+      <text x="95" y="72" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">PWA app shell</text>
 
+      <rect x="14" y="102" width="732" height="238" rx="10" fill="none" stroke="#7f9298" stroke-width="1" stroke-dasharray="4 3"></rect>
+      <text x="26" y="120" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">INTERNAL NETWORK</text>
+
+      <rect x="20" y="132" width="200" height="86" rx="8" fill="#ffffff" stroke="#0e2028" stroke-width="1.5"></rect>
+      <text x="120" y="156" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#0e2028" font-weight="600">Experience / BFF</text>
+      <text x="120" y="174" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">Next.js 16</text>
+      <text x="120" y="190" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">Orchestrator + DB writer</text>
+      <text x="120" y="206" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">edge proxy: RBAC + CSP</text>
+
+      <rect x="540" y="132" width="200" height="86" rx="8" fill="#ffffff" stroke="#6b46a8" stroke-width="1.5"></rect>
+      <text x="640" y="156" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#0e2028" font-weight="600">Data / knowledge</text>
+      <text x="640" y="174" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">PostgreSQL 17 + pgvector</text>
+      <text x="640" y="190" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">Ward domain + AI outputs</text>
+      <text x="640" y="206" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">hnsw cosine index</text>
+
+      <rect x="20" y="258" width="200" height="70" rx="8" fill="#ffffff" stroke="#1f5f8b" stroke-width="1.5"></rect>
+      <text x="120" y="282" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#0e2028" font-weight="600">AI plane</text>
+      <text x="120" y="300" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">FastAPI · Python 3.12</text>
+      <text x="120" y="316" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">stateless, no database</text>
+
+      <rect x="540" y="258" width="200" height="70" rx="8" fill="#ffffff" stroke="#5f9400" stroke-width="1.5"></rect>
+      <text x="640" y="282" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#0e2028" font-weight="600">Model plane</text>
+      <text x="640" y="300" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">NVIDIA NIM</text>
+      <text x="640" y="316" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">OpenAI-compatible API</text>
+
+      <line x1="95" y1="80" x2="115" y2="130" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch1)"></line>
+      <text x="150" y="108" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">HTTPS only</text>
+
+      <line x1="220" y1="175" x2="538" y2="175" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch1)"></line>
+      <text x="300" y="167" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">pooled client (single writer)</text>
+
+      <line x1="120" y1="218" x2="120" y2="256" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch1)"></line>
+      <text x="128" y="242" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">x-service-token</text>
+
+      <line x1="220" y1="293" x2="538" y2="293" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch1)"></line>
+      <text x="330" y="285" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">bearer key, rate-limited</text>
+    </svg>
         <div class="planes" style="margin-top:8px;">
-          <div class="plane next"><div class="cap">Experience · BFF</div><h3>Next.js 16</h3><ul><li>Board cockpit, auth/RBAC, server actions</li><li>The only surface the browser talks to</li></ul></div>
-          <div class="plane py"><div class="cap">AI plane · internal</div><h3>FastAPI</h3><ul><li>Extraction, RAG, agent, forecast, narration</li><li>Stateless; never exposed to the browser</li></ul></div>
-          <div class="plane nim"><div class="cap">Model</div><h3>NVIDIA NIM</h3><ul><li>Nemotron + embedding + rerank NIMs</li><li>OpenAI-compatible; hosted → on-prem</li></ul></div>
-          <div class="plane data"><div class="cap">Data · knowledge</div><h3>Postgres + pgvector</h3><ul><li>Ward domain + AI outputs + policy vectors</li><li>Single writer: Next.js (Drizzle migrations)</li></ul></div>
+          <div class="plane next"><div class="cap">Front door</div><h3>Next.js 16</h3><ul><li>The only surface the browser reaches</li><li>Orchestrates the AI work and is the sole database writer</li></ul></div>
+          <div class="plane py"><div class="cap">AI plane</div><h3>FastAPI</h3><ul><li>Extraction, retrieval, the action agent, forecasting</li><li>Stateless and internal; it never touches the database</li></ul></div>
+          <div class="plane nim"><div class="cap">Models</div><h3>NVIDIA NIM</h3><ul><li>Nemotron, embedding, and rerank models</li><li>Hosted for the demo; on-prem in production</li></ul></div>
+          <div class="plane data"><div class="cap">Data</div><h3>Postgres + pgvector</h3><ul><li>Ward data, AI output, and the policy vectors</li><li>One database, no separate vector store</li></ul></div>
         </div>
 
-        <p class="subhead">The request flow behind each capability</p>
+        <p class="subhead">One request, end to end</p>
+        <p>The AI plane is a toolbox of model calls, and Next.js drives them. A retrieval question, for example, is Next.js embedding the query, running the vector search itself (that is where the database lives), then asking the AI plane to rerank the results and write a cited answer. Below is a single Run extraction request crossing all four planes.</p>
+        <svg viewBox="0 0 760 300" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="archLifeTitle">
+      <title id="archLifeTitle">Run extraction request lifecycle across the four planes</title>
+      <defs>
+        <marker id="arrowArch2" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#7f9298"></path>
+        </marker>
+      </defs>
 
-        <div class="capability">
-          <h3>1 · Barrier extraction (structuring)</h3>
-          <div class="flow"><span class="step next">note</span><span class="arrow">→</span><span class="step nim">small Nemotron → strict JSON</span><span class="arrow">→</span><span class="step py">ground quotes to spans</span><span class="arrow">→</span><span class="step data">persist</span></div>
-          <p>A small model returns schema-constrained JSON (fit-flag, EDD, barriers with verbatim quotes). FastAPI grounds each barrier to its sentence and drops anything it can't locate. The note is data to read, never instructions to follow.</p>
-        </div>
+      <text x="60" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">BROWSER</text>
+      <line x1="60" y1="34" x2="60" y2="286" stroke="#d9e2e5" stroke-width="1"></line>
 
-        <div class="capability">
-          <h3>2 · Copilot (retrieval — right tool per data shape)</h3>
-          <div class="flow"><span class="step nim">router</span><span class="arrow">→</span><span class="step next">ward-state: validated filter over the board</span><span class="arrow">|</span><span class="step data">policy: embed → pgvector ANN</span><span class="arrow">→</span><span class="step py">rerank</span><span class="arrow">→</span><span class="step nim">grounded answer</span></div>
-          <p>Ward data is structured, so ward-state questions become a validated allow-listed filter (never SQL). Policy is unstructured, so it's genuine vector RAG. Weakly-supported answers are refused, not hallucinated.</p>
-        </div>
+      <text x="245" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#0e2028">NEXT.JS</text>
+      <line x1="245" y1="34" x2="245" y2="286" stroke="#d9e2e5" stroke-width="1"></line>
 
-        <div class="capability">
-          <h3>3 · Action recommender (agent, human-in-the-loop)</h3>
-          <div class="flow"><span class="step data">retrieve policy (tool)</span><span class="arrow">→</span><span class="step nim">reason → next-best action + rationale</span><span class="arrow">→</span><span class="step next">human Approve / Dismiss → audit</span></div>
-          <p>A retrieve-then-reason agent recommends one allow-listed action per barrier, justified by policy. Strictly recommend-only: approving marks the barrier in progress and writes an audit row; nothing acts externally.</p>
-        </div>
+      <text x="470" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#1f5f8b">AI PLANE</text>
+      <line x1="470" y1="34" x2="470" y2="286" stroke="#d9e2e5" stroke-width="1"></line>
 
-        <div class="capability">
-          <h3>4 · Forecast &amp; narrate</h3>
-          <div class="flow"><span class="step py">deterministic discharge + demand models</span><span class="arrow">→</span><span class="step nim">narrate the numbers</span><span class="arrow">→</span><span class="step next">flow briefing</span></div>
-          <p>Deterministic functions (no LLM) produce every number; the LLM only narrates them and is forbidden from inventing figures. Asking an LLM to predict a length-of-stay would be the anti-pattern.</p>
-        </div>
+      <text x="640" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#5f9400">NIM</text>
+      <line x1="640" y1="34" x2="640" y2="286" stroke="#d9e2e5" stroke-width="1"></line>
 
-        <p class="subhead">The rules that hold everywhere</p>
-        <div class="grid2">
-          <div class="card"><h3>Grounding over trust</h3><p>Every output cites its source; unverifiable output is dropped or refused.</p></div>
-          <div class="card"><h3>Measured, not assumed</h3><p>Four eval harnesses gate quality (see §5).</p></div>
-          <div class="card"><h3>Mock ↔ live by one flag</h3><p>Same contracts run an offline mock or real NIM; the mock is the fallback, so the app never breaks.</p></div>
-          <div class="card"><h3>Harness, not prompt</h3><p>Structured I/O, retrieval, tools, a rate-limit token bucket, and eval gates — the prompt is the smallest part.</p></div>
-        </div>
+      <text x="712" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#6b46a8">DB</text>
+      <line x1="712" y1="34" x2="712" y2="286" stroke="#d9e2e5" stroke-width="1"></line>
+
+      <line x1="60" y1="60" x2="243" y2="60" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+      <text x="70" y="52" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">1 · Server Action: run extraction</text>
+
+      <line x1="245" y1="96" x2="468" y2="96" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+      <text x="255" y="88" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">2 · POST /extract + x-service-token</text>
+
+      <line x1="470" y1="132" x2="638" y2="132" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+      <text x="480" y="124" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">3 · Nemotron, JSON mode</text>
+
+      <line x1="640" y1="164" x2="472" y2="164" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+      <text x="480" y="180" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">4 · grounded barriers, EDD, MFFD</text>
+
+      <line x1="468" y1="204" x2="247" y2="204" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+      <text x="255" y="220" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">5 · validated result</text>
+
+      <line x1="245" y1="248" x2="710" y2="248" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+      <text x="255" y="240" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">6 · Next.js writes AI output to Postgres</text>
+    </svg>
+
+        <p class="subhead">Deployment</p>
+        <p>The whole stack runs from Docker. The hosted demo and an on-prem install use the same containers and the same OpenAI-compatible model contract, so moving into a hospital is a config change — swap the model URL and key — not a rewrite. That is what lets clinical data stay inside the trust.</p>
       </div>
     </section>
 
-    <!-- 4. STACK & WHY -->
+    <!-- 4. STACK -->
     <section id="stack">
       <div class="wrap">
         <span class="sec-num">04</span>
-        <h2>Stack &amp; why</h2>
-        <p>Every technology, and — the part that matters — why it beat the obvious alternative. Two decisions drive the rest:</p>
-        <div class="safety-callout"><b>Polyglot by design</b> — TypeScript runs the product, Python runs the AI, because the GenAI/ML ecosystem lives in Python. One internal service, one front door. &nbsp;·&nbsp; <b>On-prem-capable by default</b> — the AI stack is self-hostable, so clinical data can stay in the trust; that rules out hosted frontier APIs.</div>
-
-        <div class="tech"><div class="tech-head"><h3>Next.js 16</h3><span class="tag">Experience · BFF</span></div><p class="what">App Router + RSC + Server Actions — UI, auth, and the API-for-the-frontend in one framework.</p><ul class="why"><li>Server Actions keep one front door; the AI service + DB stay unexposed.</li><li>RSC keeps the board fast; auth/RBAC/PWA came with the platform, so the build was about the AI.</li></ul><p class="instead"><b>Instead of</b> a separate SPA + API: more surface, duplicated auth, nothing gained.</p></div>
-
-        <div class="tech"><div class="tech-head"><h3>FastAPI (Python 3.12)</h3><span class="tag">AI plane</span></div><p class="what">A small, stateless internal service: extraction, RAG, agent, forecast, narration.</p><ul class="why"><li>Python is where retrieval, agents, evals, and scikit-style models live.</li><li>Stateless → testable; DB keeps a single writer; OpenAPI gives a typed contract.</li></ul><p class="instead"><b>Instead of</b> all-TS AI (worse toolchain) or all-Python app (rebuild the auth/PWA/shell).</p></div>
-
-        <div class="tech"><div class="tech-head"><h3>NVIDIA NIM — Nemotron · embed · rerank</h3><span class="tag">Model</span></div><p class="what">Self-hostable inference microservices behind an OpenAI-compatible API.</p><ul class="why"><li><b>Data sovereignty</b> — runs on the trust's own GPUs; data never leaves.</li><li>No lock-in (OpenAI-compatible); free hosted tier for the demo → identical containers on-prem for production.</li><li>TensorRT-optimised; a whole family (LLM + embed + rerank + guardrails) under one vendor.</li></ul><p class="instead"><b>Instead of</b> a hosted frontier API (no on-prem residency) or raw vLLM self-hosting (rebuild serving, optimisation, retrieval, guardrails). NIM is the middle path.</p></div>
-
-        <div class="tech"><div class="tech-head"><h3>pgvector + PostgreSQL 17 + Drizzle</h3><span class="tag">Data</span></div><p class="what">One database for relational data <em>and</em> the policy-KB vectors; type-safe schema and migrations in TypeScript.</p><ul class="why"><li>Reuses the DB already in the stack — no separate vector platform to run.</li><li>Vectors sit transactionally beside the data with an hnsw cosine index.</li><li>Drizzle is the single migration authority — keeps the polyglot setup honest.</li></ul><p class="instead"><b>Instead of</b> Pinecone/Milvus: extra infra + a second source of truth for a corpus this size.</p></div>
-
-        <div class="tech"><div class="tech-head"><h3>Deterministic ML (logistic + baseline)</h3><span class="tag">Forecast</span></div><p class="what">Transparent, monotone functions for discharge probability and demand — not an LLM.</p><ul class="why"><li>Numbers want a calibrated, testable model; the LLM only narrates them.</li></ul><p class="instead"><b>Instead of</b> LLM-predicted numbers: unaccountable and unfalsifiable.</p></div>
-
-        <div class="tech"><div class="tech-head"><h3>Docker Compose · Eval harnesses · Auth.js v5</h3><span class="tag">Delivery &amp; assurance</span></div><p class="what">Reproducible polyglot stack; scriptable quality gates; credentials auth + RBAC.</p><ul class="why"><li>One command runs the whole system; the AI service ships as its own pinned image.</li><li>Eval gates make quality a number — they caught a bad model choice and drove a measured 69% → 88% improvement.</li><li>Auth enforced once; every approval attributable in the audit trail.</li></ul></div>
-      </div>
-    </section>
-
-    <!-- 5. METRICS & ROADMAP -->
-    <section id="roadmap">
-      <div class="wrap">
-        <span class="sec-num">05</span>
-        <h2>Metrics &amp; roadmap</h2>
-
-        <p class="subhead">Verified live against NVIDIA NIM (eval gates)</p>
-        <div class="metrics">
-          <div class="metric"><div class="v">88%</div><div class="l">Barrier-extraction F1 (gate 0.85)</div></div>
-          <div class="metric"><div class="v">100%</div><div class="l">RAG hit-rate &amp; groundedness (gate 0.90)</div></div>
-          <div class="metric"><div class="v">100%</div><div class="l">Ward-state query-intent accuracy</div></div>
-          <div class="metric"><div class="v">100%</div><div class="l">Action appropriateness &amp; grounding</div></div>
-          <div class="metric"><div class="v">0.92</div><div class="l">Discharge-model rank correlation (gate 0.70)</div></div>
-          <div class="metric"><div class="v">100%</div><div class="l">Narration numeric-consistency (gate 0.90)</div></div>
+        <h2>Stack</h2>
+        <p>TypeScript runs the product and Python runs the AI, because the AI ecosystem lives in Python. One internal service, one front door, one database.</p>
+        <div class="grid2">
+          <div class="card"><h3>Next.js 16 · React 19</h3><p>App Router, Server Components, and Server Actions. The UI, auth, and the API-for-the-frontend in one framework.</p></div>
+          <div class="card"><h3>FastAPI · Python 3.12</h3><p>A small, stateless AI service: extraction, retrieval, the action agent, and forecasting.</p></div>
+          <div class="card"><h3>NVIDIA NIM</h3><p>Self-hostable models behind an OpenAI-compatible API, so data can stay on the trust’s own hardware.</p></div>
+          <div class="card"><h3>PostgreSQL 17 · pgvector</h3><p>One database for the ward data and the policy vectors, with type-safe migrations via Drizzle.</p></div>
         </div>
-
-        <p class="subhead">Shipped — spec-driven, one release per phase</p>
-        <div class="rel">
-          <span class="v">v0.1.0</span><span class="d">Repository scaffold &amp; SDD process</span>
-          <span class="v">v0.2.x</span><span class="d">Barrier intelligence &amp; ward board (extraction + grounding)</span>
-          <span class="v">v0.3.0</span><span class="d">Flow copilot — ward-state Q&amp;A + policy RAG</span>
-          <span class="v">v0.4.0</span><span class="d">Action recommendations — agentic, human-in-the-loop</span>
-          <span class="v">v0.5.0</span><span class="d">Forecasting &amp; narration — deterministic models + LLM briefing</span>
-          <span class="v">v0.6.x</span><span class="d">Flow cockpit — board-centric UX consolidation</span>
-          <span class="v">v0.7.0</span><span class="d">Action queue integrated into the board</span>
-        </div>
-
-        <p class="subhead">Next</p>
-        <p>The bed-lifecycle loop — <b>admit</b> and <b>discharge</b> so beds actually turn over — plus re-introducing CI as automated eval gates, and NeMo Guardrails as an explicit safety rail. The clinical roadmap and full design live in the PRD and per-release specs in the repo.</p>
       </div>
     </section>
 
     <footer>
-      <div class="wrap">WardBeat · the complete guide · a portfolio project by devdaviddr · Next.js 16 · FastAPI · NVIDIA NIM · PostgreSQL/pgvector</div>
+      <div class="wrap">WardBeat · product guide · Next.js 16 · FastAPI · NVIDIA NIM · PostgreSQL/pgvector</div>
     </footer>
   </body>
 </html>
