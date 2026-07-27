@@ -51,7 +51,13 @@ Then open **Copilot** (v0.3.0) and ask:
 Prove the copilot quality with `pnpm eval:copilot` (retrieval hit-rate,
 grounded rate, and ward-state query-intent accuracy — gate 0.9).
 
-Finally open **Actions** (v0.4.0): the queue lists **recommended next-best
+Open **Briefing** (v0.5.0) for the **flow briefing**: the net bed position for
+the next 12h, a predicted-discharge table, and an **AI-narrated summary** — the
+deterministic models produce every number, the LLM only turns them into prose
+(and is forbidden from inventing figures). `pnpm eval:forecast` checks the
+discharge-ranking correlation + narration numeric-consistency.
+
+Then open **Actions** (v0.4.0): the queue lists **recommended next-best
 actions** per bed — "Chase TTOs with pharmacy", "Book transport" — each with a
 policy-grounded rationale (**Why?** shows the source policy). **Approve** marks
 the barrier in progress and writes an audit record; **Dismiss** logs the

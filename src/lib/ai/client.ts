@@ -147,6 +147,52 @@ export async function recommendActions(
   return res.recommendations
 }
 
+export interface DischargeFeatures {
+  id: string
+  mffd: boolean
+  open_barriers: number
+  has_transport: boolean
+  has_social_care: boolean
+  has_review: boolean
+  days_admitted: number
+  edd_set: boolean
+}
+
+export async function forecastDischarge(
+  patients: DischargeFeatures[],
+): Promise<
+  Array<{ id: string; p_discharge_24h: number; predicted_days: number }>
+> {
+  const res = await aiPost<{
+    forecasts: Array<{
+      id: string
+      p_discharge_24h: number
+      predicted_days: number
+    }>
+  }>('/forecast/discharge', { patients })
+  return res.forecasts
+}
+
+export async function forecastDemand(input: {
+  free_beds: number
+  predicted_discharges: number
+  window_hours: number
+}): Promise<{ expected_admissions: number; net_beds: number }> {
+  return aiPost('/forecast/demand', input)
+}
+
+export async function narrateBriefing(payload: {
+  stats: Record<string, number>
+  at_risk: Array<{ label: string; barriers: string[] }>
+  predicted_discharges: Array<{
+    label: string
+    p: number
+    predicted_days: number
+  }>
+}): Promise<{ briefing: string }> {
+  return aiPost('/forecast/narrate', payload)
+}
+
 export type CopilotRoute = 'ward_state' | 'policy' | 'out_of_scope'
 
 /** Classify a question into which answer path should handle it. */

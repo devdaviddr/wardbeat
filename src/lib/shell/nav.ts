@@ -1,6 +1,7 @@
 import {
   Activity,
   LayoutDashboard,
+  LineChart,
   ListChecks,
   Settings,
   Sparkles,
@@ -19,5 +20,6 @@ export const navItems: NavItem[] = [
   { title: 'Ward board', href: '/ward', icon: Activity },
   { title: 'Copilot', href: '/copilot', icon: Sparkles },
   { title: 'Actions', href: '/actions', icon: ListChecks },
+  { title: 'Briefing', href: '/briefing', icon: LineChart },
   { title: 'Settings', href: '/settings', icon: Settings },
 ]
