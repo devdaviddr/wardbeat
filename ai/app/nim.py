@@ -22,7 +22,9 @@ async def chat_json(
         "model": settings.nim_extract_model,
         "messages": messages,
         "temperature": 0,
-        "max_tokens": 1024,
+        # Generous headroom: Nemotron is a reasoning model — reasoning tokens
+        # count toward the budget, so a tight cap can leave `content` null.
+        "max_tokens": 3072,
         "response_format": {"type": "json_object"},
     }
     headers = {
@@ -40,6 +42,10 @@ async def chat_json(
         content = data["choices"][0]["message"]["content"]
     except (KeyError, IndexError) as exc:  # pragma: no cover - defensive
         raise NimError(f"Unexpected NIM response shape: {data}") from exc
+
+    if not content:
+        finish = data["choices"][0].get("finish_reason")
+        raise NimError(f"Empty content (finish_reason={finish})")
 
     return _parse_json_object(content)
 
