@@ -1,14 +1,12 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  approveRecommendationAction,
-  dismissRecommendationAction,
-} from '@/lib/actions/decide'
 import type { CockpitBed } from '@/lib/ward/cockpit'
+
+import { RecommendationCard } from './recommendation-card'
 
 const BARRIER_LABELS: Record<string, string> = {
   tto: 'TTO / meds',
@@ -16,13 +14,6 @@ const BARRIER_LABELS: Record<string, string> = {
   social_care: 'Social care',
   review: 'Review',
   other: 'Other',
-}
-const ACTION_LABELS: Record<string, string> = {
-  chase_tto: 'Chase TTOs',
-  book_transport: 'Book transport',
-  arrange_social_care: 'Arrange social care',
-  escalate_review: 'Escalate review',
-  other: 'Action',
 }
 
 export function BedDrawer({
@@ -34,9 +25,6 @@ export function BedDrawer({
   onClose: () => void
   onChanged: () => void
 }) {
-  const [pending, startTransition] = useTransition()
-  const [msg, setMsg] = useState<string | null>(null)
-
   useEffect(() => {
     const h = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', h)
@@ -44,18 +32,6 @@ export function BedDrawer({
   }, [onClose])
 
   if (!bed) return null
-
-  function decide(
-    fn: () => Promise<{ ok: boolean; error?: string }>,
-    ok: string,
-  ) {
-    setMsg(null)
-    startTransition(async () => {
-      const r = await fn()
-      setMsg(r.ok ? ok : (r.error ?? 'Something went wrong.'))
-      onChanged()
-    })
-  }
 
   const pct =
     bed.pDischarge != null ? `${Math.round(bed.pDischarge * 100)}%` : '—'
@@ -168,85 +144,19 @@ export function BedDrawer({
               </h3>
               {bed.recommendations.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
-                  None pending. Generate from the Actions queue.
+                  None pending. Use <span className="font-medium">Actions</span>{' '}
+                  on the board to generate them.
                 </p>
               ) : (
-                <ul className="space-y-2">
+                <div className="space-y-2">
                   {bed.recommendations.map((r) => (
-                    <li key={r.id} className="bg-card rounded-lg border p-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">
-                          {ACTION_LABELS[r.actionType] ?? 'Action'}
-                        </Badge>
-                        {r.priority === 1 && (
-                          <Badge variant="destructive" className="text-[10px]">
-                            Priority
-                          </Badge>
-                        )}
-                        <span
-                          className={`text-[10px] ${r.grounded ? 'text-green-600' : 'text-amber-600'}`}
-                        >
-                          {r.grounded ? '● grounded' : '○ no policy'}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm font-medium">{r.title}</p>
-                      <p className="text-muted-foreground mt-0.5 text-sm">
-                        {r.rationale}
-                      </p>
-                      {r.citations.length > 0 && (
-                        <details className="mt-1 text-xs">
-                          <summary className="text-muted-foreground cursor-pointer">
-                            Policy ({r.citations.length})
-                          </summary>
-                          {r.citations.map((c, i) => (
-                            <blockquote
-                              key={i}
-                              className="border-primary bg-muted/40 mt-1 rounded border-l-2 p-2 leading-relaxed"
-                            >
-                              {c.text}
-                              <span className="text-muted-foreground">
-                                {' '}
-                                — {c.source}
-                              </span>
-                            </blockquote>
-                          ))}
-                        </details>
-                      )}
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          size="sm"
-                          disabled={pending}
-                          onClick={() =>
-                            decide(
-                              () => approveRecommendationAction(r.id),
-                              'Approved — barrier marked in progress.',
-                            )
-                          }
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={pending}
-                          onClick={() =>
-                            decide(
-                              () => dismissRecommendationAction(r.id),
-                              'Dismissed.',
-                            )
-                          }
-                        >
-                          Dismiss
-                        </Button>
-                      </div>
-                    </li>
+                    <RecommendationCard
+                      key={r.id}
+                      rec={r}
+                      onChanged={onChanged}
+                    />
                   ))}
-                </ul>
-              )}
-              {msg && (
-                <p className="mt-2 text-sm" role="status">
-                  {msg}
-                </p>
+                </div>
               )}
             </section>
           </div>

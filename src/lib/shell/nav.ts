@@ -1,4 +1,4 @@
-import { Activity, ListChecks, Settings, type LucideIcon } from 'lucide-react'
+import { Activity, Settings, type LucideIcon } from 'lucide-react'
 
 export interface NavItem {
   title: string
@@ -13,8 +13,8 @@ export interface NavItem {
  * view. The `/copilot` and `/briefing` routes remain reachable directly.
  */
 export const navItems: NavItem[] = [
-  // The ward board is the home/dashboard (`/dashboard`).
+  // The ward board is the home/dashboard (`/dashboard`). The action queue lives
+  // on the board (the "Actions" panel), so it's not a separate destination.
   { title: 'Ward board', href: '/dashboard', icon: Activity },
-  { title: 'Actions', href: '/actions', icon: ListChecks },
   { title: 'Settings', href: '/settings', icon: Settings },
 ]

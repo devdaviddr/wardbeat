@@ -15,6 +15,16 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.7.0] - 2026-07-27
+
+### Changed
+
+- **The action queue is now on the ward board** — an "Actions (N)" panel
+  (slide-over) with Generate + approve/dismiss, plus the existing per-bed drawer.
+  The standalone /actions page is retired (the route redirects to the board) and
+  dropped from the nav. Extracted a shared RecommendationCard used by both the
+  bed drawer and the actions panel.
+
 ## [0.6.4] - 2026-07-27
 
 ### Changed
