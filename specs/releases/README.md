@@ -81,3 +81,4 @@ Fill `spec.md` first, get it to `Accepted`, then plan in `spec-imp.md`.
 | **v0.2.0** | Barrier intelligence & ward board (Phase 1 MVP) | [spec](v0.2.0-barrier-intelligence-ward-board/spec.md) — Shipped | [plan](v0.2.0-barrier-intelligence-ward-board/spec-imp.md) — Shipped |
 | **v0.3.0** | Flow copilot — ward-state Q&A + policy RAG      | [spec](v0.3.0-flow-copilot/spec.md) — Shipped                    | [plan](v0.3.0-flow-copilot/spec-imp.md) — Shipped                    |
 | **v0.4.0** | Action recommendations (agentic, HITL)          | [spec](v0.4.0-action-recommendations/spec.md) — Shipped          | [plan](v0.4.0-action-recommendations/spec-imp.md) — Shipped          |
+| **v0.5.0** | Forecasting & narration                         | [spec](v0.5.0-forecasting-narration/spec.md) — Accepted          | [plan](v0.5.0-forecasting-narration/spec-imp.md) — Draft             |
