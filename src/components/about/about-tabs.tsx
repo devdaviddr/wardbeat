@@ -8,7 +8,11 @@ import { cn } from '@/lib/utils'
 const TABS = [
   { title: 'Overview', href: '/about' },
   { title: 'Architecture', href: '/about/architecture' },
+  { title: 'AI', href: '/about/ai' },
+  { title: 'Evals', href: '/about/evals' },
+  { title: 'Monitoring', href: '/about/monitoring' },
   { title: 'Azure', href: '/about/azure' },
+  { title: 'Demo', href: '/about/demo' },
 ]
 
 export function AboutTabs() {
