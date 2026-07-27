@@ -26,11 +26,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Serve the standalone product guide (docs/guide.html, mirrored to
-  // public/about.html via `pnpm sync:about`) at a clean /about URL.
-  async rewrites() {
-    return [{ source: '/about', destination: '/about.html' }]
-  },
   // Harden default response headers for every route.
   async headers() {
     return [

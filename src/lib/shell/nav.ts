@@ -4,10 +4,6 @@ export interface NavItem {
   title: string
   href: string
   icon: LucideIcon
-  /** Render as a plain anchor (opens in a new tab) rather than a client-routed
-   *  Link — used for the standalone /about product guide, which is a static
-   *  document served outside the app router. */
-  external?: boolean
 }
 
 /**
@@ -21,5 +17,5 @@ export const navItems: NavItem[] = [
   // on the board (the "Actions" panel), so it's not a separate destination.
   { title: 'Ward board', href: '/dashboard', icon: Activity },
   { title: 'Settings', href: '/settings', icon: Settings },
-  { title: 'About', href: '/about', icon: Info, external: true },
+  { title: 'About', href: '/about', icon: Info },
 ]
