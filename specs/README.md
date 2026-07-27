@@ -96,3 +96,4 @@ as history; `0026` was migrated here as `v0.2.0`.
 | Release    | Title                                           | `spec.md`                                                                 | `spec-imp.md`                                                                 |
 | ---------- | ----------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | **v0.2.0** | Barrier intelligence & ward board (Phase 1 MVP) | [spec](releases/v0.2.0-barrier-intelligence-ward-board/spec.md) — Shipped | [plan](releases/v0.2.0-barrier-intelligence-ward-board/spec-imp.md) — Shipped |
+| **v0.3.0** | Flow copilot — ward-state Q&A + policy RAG      | [spec](releases/v0.3.0-flow-copilot/spec.md) — Accepted                   | [plan](releases/v0.3.0-flow-copilot/spec-imp.md) — Draft                      |
