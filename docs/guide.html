@@ -140,6 +140,7 @@
         <a class="jump" href="#tooling">AI &amp; models</a>
         <a class="jump" href="#evaluation">Evals</a>
         <a class="jump" href="#stack">Stack</a>
+        <a class="jump" href="/about-roadmap.html">Roadmap</a>
       </div>
     </div>
 
@@ -164,11 +165,13 @@
         <span class="sec-num">01</span>
         <h2>The problem</h2>
         <p>Wards lose bed capacity not because patients cannot leave, but because flow stalls and the reason is hard to see. The status that matters — who is medically fit, and what is blocking their discharge — lives in free-text notes, not structured fields. Finding it means re-reading notes and chasing people by hand.</p>
+        <p>It helps to name what kind of problem this actually is. A ward is rarely short of beds because it is short of beds; it is short of beds because it cannot see, at a glance, which of today’s patients are ready to go home and what small thing is holding each of them up. That is an <b>information problem</b> wearing the costume of a capacity problem. The raw facts exist — a nurse wrote “medically fit, awaiting pharmacy TTOs” at 9am — but they exist as a sentence inside one note among hundreds, never rolled up into a picture anyone can act on.</p>
         <div class="grid2">
           <div class="card"><h3>Signal buried in notes</h3><p>Discharge status, the expected date, and every barrier sit in free-text nursing and ward-round notes.</p></div>
           <div class="card"><h3>Invisible barriers</h3><p>A patient is fit to go but stuck on medications, transport, social care, or a review, with no single view of why.</p></div>
           <div class="card"><h3>Reactive coordination</h3><p>Teams firefight in the afternoon. Board rounds are assembled by hand, and discharges slip past noon.</p></div>
         </div>
+        <p class="point"><b>Why it matters</b> The cost of the blind spot is measured in bed-days. A patient who was fit at 9am but whose discharge is only spotted at the afternoon board round leaves at 4pm instead of before noon — and that bed sits empty, or worse, an admission waits in the emergency department for it. Multiply one slipped discharge by every ward, every day, and the invisible signal becomes very visible on the wait list. WardBeat’s whole reason to exist is to surface that signal early enough to act on it.</p>
       </div>
     </section>
 
@@ -178,12 +181,22 @@
         <span class="sec-num">02</span>
         <h2>What WardBeat does</h2>
         <p>WardBeat reads every note on the ward and turns it into a live board: who is fit to leave, what is blocking each patient, and what to do next. Every answer is grounded in a real note or policy passage you can click through to.</p>
+        <p>It presents that work as four surfaces, each solving a different slice of the flow problem. They share one design principle, so it is worth stating up front: <b>every surface is grounded and cited, and none of them acts on its own.</b> WardBeat’s job is to compress hundreds of notes into a live picture and to suggest the next move — never to make the move. A clinician stays in the loop on every decision. That is what makes an AI system safe to put in front of a ward.</p>
         <div class="grid2">
           <div class="card"><h3>Ward board</h3><p>Every bed at a glance, with its barriers and discharge probability. The single view the ward was missing.</p></div>
           <div class="card"><h3>Copilot</h3><p>Ask about the live ward or discharge policy in plain language. Answers cite their source, or say they do not know.</p></div>
           <div class="card"><h3>Actions</h3><p>For each barrier, a suggested next step grounded in policy. A person approves it; nothing acts on its own.</p></div>
           <div class="card"><h3>Flow briefing</h3><p>A short shift summary and the net bed position, with the numbers from a model and the words from the AI.</p></div>
         </div>
+
+        <p class="subhead">Why each surface looks the way it does</p>
+        <div class="walk">
+          <div class="wstep"><span class="n">1</span><div><h4>The board is a view, not a data-entry screen</h4><p>The <b>ward board</b> is the picture the ward never had: one row per bed, each showing its barriers, a discharge probability, and an action badge, so the fit-but-delayed patients jump out. It is read-derived — the board is a projection of what the notes already say, not a second place to type things. That is deliberate: staff already have a record system, and asking them to maintain a second one is how tools die on the ward.</p><p class="point"><b>Why it matters</b> The board earns its place by removing work, not adding it. Because it is computed from the notes rather than hand-filled, it is always current and never becomes another chore to keep in sync.</p></div></div>
+          <div class="wstep"><span class="n">2</span><div><h4>The copilot answers, but only from sources</h4><p>The <b>copilot</b> lets anyone ask about the live ward (“who is medically fit but still here?”) or about discharge policy (“what’s the criteria for a supported discharge?”) in plain language. Ward questions become a structured, validated filter over the real data; policy questions retrieve the actual passages and answer from them, with citations. If it cannot ground an answer, it says it does not know rather than guessing.</p><p class="point"><b>Why it matters</b> A chatbot that confidently makes something up is worse than no chatbot on a ward. Refusing to answer without a source, and always showing that source, is what lets a clinician trust — and verify — what it says.</p></div></div>
+          <div class="wstep"><span class="n">3</span><div><h4>Actions recommend; a person approves</h4><p>For every barrier on the board, the <b>actions</b> agent proposes one concrete next step drawn from policy — chase the TTOs, book transport, refer to social care, request a review. It never fires the step itself. The coordinator sees the suggestion and its policy rationale, then approves the ones worth chasing, and every approval is audited.</p><p class="point"><b>Why it matters</b> Suggesting the next step is genuinely useful and carries no risk; taking it automatically would cross the line into acting on a patient’s care. Keeping approval with a human is the line that keeps WardBeat firmly in decision-support territory.</p></div></div>
+          <div class="wstep"><span class="n">4</span><div><h4>The briefing separates the numbers from the words</h4><p>The <b>flow briefing</b> is a short shift summary with the net bed position — how many discharges are likely, how many admissions are expected, where the ward nets out. Crucially, the numbers come from a plain statistical model, and the AI only writes the prose around them. The model does the maths; the language model does the language.</p><p class="point"><b>Why it matters</b> Bed forecasts have to be calibrated and testable, which a language model’s free-form guess is not. By having the LLM narrate figures it was handed rather than invent them, the briefing reads naturally while every number stays accountable.</p></div></div>
+        </div>
+
         <div class="safety-callout"><b>Decision-support, not autonomy.</b> WardBeat recommends and drafts; clinicians decide. Every AI output is grounded and cited, no model takes a clinical action on its own, and the whole system runs on synthetic data with zero patient information.</div>
       </div>
     </section>
@@ -194,6 +207,7 @@
         <span class="sec-num">03</span>
         <h2>Patient flow, end to end</h2>
         <p>One patient, from admission to a freed bed, and where WardBeat helps. WardBeat never moves a patient or sends an order. It reads the notes, makes the blockers visible, and suggests the next step; a clinician decides and acts. The shaded stages below are where WardBeat adds signal.</p>
+        <p>Reading the journey, notice <i>where</i> WardBeat sits. It does not touch the ends — admission and discharge stay entirely with clinicians and the systems of record. What it adds is in the middle: turning the running stream of notes into a visible status, and turning that status into a worklist, early enough that the barriers can be cleared before they cost a morning. The whole value is in moving the moment of discovery earlier, not in taking anyone’s decision away.</p>
 
         <svg viewBox="0 0 760 150" width="100%" style="height:auto;max-width:100%;display:block;margin:16px 0 8px" role="img" aria-labelledby="flowTitle">
           <title id="flowTitle">A patient journey from admission to discharge, with the stages WardBeat assists</title>
@@ -251,6 +265,8 @@
           <div class="tstep"><div class="surface">Discharge</div><h3>Fit, cleared, and gone by noon</h3><p>Once the patient is medically fit and the barriers are cleared, they leave and the bed frees. Because the blockers surfaced early, this happens in the morning rather than at 4pm.</p></div>
         </div>
 
+        <p class="point"><b>Why it matters</b> The design choice worth dwelling on is that WardBeat surfaces the blockers rather than resolving them. It would be technically simpler in places to let a model auto-book transport or auto-refer to pharmacy — but a wrong automated action on a real patient is a clinical incident, while a wrong <i>suggestion</i> is just a suggestion a person declines. Surfacing-early keeps every ounce of the time saving and none of the risk: the human still holds the decision, they just hold it hours sooner and with the barrier already spelled out.</p>
+
         <div class="safety-callout"><b>WardBeat assists; people act.</b> It does not admit or discharge patients, and it does not message pharmacy or transport. Those stay with clinicians and the systems of record. Automating the admit and discharge steps so beds turn over on their own is on the roadmap; today WardBeat makes the flow visible and the barriers actionable.</div>
       </div>
     </section>
@@ -261,6 +277,7 @@
         <span class="sec-num">04</span>
         <h2>Architecture</h2>
         <p>Four planes behind a single front door. Next.js is the only thing the browser talks to, and the only thing that writes to the database. The AI work runs in a small internal service that holds no state, so it is easy to scale, test, and move on-prem.</p>
+        <p class="point"><b>Why it matters</b> The shape of this diagram is a safety argument, not just an engineering one. One front door means one place to enforce who can see what; one database writer means data can never drift out of sync; and a stateless AI plane that never touches the database means the model layer holds no patient data at rest and can be restarted, scaled, or swapped without risk. This overview sketches the shape — the <b>Architecture</b>, <b>Azure</b>, and <b>Monitoring</b> tabs go deep on the topology, the cloud deployment, and how it is observed in production.</p>
         <svg viewBox="0 0 760 360" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="archTopoTitle">
       <title id="archTopoTitle">WardBeat system topology across four planes</title>
       <defs>
@@ -398,6 +415,7 @@
         <span class="sec-num">05</span>
         <h2>AI tooling &amp; models</h2>
         <p>The guiding rule is to use generative AI where it belongs and no further. Language models do the language: reading notes into structured data, answering questions from retrieved sources, and turning numbers into prose. Everything numeric or safety-critical stays in plain, testable code. The choices below follow from two constraints: clinical data should be able to stay inside the hospital, and quality has to be measurable.</p>
+        <p class="point"><b>Why it matters</b> Every model decision here is really a trust decision. Choosing self-hostable models keeps patient data inside the trust; choosing the smallest model that does the job keeps the system fast enough to run on every note and cheap enough to run on-prem; and wrapping each call in validation means the model is treated as a fallible component, not an oracle. The <b>AI</b> tab expands each of these choices in depth, and the <b>Evals</b> tab shows how every one of them is held to a number.</p>
 
         <div class="tech">
           <div class="tech-head"><h3>NVIDIA NIM</h3><span class="tag">Inference platform</span></div>
@@ -460,6 +478,7 @@
         <span class="sec-num">06</span>
         <h2>Evaluation</h2>
         <p>AI quality here is a number, not a feeling. Each capability has its own harness with three parts: a labelled synthetic dataset, a metric that fits the task, and a hard gate. The harnesses run against the live NVIDIA NIM models and exit non-zero when a gate is missed, so they can act as a release gate. Below are the figures from the current live run.</p>
+        <p class="point"><b>Why it matters</b> This is the part that turns “we tried to be careful” into “we can prove it.” In a clinical setting, an AI feature you cannot measure is an AI feature you cannot defend — so every capability is pinned to a metric and a gate, and nothing ships if a gate is missed. The <b>Evals</b> tab walks through each harness and dataset in full, and the <b>Monitoring</b> tab shows how the same signals are watched once the system is live, not just at release time.</p>
 
         <div class="metrics">
           <div class="metric"><div class="v">88%</div><div class="l">Barrier-extraction F1 (gate 0.85)</div></div>
@@ -529,6 +548,24 @@
           <div class="card"><h3>NVIDIA NIM</h3><p>Self-hostable models behind an OpenAI-compatible API, so data can stay on the trust’s own hardware.</p></div>
           <div class="card"><h3>PostgreSQL 17 · pgvector</h3><p>One database for the ward data and the policy vectors, with type-safe migrations via Drizzle.</p></div>
         </div>
+      </div>
+    </section>
+
+    <!-- 8. NEXT STEPS -->
+    <section id="next">
+      <div class="wrap">
+        <span class="sec-num">08</span>
+        <h2>Next steps</h2>
+        <p>This page is the overview — the map, not the territory. Each area sketched above has its own tab that goes as deep as you want to go. Pick the thread that interests you.</p>
+        <div class="grid2">
+          <div class="card"><h3>Architecture</h3><p>The full four-plane topology, the request lifecycles, and how the front door, AI plane, models, and database fit together.</p></div>
+          <div class="card"><h3>AI</h3><p>Every model choice, the harness around each call, and the grounded-and-cited principle in detail — where the LLM is used and where it is deliberately not.</p></div>
+          <div class="card"><h3>Evals</h3><p>Each capability’s harness, dataset, metric, and gate, with the reasoning behind why that metric fits that task.</p></div>
+          <div class="card"><h3>Monitoring</h3><p>How the same quality signals are watched once the system is live, so a regression is caught in production, not just at release.</p></div>
+          <div class="card"><h3>Azure</h3><p>The cloud deployment — how the same Docker containers and OpenAI-compatible model contract run in a hosted environment.</p></div>
+          <div class="card"><h3>Demo</h3><p>See the board, copilot, actions, and briefing in motion against the synthetic ward.</p></div>
+        </div>
+        <p style="margin-top:14px">And for where WardBeat is heading — automated bed turnover, deeper integrations, and everything still on the horizon — see the full <a href="/about-roadmap.html">Roadmap</a>.</p>
       </div>
     </section>
 

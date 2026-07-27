@@ -140,6 +140,7 @@
         <a class="jump" href="/about-monitoring.html">Monitoring</a>
         <a class="jump" href="/about-azure.html">Azure</a>
         <a class="jump" href="/about-demo.html">Demo</a>
+        <a class="jump" href="/about-roadmap.html">Roadmap</a>
         <a class="jump" href="#observe">Observe</a>
         <a class="jump" href="#signals">Signals</a>
         <a class="jump" href="#production">Production</a>
@@ -169,6 +170,7 @@
         <span class="sec-num">01</span>
         <h2>What you can observe today</h2>
         <p>Offline <a href="/about-evals.html">evals</a> prove quality <em>before</em> a release; this page is about the signals <em>while it runs</em>. It is the runtime picture — the state of the AI plane once real notes are flowing through it.</p>
+        <p class="point"><b>WHY SEPARATE</b> Evals and monitoring answer two different questions and neither substitutes for the other. Evals run on a fixed golden set in a controlled harness and ask “is this build good enough to ship?” — a gate you pass once, before release. Monitoring runs continuously on live traffic and asks “what is actually happening right now?” — where the real inputs, the real model, the real quota, and the real network are things a pre-release check can never see. A build that scored perfectly in evals can still fall back to the mock in production because NIM is down. That gap between “proven good” and “behaving well” is exactly what monitoring exists to close.</p>
 
         <div class="safety-callout"><b>Where it stands today.</b> Monitoring is structured logs, the health and config endpoints, eval scores, and graceful, logged degradation. There are no metrics, distributed tracing, or alerting yet — those are on the roadmap. The design already emits everything a collector needs.</div>
 
@@ -211,6 +213,7 @@
 
         <p class="subhead">1 · Structured logs</p>
         <p>The primary signal. Every hop writes machine-readable log lines that any collector can ingest — no dashboards required to start reading them.</p>
+        <p class="point"><b>WHY JSON</b> One JSON object per line is the whole trick. An unstructured <code>print("extraction failed for note 42")</code> is a string a human can read and nothing else — to count failures you would be writing brittle regexes, and every developer phrases the message slightly differently. A structured line like <code>{"level":"warn","msg":"note extraction failed","noteId":42,"time":"…"}</code> is a record: you can <code>grep</code> it, <code>jq</code> it, filter on <code>level</code>, group by <code>noteId</code>, and any log collector — Loki, Application Insights, a plain <code>tail</code> — can ingest it without a custom parser. And because the format is decided in one place, the sink is swappable: point <code>logger.ts</code> at a different backend and every call site keeps working untouched. That is the payoff of structuring at the source rather than at the reader.</p>
         <div class="grid2">
           <div class="card"><h3>App — Next.js</h3><p><code>src/lib/logger.ts</code> emits one JSON object per line (<code>level</code>, <code>message</code>, <code>time</code>, plus fields), greppable and ingestible by any collector. <code>LOG_LEVEL</code> (<code>debug|info|warn|error</code>) sets the threshold — <code>info</code> in production, <code>debug</code> in dev. Notable AI events: <code>ward extraction complete</code> with <code>{ processed, failed, barriers, ungrounded }</code>, <code>ward extraction failed</code> / <code>note extraction failed</code> per-note with the error, and <code>AI config fetch failed</code> when the Settings card cannot reach the AI plane.</p></div>
           <div class="card"><h3>AI plane — FastAPI</h3><p>Python <code>logging</code> under <code>wardbeat.ai</code>. Notable events: <code>AI plane up — mock=&lt;bool&gt; model=&lt;id&gt; rpm=&lt;n&gt;</code> at startup, <code>NIM extraction failed (…); using mock fallback</code> when a live call falls back, <code>reranker unavailable on this tier; using cosine order</code>, and other per-capability <code>… failed (…); using mock</code> warnings. Tail it in dev with <code>docker compose logs -f ai</code>.</p></div>
@@ -241,12 +244,15 @@
             </tbody>
           </table>
         </div>
+        <p class="point"><b>WHY TWO</b> The split is deliberate. <code>/healthz</code> is a <em>liveness probe</em> — the thing an orchestrator, load balancer, or uptime check hits every few seconds to decide whether the container is alive. It stays unauthenticated because a probe cannot carry a credential, and it stays minimal because it must be cheap to answer under constant polling and must never leak anything sensitive: <code>{ status, mock, model }</code> is safe to expose to anyone. <code>/config</code> is the opposite — it is the full internal picture (endpoint host, rate limits, timeouts, which credentials are present), useful to an operator debugging but exactly the sort of surface you do not want open to the world, so it sits behind a service token. Same idea, two audiences: a robot health-check that must be open and tiny, and a human config view that must be gated.</p>
 
         <p class="subhead">3 · The AI-configuration Settings card</p>
         <p><code>Settings → System → AI configuration</code> (admin-only) renders <code>/config</code> as an operability surface: Reachable / Unreachable, Live / Mock, the three model ids, the endpoint host, the operational limits, and credential presence. It is the fastest way to confirm, from the product itself, that the AI plane is wired and reachable — no shell access needed (<code>src/components/settings/ai-config-card.tsx</code>).</p>
 
         <p class="subhead">4 · Graceful, logged degradation</p>
         <p>Every model call is wrapped in a fixed harness — rate-limit → timeout → structured output → validate → ground → mock fallback. Failures never break the app; they fall back to the deterministic mock <em>and log a warning</em>. That makes the logs the primary signal: a rise in <code>using mock fallback</code> warnings while <code>NIM_MOCK=false</code> means NIM is unavailable or over quota.</p>
+        <p class="point"><b>WHY DEGRADE-AND-LOG</b> The pairing is the design, not two independent features. Degrading gracefully means a NIM outage never becomes a broken ward — the board still populates from the deterministic mock, and a clinician’s workflow does not stall on infrastructure they cannot see. But silent degradation would be dangerous in its own way: the app would look healthy while quietly running on canned data, and nobody would know to fix the real thing. So every fallback leaves a trail. The warning line <em>is</em> the signal — the same event that keeps the app alive is the one that tells an operator something upstream is wrong. Never break the app; always leave a trail. When both hold, the logs become a reliable early-warning system instead of a graveyard of swallowed errors.</p>
+        <div class="safety-callout"><b>The trap this avoids.</b> A fallback with no log is the worst of both worlds — the app appears fine while running on mock data indefinitely, and the outage is invisible until someone notices the extractions look generic. Watching <code>using mock fallback</code> in live mode turns that silent failure into a loud one.</div>
       </div>
     </section>
 
@@ -256,6 +262,7 @@
         <span class="sec-num">02</span>
         <h2>Signals worth watching</h2>
         <p>A short list of what to look for, where it surfaces, and what it most likely means. Most of these read straight out of the logs.</p>
+        <p class="point"><b>HOW TO READ THIS</b> Each row below is a symptom; the value is knowing what it points at and what you do about it. A signal that is expected and self-correcting (rate-limit queueing) needs a different reaction from one that means an upstream dependency is down (the mock-fallback rise) or that the model itself is slipping (a climbing ungrounded rate). Read the table first, then the notes under it for the “so what.”</p>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px">
             <thead>
@@ -299,6 +306,16 @@
             </tbody>
           </table>
         </div>
+
+        <p class="subhead">Reading each signal</p>
+        <div class="grid2">
+          <div class="card"><h3><code>using mock fallback</code> in live mode</h3><p><b>Why it matters:</b> with <code>NIM_MOCK=false</code> the app is meant to be running on the real model — every fallback line means a live call failed and the deterministic mock answered instead. The app keeps working, which is precisely why this can go unnoticed; watching it is the whole point. <b>What to do:</b> check <code>/healthz</code> and the AI-plane logs — NIM is down, the key is bad, or you are over quota. Extractions are running on canned data until it clears.</p></div>
+          <div class="card"><h3><code>timed out</code> errors</h3><p><b>Why it matters:</b> the harness bounds each hop — 45s Next→AI, 30s AI→NIM — so a timeout is a call that ran past its budget, usually a slow or half-open connection rather than a hard error. <b>What to do:</b> a few under load is normal back-pressure; a sustained rise points at NIM latency or a network path degrading, and pairs with a mock-fallback rise as the timeouts fall back.</p></div>
+          <div class="card"><h3>Climbing <code>ungrounded</code> rate</h3><p><b>Why it matters:</b> the grounding gate drops any extracted barrier it cannot tie back to the source note. A slow, steady climb in the <code>ungrounded</code> count on <code>ward extraction complete</code> is the clearest early sign of <em>model drift</em> — the model inventing detail the notes do not support. <b>What to do:</b> sample the rejected items; if they are genuine hallucinations, it is time to re-run evals and consider a prompt or model change.</p></div>
+          <div class="card"><h3>Copilot refusals / <code>grounded=false</code></h3><p><b>Why it matters:</b> a refusal is the copilot declining to answer rather than guessing — sometimes correct (the question is out of scope), sometimes a retrieval miss where the right context never reached the model. <b>What to do:</b> a low background rate is healthy caution; a spike suggests retrieval is failing to surface the relevant notes, worth checking against the embedding/reranker path.</p></div>
+          <div class="card"><h3>Rate-limit queueing</h3><p><b>Why it matters:</b> the AI plane throttles itself to stay under the NIM quota (~40 RPM headroom, token bucket). Queueing during a burst of extraction is the system working <em>as designed</em>, not an error. <b>What to do:</b> usually nothing — it self-throttles and drains. Persistent, growing queues mean sustained demand exceeds the quota and it is time to raise the limit or spread the load.</p></div>
+          <div class="card"><h3><code>failed</code> count in the extraction summary</h3><p><b>Why it matters:</b> each note is processed in isolation, so one bad note errors alone and the rest of the ward still lands — a non-zero <code>failed</code> is contained, not fatal. <b>What to do:</b> match the per-note <code>note extraction failed</code> line to see which note and why; a handful is normal, a large fraction of a run points at a systemic problem (malformed input, or the AI plane itself struggling).</p></div>
+        </div>
       </div>
     </section>
 
@@ -324,12 +341,29 @@
         <span class="sec-num">04</span>
         <h2>Gaps &amp; next</h2>
         <p>What today’s picture does not yet give you, and the concrete next step for each. All of it is tracked on the roadmap.</p>
+        <p class="point"><b>WHY THESE MATTER</b> The gaps are not oversights — they are the difference between <em>seeing events</em> and <em>running a service</em>. Logs tell you what happened; the missing pieces tell you how much, how fast, how it moves over time, and get someone paged before a clinician notices. Each one below buys a specific capability the log stream alone cannot give you.</p>
         <div class="grid2">
-          <div class="card"><h3>No metrics</h3><p>Per-call latency, token usage, and cost are not yet recorded — only the events, not the quantities around them.</p></div>
-          <div class="card"><h3>No distributed tracing</h3><p>A request that crosses Next.js → AI plane → NIM has no correlated trace. Add OpenTelemetry spans around each hop to stitch a request together end to end.</p></div>
-          <div class="card"><h3>No alerting / dashboards</h3><p>Signals live in logs, not on a board. Nothing pages an operator yet; you have to go looking.</p></div>
-          <div class="card"><h3>Eval scores not tracked over time</h3><p>The eval gates run, but their scores are not recorded run-over-run. Run them in CI and store the numbers to catch regressions early.</p></div>
+          <div class="card"><h3>No metrics</h3><p>Per-call latency, token usage, and cost are not yet recorded — only the events, not the quantities around them. <b>Buys you:</b> the ability to answer “is it getting slower?” and “what is this costing?” — trends and budgets you cannot grep out of discrete log lines.</p></div>
+          <div class="card"><h3>No distributed tracing</h3><p>A request that crosses Next.js → AI plane → NIM has no correlated trace. Add OpenTelemetry spans around each hop to stitch a request together end to end. <b>Buys you:</b> when one extraction is slow or fails, a single trace id that follows it across all three planes — instead of hand-correlating timestamps across two log streams.</p></div>
+          <div class="card"><h3>No alerting / dashboards</h3><p>Signals live in logs, not on a board. Nothing pages an operator yet; you have to go looking. <b>Buys you:</b> the shift from reactive to proactive — a threshold on the mock-fallback rate pages someone the moment NIM goes down, rather than the outage surfacing when the extractions look generic.</p></div>
+          <div class="card"><h3>Eval scores not tracked over time</h3><p>The eval gates run, but their scores are not recorded run-over-run. Run them in CI and store the numbers to catch regressions early. <b>Buys you:</b> a quality trend line — you catch the build where grounding quietly dropped two points, instead of only seeing pass/fail on the current run.</p></div>
         </div>
+      </div>
+    </section>
+
+    <!-- 5. NEXT STEPS -->
+    <section id="next">
+      <div class="wrap">
+        <span class="sec-num">05</span>
+        <h2>Next steps</h2>
+        <p>Today’s picture is a solid floor — structured logs, health and config surfaces, and degradation that always leaves a trail. The work ahead turns that stream of events into a service you can run without watching. In rough order of leverage:</p>
+        <div class="grid2" style="margin-top:12px">
+          <div class="card"><h3>OpenTelemetry tracing end to end</h3><p>Spans around each hop of Next.js → AI plane → NIM, sharing one trace id, so a slow or failed extraction can be followed across all three planes instead of correlated by hand across two log streams.</p></div>
+          <div class="card"><h3>Per-call token, cost &amp; latency metrics</h3><p>Record the quantities the logs only imply — how long each call took, how many tokens it burned, what it cost — so “is it getting slower?” and “what is this costing?” become charts, not guesses.</p></div>
+          <div class="card"><h3>Dashboards &amp; alerts</h3><p>Lift the signals off the log tail and onto a board, with thresholds that page an operator — the mock-fallback rate, error rate, and latency — the moment they cross, rather than when someone goes looking.</p></div>
+          <div class="card"><h3>Eval scores tracked over time</h3><p>Store each eval run’s scores so quality has a trend line, catching the build where grounding quietly slipped before it reaches production instead of only seeing pass/fail on the current run.</p></div>
+        </div>
+        <p class="point"><b>WHERE IT LIVES</b> These are tracked, sequenced, and kept current on the <a href="/about-roadmap.html">Roadmap</a> tab — head there for the full picture of what is planned across the platform, not just monitoring.</p>
       </div>
     </section>
 

@@ -140,10 +140,12 @@
         <a class="jump" href="/about-monitoring.html">Monitoring</a>
         <a class="jump" href="/about-azure.html">Azure</a>
         <a class="jump" href="/about-demo.html">Demo</a>
+        <a class="jump" href="/about-roadmap.html">Roadmap</a>
         <a class="jump" href="#capabilities">Capabilities</a>
         <a class="jump" href="#harness">Harness</a>
         <a class="jump" href="#models">Models</a>
         <a class="jump" href="#restraint">Restraint</a>
+        <a class="jump" href="#next">Next</a>
       </div>
     </div>
 
@@ -174,6 +176,10 @@
         <div class="capability">
           <h3>1 · Barrier extraction — reading notes into data</h3>
           <p>The job: turn free-text ward notes into structured, board-ready barriers — without letting the model invent any of them. A creative read is welcome; an unverified claim is not.</p>
+
+          <p>Reading a nurse’s free-text note into a tidy list of discharge barriers is a genuinely linguistic task — the same blocker gets written a dozen different ways, and no set of keyword rules catches them all. That is exactly the kind of work a language model is good at, so we let one do it. The discipline is in <em>how</em> we let it: a <b>small</b> model (nothing here needs a frontier one), pinned to <b>temperature 0</b> so the same note always reads the same way, forced into <b>strict JSON</b> so the output is data rather than prose — and then, crucially, every claim it makes is checked back against the note before anyone sees it. The diagram below is that pipeline, left to right.</p>
+
+          <p class="point"><b>Why temperature 0 + strict JSON</b> — temperature is the model’s “creativity dial”; turned to zero it stops sampling and always picks its most-likely next token, so extraction becomes reproducible and auditable — run the same note twice, get the same barriers. JSON mode makes the output a machine-readable object instead of a paragraph we would have to parse with fragile regexes. Without both, the same note could yield different barriers on Monday and Tuesday, and a chatty model could break the parser mid-shift.</p>
 
           <svg viewBox="0 0 740 250" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="extractTitle">
             <title id="extractTitle">Barrier extraction pipeline: note to Nemotron JSON, sanitise, then a grounding gate that snaps quotes to real offsets and drops any barrier it cannot locate before persisting to the board.</title>
@@ -244,11 +250,17 @@
           </div>
 
           <p class="point"><b>The point</b> — the model may be creative about <em>reading</em>, but every claim is mechanically verified against the source before anyone sees it; a hallucinated barrier physically cannot reach the board.</p>
+
+          <div class="safety-callout"><b>The grounding gate is the whole game.</b> A barrier that the model invents — a plausible-sounding blocker that was never in the note — is the one failure a clinician must never see. The gate makes that impossible by construction: the model must quote the exact words it based each barrier on, and code then searches for that quote back in the source note (an exact match first, then a fuzzy sliding-window match at ≥0.75 similarity to forgive minor paraphrasing). If the quote cannot be found, the barrier is <b>deleted</b>, not shown with a warning. Think of it like a footnote a fact-checker refuses to publish unless they can point at the exact sentence it came from. In healthcare you do not ask people to trust the model — you show them the evidence, and drop anything you cannot back up.</div>
         </div>
 
         <div class="capability">
           <h3>2 · Copilot — the right retrieval for each kind of question</h3>
           <p>The job: answer two very different kinds of question — “what is happening on my ward right now?” and “what does policy say?” — each with the retrieval it actually needs. Two data shapes, two tools.</p>
+
+          <p>A tempting shortcut would be to point the model at everything and let it figure out how to fetch what it needs. We deliberately do not. The two kinds of question have completely different data underneath — the ward’s live state is <em>structured</em> rows in a database, while policy is <em>unstructured</em> prose — and the right retrieval for each is different. So a classifier routes the question first, and each branch uses a purpose-built tool that the model is not allowed to step outside of. Follow the split below.</p>
+
+          <p class="point"><b>Why the model never writes SQL</b> — on the ward-state path the model only chooses <em>what</em> to filter (a small JSON object like <code>{mffd:true, barrier:"transport"}</code>), validated against an allow-list of fields; it never chooses <em>how</em> to query and it never touches the database. If the model could emit SQL, a hallucinated or manipulated query could read or delete data it should never see — the classic prompt-injection-to-database hole. Restricting it to a validated filter means the worst it can do is ask for a combination that returns nothing.</p>
 
           <svg viewBox="0 0 740 300" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="copilotTitle">
             <title id="copilotTitle">Copilot routing: a classifier splits a question into a ward-state path (validated JSON filter over board data) or a policy path (embed, vector search, rerank), and both paths reconverge on a cited answer or a grounded refusal.</title>
@@ -327,12 +339,18 @@
             <div class="wstep"><span class="n">4</span><div><h4>Answer from evidence, or refuse</h4><p>The model answers from <b>only</b> the numbered passages, citing each one it used — or it returns <code>grounded:false</code> and refuses (“I don’t have policy that covers that”). Weak support becomes a refusal, not a guess.</p></div></div>
           </div>
 
+          <p class="point"><b>Why “answer only from retrieved passages, or refuse”</b> — the policy path is genuine RAG: the question is embedded, matched against policy by <em>meaning</em> in pgvector, and the shortlist reranked so the best few passages surface. The model is then told to answer using <b>only</b> those numbered passages and to cite each one — or, if they do not actually cover the question, to return <code>grounded:false</code> and say so. This is what stops the confident-but-wrong answer: a general-purpose model asked “what’s the escalation policy for a delayed transfer?” will happily invent a reasonable-sounding one from its training data. Forcing it to cite retrieved trust policy — or refuse — means a weak match becomes an honest “I don’t have policy that covers that,” which on a ward is far safer than a plausible fabrication.</p>
+
           <p class="point"><b>The point</b> — structured data gets a validated filter; unstructured data gets vector RAG; both paths end the same way, by citing evidence or admitting there is none.</p>
         </div>
 
         <div class="capability">
           <h3>3 · Action recommender — a narrow, human-gated agent</h3>
           <p>The job: given a patient’s barriers, propose the next concrete step for each — grounded in policy, capped to a safe menu, and never acting on its own. Retrieve, then reason, then hand to a human.</p>
+
+          <p>This is the one capability that looks like an “agent” in the buzzword sense — it retrieves, reasons, and produces a plan of action. So it is also where the safety design has to be strictest. The reasoning is real and useful, but three hard constraints wrap it: the model may only pick from a <b>fixed allow-list</b> of actions, it may only <b>recommend</b> (never execute), and every proposal passes a <b>human gate</b> that writes an audit row. Trace the flow below, then read why each constraint is there.</p>
+
+          <p class="point"><b>Why a fixed action allow-list</b> — the model chooses one action per barrier from a closed menu (chase TTOs, book transport, arrange social care, escalate a review, or “other”), and anything off-menu is coerced to a safe default. An open-ended agent that can “take any action it deems appropriate” cannot be tested, reasoned about, or trusted near patients — you cannot enumerate what it might do. A closed menu means the set of possible outputs is small, reviewable, and safe by construction; the model’s cleverness is spent on <em>which</em> known-safe step fits, not on inventing new ones.</p>
 
           <svg viewBox="0 0 740 236" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="agentTitle">
             <title id="agentTitle">Action recommender: retrieve policy from pgvector, reason over barriers plus policy to propose one allow-listed action per barrier, then a human approves or dismisses — nothing is sent to pharmacy or transport.</title>
@@ -395,12 +413,18 @@
             <div class="wstep"><span class="n">3</span><div><h4>Recommend only — a human decides</h4><p>Nothing acts autonomously. A person Approves or Dismisses each recommendation; approving marks the barrier <em>in progress</em> and writes an audit row. Nothing is ever sent to pharmacy or transport.</p></div></div>
           </div>
 
+          <div class="safety-callout"><b>Recommend-only, human gate, audit trail.</b> Nothing the agent produces acts on the world. It writes no orders, sends nothing to pharmacy or transport, and moves no patient — it only surfaces a proposal with a cited rationale. A person Approves or Dismisses each one; approving is what marks the barrier <em>in progress</em>, and every decision writes an audit row recording who decided what and when. Two things fall out of this. First, accountability stays with a clinician, where it legally and ethically belongs — the AI advises, a human decides. Second, the audit trail turns the whole feature into a dataset: over time you can see which recommendations get approved and which get thrown out, which is the honest way to measure whether the agent is any good — and, later, to improve it.</div>
+
           <p class="point"><b>The point</b> — autonomy is capped by design: a fixed action menu, mandatory policy grounding, and a human gate on every single recommendation.</p>
         </div>
 
         <div class="capability">
           <h3>4 · Forecast &amp; narrate — the deliberate absence of an LLM</h3>
           <p>The job: predict discharge likelihood and demand, then explain it in plain language — while keeping the model as far from the arithmetic as possible. The numbers are calculated; only the prose is generated.</p>
+
+          <p>This pipeline is the sharpest illustration of the whole thesis, because it is defined by what the LLM is <em>not</em> allowed to do. A discharge probability is a number a clinician acts on, so it has to be calibrated, testable, and identical for identical inputs. Those are exactly the properties a language model cannot offer. So the calculable part and the linguistic part are split down the middle: a small, transparent statistical model does every figure, and the LLM is handed the finished numbers and asked only to read them aloud in a sentence or two. Watch where the boxes change colour below — that is where the model is and is not.</p>
+
+          <p class="point"><b>Why the numbers are a deterministic model, not an LLM</b> — the forecast is a plain logistic model with a handful of readable, monotone weights: being medically fit pushes discharge odds up, each open barrier and a slow social-care package pushes them down. Because it is ordinary arithmetic it is <em>inspectable</em> (you can read exactly why a patient scored 0.62), <em>testable</em> (unit tests pin the output for known inputs) and <em>calibratable</em> (weights can be re-fit against real length-of-stay history). An LLM asked to “predict the discharge probability” gives you a number with none of those properties — unfalsifiable, non-reproducible, and impossible to honestly unit-test. This is the clearest case in the product of <em>when not to use an LLM</em>.</p>
 
           <svg viewBox="0 0 740 224" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="forecastTitle">
             <title id="forecastTitle">Forecast and narrate: a deterministic logistic model with readable monotone weights computes the probability with no LLM involved, then the finished numbers are handed to the model only to write a short briefing using exactly those numbers.</title>
@@ -452,6 +476,8 @@
             <div class="wstep"><span class="n">2</span><div><h4>Narrate, don’t recompute</h4><p>The finished numbers go to the model with one instruction: write a 2-to-4-sentence briefing using <b>exactly</b> these numbers, never inventing or recomputing one. The model does the language; the model never does the maths.</p></div></div>
           </div>
 
+          <p class="point"><b>Why the LLM only narrates</b> — narration <em>is</em> a language task (turn “0.62 · 3 days · one open barrier” into a readable briefing), and there the model earns its place. But it is handed the finished figures with one rule: use <b>exactly</b> these numbers, never invent or recompute one. Keeping the model downstream of the maths means the sentence a clinician reads and the number it describes can never disagree — and both halves stay independently auditable and testable.</p>
+
           <p class="point"><b>The point</b> — asking an LLM to predict a length-of-stay would be the anti-pattern (unaccountable, unfalsifiable); splitting the calculable part (a testable model) from the linguistic part (narration) is the lesson made concrete.</p>
         </div>
       </div>
@@ -463,6 +489,19 @@
         <span class="sec-num">02</span>
         <h2>The model-call harness</h2>
         <p>The four pipelines above each reach a language model exactly once or twice — but the prompt is the smallest part of what happens. Every single model call in WardBeat is wrapped in the same fixed sequence of guards, and most of the reliability comes from that wrapper, not from the words sent to the model. The harness runs the same way whether the caller is extraction, the copilot, or the agent: acquire a token, bound the call in time, force structured output, re-validate it in code, ground it against the source, and — if anything is off or fails — degrade to a deterministic mock so the endpoint always returns something usable.</p>
+
+        <p>It helps to read the six guards not as a checklist but as six specific failures we refuse to let happen. Each one exists because of a concrete way a naïve “just call the model” endpoint breaks in production — and the model call itself, the green box in the middle, is a small slice of the whole. Here is the failure each guard prevents.</p>
+
+        <div class="grid2" style="margin:10px 0 4px">
+          <div class="card"><h3>Rate limit → provider lock-out</h3><p>An async token bucket (~40 req/min) means a burst of extractions queues politely instead of slamming the provider and getting the whole app throttled or 429-blocked mid-shift.</p></div>
+          <div class="card"><h3>Timeout → a wedged batch</h3><p>Every call is bounded (45s at the edge, 30s at the model). Without it, one stalled connection hangs a request forever and can back up an entire batch of notes behind it.</p></div>
+          <div class="card"><h3>Structured output → an unparseable blob</h3><p>Temperature 0 + JSON mode make the output repeatable and machine-readable; a tolerant parser pulls the first <code>{…}</code> even out of a chatty preamble, so a wordy model never breaks the caller.</p></div>
+          <div class="card"><h3>Validate → an off-schema value</h3><p>The parsed JSON is re-checked against allow-lists in code. The model’s field names and values are never trusted as-is — unknown ones are coerced to a safe default or dropped, so a novel label cannot corrupt the board.</p></div>
+          <div class="card"><h3>Ground → a hallucination</h3><p>Claims are matched back to their source — a quote located in the note, an answer tied to a retrieved passage — and anything unverifiable is dropped or refused. This is the anti-fabrication step, applied uniformly.</p></div>
+          <div class="card"><h3>Mock fallback → a hard failure</h3><p>If the backend is flagged off, unavailable, or any step raises, the call degrades to a deterministic offline mock returning the same result shape. The endpoint always returns something usable; the app never hard-breaks.</p></div>
+        </div>
+
+        <p class="point"><b>Why the wrapper, not the prompt, does the work</b> — a prompt is a request, not a guarantee: models ignore instructions, drift, stall, and occasionally invent. Every guard above is code that runs <em>regardless</em> of what the model did, so the endpoint’s safety and reliability do not depend on the model behaving. That is what lets us trust a small model in a clinical setting — we do not trust the model, we trust the cage around it.</p>
 
         <svg viewBox="0 0 760 360" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="harnessTitle">
           <title id="harnessTitle">The fixed harness wrapped around every model call: a request passes a rate-limit token and a timeout in the AI plane, reaches the model at temperature 0 in JSON mode, then its output is tolerantly parsed, validated against allow-lists, and grounded to the source before returning a result — and any failure or disabled state branches to a deterministic mock that returns the same shape of result.</title>
@@ -578,6 +617,8 @@
         <h2>The models</h2>
         <p>The guiding rule is to use generative AI where it belongs and no further. Language models do the language: reading notes into structured data, answering questions from retrieved sources, and turning numbers into prose. Everything numeric or safety-critical stays in plain, testable code. The choices below follow from two constraints: clinical data should be able to stay inside the hospital, and quality has to be measurable.</p>
 
+        <p class="point"><b>Why NVIDIA NIM</b> — the platform choice is driven by <em>data sovereignty</em>. A hosted frontier API is the easy default, but it means patient data leaves the hospital trust, which is a non-starter in healthcare. NIM ships the models as self-hostable microservices behind an <em>OpenAI-compatible</em> API: the demo runs on the hosted free tier, and moving to production is a config change — the same client code points at NIM containers running on the hospital’s own GPUs, so the data never leaves the building. OpenAI-compatibility also means no lock-in — the client is standard and any model can be swapped. Raw self-hosting with vLLM would work too, but then you rebuild serving, optimisation, embedding and reranking yourself; NIM is the middle path.</p>
+
         <div class="tech">
           <div class="tech-head"><h3>NVIDIA NIM</h3><span class="tag">Inference platform</span></div>
           <p class="what">Self-hostable inference microservices behind an OpenAI-compatible API. One vendor supplies the language, embedding, and rerank models the product needs.</p>
@@ -591,6 +632,7 @@
 
         <p class="subhead">The three models</p>
         <p>Each model is the smallest one that does its job well. Nothing here needs a frontier model, and a smaller model is faster, cheaper, and easier to run on-prem.</p>
+        <p class="point"><b>Why the smallest model that does the job</b> — the reflex to reach for the biggest, smartest model is the wrong one here. None of these tasks — reading a note into JSON, routing a question, narrating finished numbers — needs frontier-level reasoning; they need reliability, and the harness supplies that. Choosing the smallest model that clears the bar pays off three times over: it is <em>cheaper</em> (extraction runs on every note), <em>faster</em> (lower latency per call), and <em>far easier to run on-prem</em> — a 9B model fits on hardware a hospital can realistically own, where a frontier model would not. Right-sizing each model is what makes the sovereignty story practical rather than aspirational.</p>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px">
             <thead>
@@ -639,6 +681,26 @@
         <p>The most important AI decision in WardBeat is where the AI stops. Discharge probability and bed demand are numbers a clinician acts on — they have to be calibrated, testable, and the same for the same inputs. A language model is the wrong tool for that: it is unaccountable and unfalsifiable, and there is no honest way to unit-test a figure it invents. So the calculable part and the linguistic part are split cleanly. A small, transparent statistical model with readable weights computes every figure; the LLM is handed the finished numbers and asked only to narrate them in a sentence or two, forbidden from inventing or changing a single one.</p>
 
         <div class="safety-callout"><b>When not to use a language model.</b> Discharge probability and bed demand come from a small, transparent statistical model with readable weights, not the LLM. Numbers have to be calibrated and testable; the LLM only narrates them, and is forbidden from inventing or changing a figure. Knowing where to stop using AI is part of the design.</div>
+      </div>
+    </section>
+
+    <!-- 5. NEXT STEPS -->
+    <section id="next">
+      <div class="wrap">
+        <span class="sec-num">05</span>
+        <h2>Next steps</h2>
+        <p>The design above is deliberately conservative — the cage first, cleverness second. That same foundation is what makes the next moves safe to add, because each one slots into the existing harness rather than working around it. Here is where the AI goes from here.</p>
+
+        <div class="grid2">
+          <div class="card"><h3>NeMo Guardrails</h3><p>Add a declarative guardrail layer in front of the copilot and agent — programmable rails for topic boundaries, jailbreak resistance, and output policy. It formalises, in one place, the input/output checks the harness does today by hand.</p></div>
+          <div class="card"><h3>Streaming responses</h3><p>Stream the copilot and narrator token-by-token so answers appear as they are written. The grounding and citation checks still run on the completed output — streaming changes the delivery, never the verification.</p></div>
+          <div class="card"><h3>Per-capability model choice</h3><p>Because the client is OpenAI-compatible, each capability can point at the model that suits it — a stronger reasoner for the agent, a leaner one for routing — chosen by measured quality, not by defaulting everything to one model.</p></div>
+          <div class="card"><h3>Active learning from the audit trail</h3><p>Every approved or dismissed recommendation is already an audit row. That is a labelled dataset waiting to be used — to measure which suggestions clinicians trust, tune prompts and weights against real decisions, and improve the model where it matters.</p></div>
+        </div>
+
+        <p class="point"><b>The through-line</b> — none of these loosens the guarantees; each one is added <em>inside</em> the harness, so the same rules — validate, ground, human-gate, fall back — still hold. The model gets more capable; the cage stays.</p>
+
+        <p style="margin-top:16px">For the full picture of where WardBeat is headed — across product, platform and AI — see the <a href="/about-roadmap.html">Roadmap</a> tab.</p>
       </div>
     </section>
 

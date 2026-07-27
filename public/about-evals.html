@@ -140,6 +140,7 @@
         <a class="jump" href="/about-monitoring.html">Monitoring</a>
         <a class="jump" href="/about-azure.html">Azure</a>
         <a class="jump" href="/about-demo.html">Demo</a>
+        <a class="jump" href="/about-roadmap.html">Roadmap</a>
         <a class="jump" href="#layers">Layers</a>
         <a class="jump" href="#harnesses">Harnesses</a>
         <a class="jump" href="#running">Running</a>
@@ -168,6 +169,10 @@
         <span class="sec-num">01</span>
         <h2>How quality is proven</h2>
         <p>AI quality here is a number, not a feeling — measured, not guessed. Every AI capability has a labelled synthetic dataset, a metric that fits the task, and a hard gate; the harnesses run against the live NVIDIA NIM models and exit non-zero when a gate is missed, so they double as a release gate. This is the concrete form of the project’s thesis — we don’t trust the model, we measure it.</p>
+
+        <p class="subhead">Why evaluate an AI system at all</p>
+        <p>A traditional function is deterministic — the same input gives the same output, and a handful of unit tests pin it forever. A language model is not. It is <b>probabilistic</b>: two calls with the same prompt can return different text, and its behaviour <b>drifts</b> as prompts, model versions, or upstream weights change underneath you. That means a demo that “looks right” proves nothing — it is one lucky sample, not evidence. The only honest way to know whether the AI is good enough to ship is to turn quality into a <b>measured number</b>, run against a known-answer dataset, and hold it to a threshold you agreed on in advance.</p>
+        <p class="point"><b>Why this matters</b> Without a number, “is the AI working?” has no answer but a vibe — and vibes ship regressions. A model can silently get worse and still feel fine on the three examples you happen to click. The eval harness replaces that feeling with a figure and a pass/fail line.</p>
 
         <div class="thesis"><b>The thesis.</b> Three layers of testing prove it, from the bottom up: deterministic unit tests pin the non-AI logic and the AI-plane contract, the eval harnesses score the live models against planted ground truth, and a single mock ↔ live flag keeps the system behaving identically offline and on real models.</div>
 
@@ -276,6 +281,7 @@
             <div>
               <h4>Extraction — barrier-type F1</h4>
               <p>For every labelled note it calls <code>/extract</code>, compares the extracted barrier <b>types</b> against the planted set, and computes precision / recall / F1 plus MFFD accuracy. F1 balances the two failure modes — missing a real barrier versus inventing one.</p>
+              <p class="point"><b>Why this metric</b> Extraction can fail in two opposite directions: it can <b>miss</b> a real barrier (low recall) or <b>invent</b> one that isn’t in the note (low precision). A single accuracy percentage averages those together and hides whichever is worse — you could ship a model that quietly drops a third of the barriers and still read a healthy-looking score. F1 is the harmonic mean of precision and recall, so it only stays high when <b>both</b> failure modes are low; it cannot be gamed by trading one off against the other.</p>
             </div>
           </div>
           <div class="wstep">
@@ -283,6 +289,7 @@
             <div>
               <h4>Copilot — hit-rate, groundedness, query-intent</h4>
               <p>The <b>policy path</b> embeds each question, runs the pgvector cosine top-K (K = 8), reranks to top-N (N = 4), and checks the expected policy document was retrieved (hit-rate) and the answer came back grounded. The <b>ward path</b> sends each question to <code>/copilot/query-intent</code> and checks the produced structured filter matches the expected keys. Retrieval is only useful if the right passage returns, and an answer is only safe if it is grounded in what was retrieved — both are scored.</p>
+              <p class="point"><b>Why this metric</b> This is the RAGAS split — retrieval quality and answer quality are <b>two different failures</b> and must be measured apart. <b>Hit-rate</b> asks “did the right passage come back at all?” — if retrieval whiffs, no amount of eloquence can save the answer. <b>Groundedness</b> asks “is every claim in the answer traceable to a retrieved passage?” — a model can retrieve the correct document and still hallucinate around it. A single “did it answer well?” score would let a fluent, confident, wrong answer pass; splitting them tells you <b>which half broke</b>, which is what you need to fix it.</p>
             </div>
           </div>
           <div class="wstep">
@@ -290,6 +297,7 @@
             <div>
               <h4>Actions — appropriateness &amp; grounding</h4>
               <p>For each labelled barrier it retrieves policy and calls <code>/agent/recommend</code>, then checks the recommended <code>action_type</code> matches the expected mapping and the rationale is grounded in a cited passage.</p>
+              <p class="point"><b>Why this metric</b> An action recommendation has two independently-failing parts: <b>what</b> it recommends and <b>why</b>. Appropriateness scores the “what” against the expected barrier → action mapping; rationale-grounding scores the “why” against an actual cited policy passage. Scoring only appropriateness would let a right answer through with an invented justification — dangerous in a clinical setting, where an ungrounded rationale is a fabricated reason to act.</p>
             </div>
           </div>
           <div class="wstep">
@@ -297,6 +305,8 @@
             <div>
               <h4>Forecast &amp; narration — Spearman ρ + numeric-consistency</h4>
               <p>The deterministic discharge model is scored on <b>getting the order right</b> (Spearman ρ against a truth score), not on hitting an exact probability, because the forecast is used to rank patients. Then the narrator is fed a fixed set of numbers and the briefing is checked so that <b>every integer it states came from the input</b> — proving the LLM narrates and never invents figures.</p>
+              <p class="point"><b>Why this metric</b> The forecast’s job is to <b>order</b> patients by how ready they are for discharge — a coordinator reads the list top-down. So what matters is rank, not the absolute probability. <b>Spearman ρ</b> measures exactly that: it scores whether the model puts patients in the same order as the truth, and is indifferent to whether it said 0.7 or 0.9 for the top patient. Grading on an exact-probability error (like RMSE) would punish a model that ranks perfectly but is systematically cautious, and reward a model that hits the numbers yet scrambles the order — the opposite of what the feature needs.</p>
+              <p class="point"><b>Why this metric</b> A narrator has essentially <b>one</b> way to be dangerous: state a <b>wrong number</b> — “4 beds free” when there are 2. Fluency and tone don’t matter clinically; a misquoted figure does. Numeric-consistency targets that single failure directly by asserting every integer in the briefing was present in the input, proving the LLM is <b>narrating</b> supplied facts, not <b>computing</b> or inventing them.</p>
             </div>
           </div>
         </div>
@@ -320,7 +330,12 @@ pnpm eval:actions               # appropriateness / grounding, gates 0.90
 pnpm eval:forecast              # Spearman ρ 0.70 / numeric-consistency 0.90</code></pre>
         <p>Any gate miss exits non-zero (and prints the shortfall), so these can be wired into CI unchanged when CI is re-introduced.</p>
 
+        <p class="subhead">What a gate is (and why it exits non-zero)</p>
+        <p>A <b>gate</b> is a threshold the measured number must clear — F1 ≥ 0.85, groundedness ≥ 0.90, Spearman ρ ≥ 0.70. If the number falls short, the harness prints the shortfall and <b>exits with a non-zero status code</b>. That exit code is the whole point: it is the language every shell, Makefile, and CI runner already understands as “this step failed.” A green run is a machine-checkable promise that the AI still meets the bar; a red run stops the pipeline before a worse model reaches production. Because the exact same script both reports the score and returns the exit code, there is nothing extra to wire up — the report <b>is</b> the gate.</p>
+        <p class="point"><b>Why this matters</b> A gate is only worth having if it can actually fail. Set the threshold where the model comfortably always passes and you have a green light that means nothing — it will stay green straight through a regression. The thresholds here sit just below current live performance: high enough that a real drop trips them, low enough that healthy natural variance doesn’t. A gate you never fail is not a gate; it’s decoration.</p>
+
         <div class="safety-callout"><b>Mock vs live.</b> By default the AI plane runs the deterministic offline mock (<code>NIM_MOCK=true</code>, or no <code>NVIDIA_API_KEY</code>) — the evals still run and exercise the full pipeline. To evaluate the real models, set <code>NIM_MOCK=false</code> and a <code>NVIDIA_API_KEY</code>, recreate the <code>ai</code> container, and re-run. The figures on this page are the live NIM numbers.</div>
+        <p class="point"><b>Why both</b> The <b>mock</b> is deterministic, free, and offline, so the harness always has something to run — it proves the whole pipeline (dataset → AI plane → metric → gate) is wired correctly even with no API key, and keeps the scoring/parsing/gate logic honest without spending a token. But a mock returns canned outputs, so a green mock says nothing about whether the <b>real model</b> is good enough. That is why the headline figures on this page are the <b>live-NIM</b> numbers: the mock proves the harness works; live NIM proves the AI works.</p>
 
         <p class="subhead">The eval loop</p>
         <p>Every harness is the same shape: a labelled dataset feeds the live AI plane, the output is scored into a metric, and the metric is compared to its gate — pass continues, fail exits non-zero.</p>
@@ -370,6 +385,9 @@ pnpm eval:forecast              # Spearman ρ 0.70 / numeric-consistency 0.90</c
 
         <div class="safety-callout"><b>Measured, not guessed.</b> The extraction harness earned its keep early: it caught the first model choice underperforming and let the prompt be tuned from a measured <b>69% to 88% F1</b>. Without the number, that regression would have been invisible — the model would have felt fine and quietly missed a fifth of the barriers.</div>
 
+        <p>Walk through what happened. The first model choice extracted barriers that <b>read</b> correctly — plausible types, sensible language — and on a spot-check it looked done. But scored against the planted labels it landed at <b>69% F1</b>, meaning it was quietly missing or inventing close to a third of the barriers. That number is the only reason anyone knew. With the gap made visible, the fix was mechanical rather than a guess: swap the model and tune the prompt, re-run the harness, and watch the number climb to <b>88%</b>, clearing the 0.85 gate. The lesson is not “our first model was bad” — it is that <b>the failure was measurable, and therefore fixable</b>. A team relying on the demo feeling would have shipped 69% and never known; the harness turned an invisible regression into a two-line diff and a number that moved.</p>
+        <p class="point"><b>The lesson</b> You cannot improve what you don’t measure, and you cannot catch a regression you can’t see. The 69% was not a disaster — it was the harness doing its job, on day one, on exactly the kind of silent quality loss that a spot-check will always wave through.</p>
+
         <p class="subhead">Why these metrics (and not others)</p>
         <p>Each metric is chosen to match how its output is actually used — a single accuracy number would hide the failure that matters.</p>
         <div class="grid2">
@@ -378,6 +396,63 @@ pnpm eval:forecast              # Spearman ρ 0.70 / numeric-consistency 0.90</c
           <div class="card"><h3>Rank correlation for the forecast</h3><p>The forecast is used to order patients by dischargeability, so it is scored on getting the order right (Spearman ρ), not on a false-precision point estimate.</p></div>
           <div class="card"><h3>Numeric-consistency for narration</h3><p>The one failure that matters for a narrator is stating a wrong number. Checking that every figure came from the input targets exactly that.</p></div>
         </div>
+
+        <p class="subhead">Adding a new eval</p>
+        <p>Every harness follows the same five-step pattern, so a new one is a copy-and-adapt rather than a design exercise. To evaluate a new AI capability:</p>
+        <div class="walk">
+          <div class="wstep">
+            <span class="n">1</span>
+            <div>
+              <h4>Plant ground truth</h4>
+              <p>Add a <b>labelled dataset</b> — inputs paired with the known-correct answer — usually as synthetic rows in a seed (<code>notes.eval_labels</code>) or a fixture the harness reads. This is the “truth” the score is measured against, so label it carefully; the eval is only as honest as its labels.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">2</span>
+            <div>
+              <h4>Pick a metric that fits the use</h4>
+              <p>Ask <b>how the output is actually consumed</b>, then choose the metric that exposes the failure that matters — F1 for “must not miss or invent,” a rank correlation for “must order correctly,” a grounding check for “must not fabricate.” Resist a bare accuracy number; it averages away the failure you care about.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">3</span>
+            <div>
+              <h4>Write the harness</h4>
+              <p>Copy an existing script under <code>src/eval/</code>: load the labels, call the live AI-plane endpoint for each case, score the output into your metric, and print the numbers. Keep it a plain standalone script — no test framework needed.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">4</span>
+            <div>
+              <h4>Set a gate and exit non-zero</h4>
+              <p>Choose a threshold just below current live performance and <code>process.exit(1)</code> when the metric falls short. This is what turns a report into a release gate — and makes it CI-ready with no extra wiring.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">5</span>
+            <div>
+              <h4>Wire the command</h4>
+              <p>Add a <code>pnpm eval:&lt;name&gt;</code> script so it runs alongside the others, then record the live figure. That number is now part of the definition of “working.”</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. NEXT STEPS -->
+    <section id="next">
+      <div class="wrap">
+        <span class="sec-num">05</span>
+        <h2>Next steps</h2>
+        <p>The harness is deliberately small and honest — enough to gate the current capabilities against the live models. The natural next moves make it stricter, more automatic, and more representative over time.</p>
+        <div class="grid2">
+          <div class="card"><h3>Evals in CI</h3><p>Run every <code>eval:*</code> on each pull request, so a model or prompt change that drops a metric fails the build before it can merge — the gate stops being a manual step and becomes automatic.</p></div>
+          <div class="card"><h3>RAGAS faithfulness</h3><p>Move the copilot grounding check from an exact-passage test to a proper <b>faithfulness</b> score, measuring how well every claim in an answer is entailed by the retrieved context rather than merely present.</p></div>
+          <div class="card"><h3>LLM-as-judge</h3><p>For open-ended outputs where there is no single right string — rationales, narration tone — add a rubric-scored model judge, cross-checked against human labels so the judge itself is validated, not trusted blindly.</p></div>
+          <div class="card"><h3>Regression tracking over time</h3><p>Persist each run’s figures so metrics can be <b>trended</b>, not just gated — a slow month-over-month slide that never quite trips a threshold is exactly the drift a single pass/fail line can miss.</p></div>
+          <div class="card"><h3>Bigger, real-derived sets</h3><p>Grow the labelled datasets and derive them from de-identified real notes rather than purely synthetic ones, so the score reflects the messiness the model meets in production, not a clean best case.</p></div>
+        </div>
+        <p style="margin-top:16px">These sit on the broader plan for the platform — see the full <a href="/about-roadmap.html">Roadmap</a> tab for where evaluation fits alongside the rest of the work.</p>
       </div>
     </section>
 

@@ -140,11 +140,13 @@
         <a class="jump" href="/about-monitoring.html">Monitoring</a>
         <a class="jump" href="/about-azure.html">Azure</a>
         <a class="jump" href="/about-demo.html">Demo</a>
+        <a class="jump" href="/about-roadmap.html">Roadmap</a>
         <a class="jump" href="#topology">Topology</a>
         <a class="jump" href="#aiflow">AI flow</a>
         <a class="jump" href="#harness">Harness</a>
         <a class="jump" href="#lifecycle">Lifecycle</a>
         <a class="jump" href="#data">Data</a>
+        <a class="jump" href="#next">Next</a>
       </div>
     </div>
 
@@ -169,6 +171,8 @@
         <span class="sec-num">01</span>
         <h2>System topology</h2>
         <p>WardBeat is built as four cooperating planes behind a single front door. The browser only ever talks to one of them — the Next.js experience layer — which is at once the front-end, the orchestrator of every AI workflow, and the single writer to the database. Behind it sit a stateless AI toolbox, the NVIDIA NIM inference models, and PostgreSQL. The design goal is simple: keep clinical data and control in one place, and make the AI plane something you can scale, test, and swap between hosted and on-prem models without touching the rest of the system.</p>
+
+        <p>Read this section as a set of decisions rather than a list of boxes. Each plane exists because giving it exactly one job — and denying it the others — is what makes the whole system easy to reason about, test, and deploy inside a hospital trust. The recurring move is the same one every time: concentrate authority (data, orchestration, control) in one plane, and keep the plane that talks to a language model as small, stateless, and replaceable as possible.</p>
 
         <p class="subhead">The four planes</p>
 
@@ -264,11 +268,28 @@
           </div>
         </div>
 
+        <p class="point"><b>Why it matters</b> — the two coloured borders that carry authority are the black Next.js plane (orchestration + the only write path) and the purple data plane (the one source of truth). The blue AI plane and the green model plane are deliberately powerless: they compute, they never decide and never persist. If you remember one thing about the topology, remember which boxes are allowed to change the world and which are not.</p>
+
         <p class="subhead">The AI plane is a stateless toolbox</p>
-        <p>Here is the key idea. The AI plane holds no state and never reaches the database — Next.js is the orchestrator and the only thing that touches Postgres. So a Retrieval-Augmented-Generation query is not one big call to a black box; it is a short sequence that Next.js drives. Next.js calls <code>/embed</code> to turn the question into a vector, runs the pgvector nearest-neighbour search <em>itself</em> (that is where the database lives), calls <code>/copilot/rerank</code> to reorder the candidates, then calls <code>/copilot/answer</code> to compose a grounded, cited answer. The agent follows the same shape — Next.js retrieves the relevant policy from pgvector, then calls <code>/agent/recommend</code> — and so does forecasting, where Next.js gathers the features and calls the <code>/forecast/*</code> endpoints. Because the AI plane never holds state and never sees the database, it is easy to scale horizontally, easy to test in isolation, and trivial to swap between hosted and on-prem models.</p>
+        <p>Here is the key idea. The AI plane holds no state and never reaches the database — Next.js is the orchestrator and the only thing that touches Postgres. That single rule is the load-bearing decision of the whole architecture, so it is worth being precise about what it buys you.</p>
+
+        <p><b>Testability.</b> Because every AI-plane endpoint is a pure function of its request — text in, structured JSON out, no hidden database read, no session, no prior turn remembered — you can test it the way you test any pure function. Give it a note, assert on the barriers; give it passages, assert on the answer. There is no fixture database to stand up, no state to reset between tests, and no “it passed yesterday” flakiness that comes from a service quietly accumulating state. A stateful AI service, by contrast, would force every test to reason about what happened before it.</p>
+
+        <p><b>Horizontal scale.</b> Statelessness is also what lets you run ten copies of the AI plane behind a load balancer and route any request to any instance — none of them holds anything the next request depends on. The moment a service holds session or cache state that matters for correctness, you have to make requests sticky or share that state across instances, and scaling stops being free. Here it stays free: the only shared state in the system lives in one place, Postgres, and only Next.js talks to it.</p>
+
+        <p><b>Swapability.</b> And because the plane is just a thin, uniform wrapper over model primitives — with no database schema of its own to keep in sync — you can replace the whole thing, or the models behind it, without the rest of the system noticing. The contract it exposes is a handful of HTTP endpoints, not a shared database, so there is no coupling to unpick.</p>
+
+        <p>So a Retrieval-Augmented-Generation query is not one big call to a black box; it is a short sequence that Next.js drives. Next.js calls <code>/embed</code> to turn the question into a vector, runs the pgvector nearest-neighbour search <em>itself</em> (that is where the database lives), calls <code>/copilot/rerank</code> to reorder the candidates, then calls <code>/copilot/answer</code> to compose a grounded, cited answer. The agent follows the same shape — Next.js retrieves the relevant policy from pgvector, then calls <code>/agent/recommend</code> — and so does forecasting, where Next.js gathers the features and calls the <code>/forecast/*</code> endpoints. Because the AI plane never holds state and never sees the database, it is easy to scale horizontally, easy to test in isolation, and trivial to swap between hosted and on-prem models.</p>
+
+        <div class="safety-callout"><b>Why retrieval lives in Next.js, not the AI plane.</b> The obvious-looking design would be to send the question to the AI plane and let it do the whole RAG loop — embed, search, rerank, answer — in one call. WardBeat deliberately does not. The vector search runs in Next.js because that is where the database is, and the database is the one thing the AI plane is not allowed to touch. The AI plane only ever provides model primitives: turn this text into a vector, reorder these passages, compose an answer from those passages. Next.js keeps the retrieval — the step that reads clinical and policy data — on the same plane as every other data access, under the same single writer and the same access control. The common mistake this avoids is a second, shadow data path: an AI service that grows its own database connection, its own copy of the schema, and its own idea of who is allowed to read what.</div>
+
+        <p class="subhead">Next.js is the single writer and the orchestrator</p>
+        <p>The mirror image of the stateless AI plane is that Next.js is the <em>only</em> plane that writes to Postgres, and the only plane that orchestrates a workflow end to end. This is a deliberate choice, not an accident of where the code happened to live. When exactly one process owns every write, there is one source of truth for what is on the board, one place where a transaction either fully happens or fully does not, and one place to reason about ordering and consistency. If the AI plane could also write — say, persist an extraction directly — you would have split-brain writes: two processes racing to update the same encounter, each with its own view of “latest wins”, and no single transaction boundary around the pair. That is the class of bug that produces a board showing barriers from a note that was already superseded. Concentrating writes in the orchestrator removes the race by construction. The AI plane returns a result; Next.js decides whether, when, and how to persist it.</p>
+
+        <p class="point"><b>Why it matters</b> — “single writer” is not about performance, it is about not having to trust two processes to agree. The AI plane can be restarted, scaled, or swapped mid-workflow without any risk to data integrity, precisely because it never held the pen.</p>
 
         <p class="subhead">The AI plane’s API</p>
-        <p>Every capability is one internal HTTP call. The browser never sees these; only Next.js calls them, over the private network, with a shared service token. Note where the LLM is used and where it is deliberately not.</p>
+        <p>Every capability is one internal HTTP call. The browser never sees these; only Next.js calls them, over the private network, with a shared service token. The shape of this table is itself the argument: each row is a self-contained model primitive with no memory of the last row, which is exactly what makes the plane stateless and swappable. Note, too, where the LLM is used and where it is deliberately not — the <code>/forecast/*</code> rows that compute numbers use no language model at all.</p>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px">
             <thead>
@@ -672,6 +693,8 @@
         <h2>Request lifecycle</h2>
         <p>Take a single Run extraction request — a clinician asks WardBeat to read a ward note and pull out the discharge barriers. It crosses all four planes and returns to Postgres, with Next.js in control the whole way, and the harness from the previous section wrapping the model call in the middle.</p>
 
+        <p>The point of walking it hop by hop is that every hop earns its place — none of them is there for tidiness. Each boundary crossing is a place where trust is checked or authority is handed over, and reading them in order is the clearest way to see why the topology is shaped the way it is. Notice as you go how the arrows narrow: the browser can reach exactly one plane, that plane can reach the AI plane and the database, and the AI plane can reach only the model. Authority decreases the further you get from the front door.</p>
+
         <svg viewBox="0 0 760 300" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="archLifeTitle">
           <title id="archLifeTitle">Run extraction request lifecycle across the four planes</title>
           <defs>
@@ -719,14 +742,14 @@
             <span class="n">1</span>
             <div>
               <h4>The browser asks Next.js — and nothing else</h4>
-              <p>The clinician triggers a Server Action. The request passes the edge proxy, which checks the JWT session and role before the work begins. No API route is exposed; the browser cannot reach the AI plane, NIM or Postgres.</p>
+              <p>The clinician triggers a Server Action. The request passes the edge proxy, which checks the JWT session and role before the work begins — this is the outermost trust boundary, and it is on the hot path so an unauthenticated or under-privileged request is rejected before any expensive work runs. No API route is exposed; the browser cannot reach the AI plane, NIM or Postgres. <b>Why this hop exists:</b> a single front door means there is exactly one surface to authenticate, authorise, and apply the CSP to. Every other plane can therefore assume its caller is already trusted.</p>
             </div>
           </div>
           <div class="wstep">
             <span class="n">2</span>
             <div>
               <h4>Next.js calls the AI plane over the private network</h4>
-              <p>Next.js sends the note text to <code>/extract</code> on the internal-only AI plane, carrying the shared <code>x-service-token</code> header. This hop never leaves the internal network.</p>
+              <p>Next.js sends the note text to <code>/extract</code> on the internal-only AI plane, carrying the shared <code>x-service-token</code> header. This hop never leaves the internal network. <b>Why this hop exists:</b> the AI plane is a second, internal trust boundary — it refuses any request without the service token, which is what lets it stay simple and unauthenticated-by-user while still never being reachable from outside. The browser has no route to it and no token to present even if it did.</p>
             </div>
           </div>
           <div class="wstep">
@@ -754,13 +777,27 @@
             <span class="n">6</span>
             <div>
               <h4>Next.js — and only Next.js — writes to Postgres</h4>
-              <p>The extracted barriers and flags are written to PostgreSQL through the pooled Drizzle client. The AI plane never touched the database; the single writer is the front door.</p>
+              <p>The extracted barriers and flags are written to PostgreSQL through the pooled Drizzle client. The AI plane never touched the database; the single writer is the front door. <b>Why this hop closes the loop:</b> the write is the one irreversible act in the whole request, and it happens in the plane that has been in control since step 1 — so the same process that authenticated the clinician is the one that decides what lands on the board, inside one transaction. There is no second writer to disagree with.</p>
             </div>
           </div>
         </div>
 
+        <p class="point"><b>Why it matters</b> — six hops, three trust boundaries: the edge (is this clinician allowed?), the service token (is this caller the orchestrator?), and the model’s bearer key (is this the AI plane?). Trust is re-established at each crossing rather than assumed once, so compromising one plane does not hand an attacker the next.</p>
+
+        <p class="subhead">Trust boundaries, made explicit</p>
+        <p>Three concentric boundaries do the security work, and it is worth naming each and the failure it prevents.</p>
+        <div class="grid2">
+          <div class="card"><h3>The browser only ever talks to Next.js</h3><p>There is no public API route and no client-side call to the AI plane, NIM, or Postgres. This collapses the attack surface to a single authenticated front door — the thing you would otherwise have to defend in three places you now defend in one.</p></div>
+          <div class="card"><h3>Edge: per-request nonce CSP + RBAC</h3><p>The proxy applies role-based access control from a JWT claim (no database read at the edge, so it stays fast) and a Content-Security-Policy carrying a fresh per-request nonce. The nonce means an injected inline script has no valid nonce and simply will not run — it turns the whole class of XSS-via-injected-<code>&lt;script&gt;</code> into a non-event, rather than relying on catching every injection point.</p></div>
+          <div class="card"><h3>The AI plane is internal-only and token-gated</h3><p>Every endpoint but <code>/health</code> demands the shared <code>x-service-token</code>, and the plane is never published to the internet. Even if an attacker reached the internal network, they would still need the token; even with the token, they reach a plane that holds no data and cannot write. Defence in depth, not a single wall.</p></div>
+          <div class="card"><h3>The model plane is reached only by bearer key</h3><p>NIM sits behind an OpenAI-compatible API authenticated with a bearer key that only the AI plane holds. The models are a leaf: they compute and return, and have no path back to the browser, the orchestrator, or the database.</p></div>
+        </div>
+
         <p class="subhead">Deployment &amp; data residency</p>
-        <p>The same lifecycle runs identically in the hosted demo and on-prem. The whole stack ships from Docker: in production <code>docker-compose.prod.yml</code> puts a Cloudflare Tunnel in front as the public gateway — there is no inbound port — routing to <code>app:3000</code> (Next.js), which talks to <code>db:5432</code> (Postgres) and <code>minio:9000</code> for uploads, with the AI plane as its own pinned image and every container running as a non-root user. Going on-prem is a config change — swap the NIM base URL and key — not a rewrite, which is exactly what keeps clinical data inside the trust’s own walls.</p>
+        <p>The same lifecycle runs identically in the hosted demo and on-prem. The whole stack ships from Docker: in production <code>docker-compose.prod.yml</code> puts a Cloudflare Tunnel in front as the public gateway — there is no inbound port — routing to <code>app:3000</code> (Next.js), which talks to <code>db:5432</code> (Postgres) and <code>minio:9000</code> for uploads, with the AI plane as its own pinned image and every container running as a non-root user.</p>
+        <p>Going on-prem is a config change — swap the NIM base URL and key — not a rewrite, and this is a bigger claim than it sounds. The reason it holds is the <b>OpenAI-compatible contract</b>: the AI plane speaks to NIM through the same request and response shape whether the models run on NVIDIA’s hosted free tier or on the trust’s own GPUs, so moving from one to the other changes two environment values and nothing else. Because the container image, the schema, the orchestration, and every guard in the harness are identical across both, there is no fork of the codebase to maintain and no “on-prem edition” that drifts from the demo. That is precisely what keeps clinical data inside the trust’s own walls without a second, divergent build: the data-residency guarantee is a deployment setting, not a rewrite, and the thing you tested in the demo is bit-for-bit the thing that runs in the hospital.</p>
+
+        <div class="safety-callout"><b>The lesson made concrete.</b> When the boundary between “what changes on-prem” and “what stays the same” is a config file rather than a code branch, going into a trust is a procurement conversation, not an engineering project — and the clinical safety you proved once is the clinical safety that ships.</div>
       </div>
     </section>
 
@@ -897,6 +934,26 @@
         </svg>
 
         <p>Retrieval works by <b>meaning, not keywords</b>. A policy document is split into passages, each passage is embedded into a 1024-dim vector by the NVIDIA embedding model, and text plus vector are stored in <b>policyChunks</b> behind an hnsw cosine index. At query time the question is embedded the same way and pgvector finds the nearest chunks by cosine similarity. One subtlety matters: NVIDIA embedding models are <b>asymmetric</b> — passages are embedded with input_type <b>passage</b> and questions with input_type <b>query</b>, so the stored corpus and the incoming question land in the same space and match correctly.</p>
+      </div>
+    </section>
+
+    <!-- 6. NEXT STEPS -->
+    <section id="next">
+      <div class="wrap">
+        <span class="sec-num">06</span>
+        <h2>Next steps</h2>
+        <p>The architecture you have just read is deliberately the simplest thing that keeps clinical data in one place and every model call in a cage. That simplicity is a starting point, and a few of its edges are where the design grows next — each one an extension of a decision made above, not a reversal of it.</p>
+
+        <div class="grid2">
+          <div class="card"><h3>A shared rate-limit store for scale-out</h3><p>Today the AI plane’s token bucket and the app’s rate limiter are <b>in-memory</b> — correct and fast for a single instance. The moment you run several instances behind a load balancer, each holds its own counter and the effective limit multiplies. The fix is small precisely because the planes are already stateless: move the limiter to a shared store (Redis) so every instance draws from one bucket. The topology does not change; one piece of state moves out of process.</p></div>
+          <div class="card"><h3>OpenTelemetry tracing across the hops</h3><p>The six-hop lifecycle is easy to narrate on paper; in production you want to <em>see</em> a single request cross the browser → Next.js → AI plane → NIM → Postgres path as one trace, with timing on each boundary. Propagating a trace context across the hops turns the diagram in section 4 into a live, per-request waterfall — invaluable the first time a model call is slow and you need to know which hop owns the latency.</p></div>
+          <div class="card"><h3>Shipping the Azure design</h3><p>The Docker + Cloudflare Tunnel deployment is the on-prem-friendly baseline. The <a href="/about-azure.html">Azure design</a> maps the same four planes onto managed services — Container Apps, a managed Postgres with pgvector, private networking — for trusts that prefer a cloud landing zone. Because the contract between planes is HTTP and a shared database, the mapping is a hosting decision, not an architectural one.</p></div>
+          <div class="card"><h3>Where the AI plane goes</h3><p>Everything that makes the plane stateless and swappable is what makes model upgrades routine: a newer Nemotron, a stronger reranker, or on-prem GPUs are all a config change behind the same endpoints. The harness and grounding gates stay exactly where they are — new models are dropped into the same cage, not trusted more.</p></div>
+        </div>
+
+        <p class="point"><b>Why it matters</b> — none of these is a rewrite. Each is a small change enabled by a decision already made: statelessness makes the shared limiter easy, single-writer makes tracing legible, and the OpenAI-compatible contract makes the hosting target interchangeable. Good architecture is the one whose next steps are cheap.</p>
+
+        <p>For the full picture of what is planned and in what order, see the <a href="/about-roadmap.html">Roadmap</a> tab.</p>
       </div>
     </section>
 

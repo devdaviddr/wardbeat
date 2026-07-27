@@ -140,10 +140,12 @@
         <a class="jump" href="/about-monitoring.html">Monitoring</a>
         <a class="jump" href="/about-azure.html">Azure</a>
         <a class="jump" href="/about-demo.html">Demo</a>
+        <a class="jump" href="/about-roadmap.html">Roadmap</a>
         <a class="jump" href="#reference">Reference</a>
         <a class="jump" href="#mapping">Mapping</a>
         <a class="jump" href="#practices">Best practices</a>
         <a class="jump" href="#delivery">Delivery</a>
+        <a class="jump" href="#next">Next steps</a>
       </div>
     </div>
 
@@ -169,6 +171,9 @@
         <span class="sec-num">01</span>
         <h2>Reference architecture</h2>
         <p>One virtual network, one public door. Azure Front Door with its WAF is the only internet-facing surface; everything else — the two container apps, the database, object storage, the model endpoints, secrets and the registry — is reached over Private Endpoints inside the VNet. Every service authenticates with a managed identity, so there are no passwords or long-lived keys in the app.</p>
+
+        <p>Read the diagram top-down as a series of trust boundaries. The public band at the top is the single square millimetre of attack surface a hospital has to reason about — one hostname, one WAF policy, one TLS certificate. The dashed blue rectangle below it is the VNet: a private address space on the Microsoft backbone where every arrow between boxes travels over a Private Endpoint, never the public internet. The point of the whole shape is that the interesting data — the ward, the patients, the AI outputs — lives entirely inside that dashed line, and nothing inside it is reachable from outside except by going through Front Door first.</p>
+        <p class="point"><b>WHY</b> A private-by-default topology inverts the usual cloud posture. Instead of a dozen public endpoints each needing its own firewall rule, key rotation and audit, there is one door to defend and everything else is dark. The threat it addresses is the most common cloud breach shape of all — a forgotten public endpoint (a database, a storage account, a management API) discovered by a scanner. Here there is nothing to discover.</p>
 
         <svg viewBox="0 0 760 560" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="azRefTitle">
   <title id="azRefTitle">Proposed WardBeat deployment on Azure: a public edge and an all-private data plane in one virtual network</title>
@@ -238,6 +243,7 @@
 </svg>
 
         <p>The shape mirrors the app’s own design. WardBeat already splits into a web front door that owns all state and a stateless AI plane behind it, so <code>wardbeat-web</code> takes external ingress and <code>wardbeat-ai</code> takes internal-only ingress in the same Container Apps environment. The database stays a single Postgres with pgvector, holding ward data, AI outputs and policy vectors together. The only genuinely new surface is Front Door at the edge — everything below it is private.</p>
+        <p class="point"><b>WHY</b> That the diagram maps one-to-one onto the app’s existing planes is the whole reason this is a proposal we can stand behind rather than a hopeful sketch. Nothing here asks WardBeat to be re-drawn to fit Azure — the internal ingress boundary on <code>wardbeat-ai</code> is the same trust boundary the app already enforces in Docker, just expressed in Azure networking. The migration risk it addresses is the one that sinks most cloud moves: discovering, halfway through, that the target platform demands an architecture the app was never built for.</p>
 
         <div class="safety-callout"><b>Sovereignty by construction.</b> Every resource sits in the customer’s own tenant and chosen region; the GPU model endpoints run in-region on Azure, and private networking keeps clinical data on the Microsoft backbone. The on-prem story WardBeat was built for becomes an in-tenant story — the same guarantee, delivered as managed infrastructure.</div>
       </div>
@@ -249,6 +255,8 @@
         <span class="sec-num">02</span>
         <h2>Component mapping</h2>
         <p>Each WardBeat piece maps cleanly onto a managed Azure service. Nothing in the table changes what WardBeat <em>is</em> — the planes, the single database, the recommend-only agent all stay. Azure supplies the surrounding platform, so the team runs less and ships the same product.</p>
+        <p>The right way to read this table is as a list of things the team stops operating. Every row where a self-run component (MinIO, a raw Postgres container, an admin-keyed registry) becomes a managed service is a component removed from the on-call surface — patching, backups, failover and capacity planning all move to Microsoft. The trade the table encodes is deliberate: give up a little control over the runtime in exchange for giving up a lot of operational toil, on a product whose team should be spending its attention on ward flow, not on database patch cadence.</p>
+        <p class="point"><b>WHY</b> Choosing managed services over self-run ones addresses the quiet risk that dominates small-team products in production — not a dramatic breach, but the slow accumulation of undone operational work: the unpatched database, the storage node that filled up, the registry credential that leaked into a log. Each managed row is one of those failure modes handed to a platform team of thousands instead of left to a handful of engineers.</p>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px">
             <thead>
@@ -282,7 +290,20 @@
       <div class="wrap">
         <span class="sec-num">03</span>
         <h2>Best practices</h2>
-        <p>The design follows the Azure Well-Architected Framework: identity over secrets, private over public, managed over self-run, and everything expressed as code. Each block below is a decision, not just a service pick.</p>
+        <p>The design follows the Azure Well-Architected Framework: identity over secrets, private over public, managed over self-run, and everything expressed as code. Each block below is a decision, not just a service pick — a <em>what</em> it is, a <em>why</em> it was chosen over the obvious alternative, and the risk that choice is there to close.</p>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Compute — Container Apps</h3><span class="tag">Platform</span></div>
+          <p class="what">Both planes run as containers on the Azure Container Apps environment — a serverless container platform built on Kubernetes and KEDA, but with the cluster itself hidden. You give it an image and a scale rule; it gives you ingress, revisions and autoscale.</p>
+          <ul class="why">
+            <li><b>Scale-to-zero for the AI plane.</b> Extraction is bursty — long idle stretches punctuated by a flurry of work when a clinician uploads a document. Container Apps can scale <code>wardbeat-ai</code> to zero replicas between bursts and spin it back up on the next internal request, so nothing is paid for while the ward is quiet.</li>
+            <li><b>Revisions give blue-green for free.</b> Every deploy is an immutable revision, and traffic is split across revisions by weight. That is exactly the safe-release primitive the delivery pipeline needs, without any bespoke deployment machinery.</li>
+            <li><b>Fits a stateless app.</b> Neither plane keeps local state — the web app owns all state in Postgres, the AI plane keeps none — so a platform that can create and destroy replicas freely is a natural match rather than a constraint to work around.</li>
+          </ul>
+          <p class="instead"><b>Instead of AKS</b> — a full Azure Kubernetes Service cluster would hand the team a control plane, node pools, upgrades and CNI networking to operate. For two stateless services that is a large standing operational cost bought to solve problems this workload does not have; Container Apps keeps the Kubernetes benefits (KEDA, revisions, VNet integration) and hides the cluster.</p>
+          <p class="instead"><b>Instead of App Service</b> — App Service is a fine PaaS for a single web app, but it does not scale to zero, its container and sidecar story is thinner, and running the AI plane as a second, internal-only service alongside the web app is more awkward. Container Apps was built for exactly this multi-container, internal-ingress, scale-to-zero shape.</p>
+          <p class="point"><b>WHY</b> The risk this choice addresses is paying for idle GPU-adjacent compute and hand-rolling safe deploys. Scale-to-zero removes the first; revisions remove the second — both are properties of the platform rather than code the team has to write and maintain.</p>
+        </div>
 
         <div class="tech">
           <div class="tech-head"><h3>Identity &amp; secrets</h3><span class="tag">Security</span></div>
@@ -292,6 +313,8 @@
             <li><b>No standing credentials.</b> Postgres uses Entra authentication rather than a stored password, and ACR is pulled by identity rather than admin keys.</li>
             <li><b>Entra to the model where possible.</b> Prefer Entra ID / managed-identity auth to the Foundry endpoints; fall back to keys in Key Vault only where the endpoint requires it.</li>
           </ul>
+          <p class="instead"><b>Instead of connection strings and API keys in env vars</b> — the default reflex is a <code>DATABASE_URL</code> with a password and an API key set as environment variables. Those are long-lived secrets that leak into logs, container images, screenshots and shell history, and rotating them means a coordinated redeploy. Managed identity issues a short-lived token per request that nothing ever has to store; there is no secret to leak because there is no secret.</p>
+          <p class="point"><b>WHY</b> This closes the single most common credential-breach path in cloud apps: a long-lived key that escaped into somewhere it should not be. Entra database auth and identity-based ACR pulls mean the app holds no password at all, and least-privilege RBAC means that even a fully compromised container can only touch the exact resources its identity was granted — not the whole subscription.</p>
         </div>
 
         <div class="tech">
@@ -301,6 +324,8 @@
             <li><b>No public data plane.</b> Clinical data never traverses the public internet; it stays on the Microsoft backbone inside the VNet.</li>
             <li><b>Subnet isolation.</b> NSGs guard each subnet, and the AI plane’s internal ingress means it is not addressable from outside the environment at all.</li>
           </ul>
+          <p class="instead"><b>Instead of public endpoints with firewall allow-lists</b> — the common shortcut is to leave Postgres, Blob and Key Vault on their public endpoints and restrict them by IP allow-list. That surface is still internet-reachable, still enumerable, and one misconfigured rule from exposure. Private Endpoints give each service a private IP inside the VNet and remove the public endpoint entirely, so an allow-list mistake cannot expose anything.</p>
+          <p class="point"><b>WHY</b> A wholly private data plane closes two concrete threats. Data exfiltration: with no public path off the backbone, clinical data has nowhere to leak to even if a component is compromised. Reconnaissance and lateral movement: an attacker who somehow reached one box cannot discover or reach the database, storage or secrets by scanning, because those services simply do not exist on the public internet. Only Front Door is exposed, and Front Door’s WAF is the one surface hardened against clickjacking, injection and the rest of the OWASP catalogue.</p>
         </div>
 
         <div class="tech">
@@ -311,6 +336,8 @@
             <li><b>Private and in-region.</b> The AI plane calls the endpoints over a Private Endpoint; the GPUs run in the chosen region, so inference stays in-tenant.</li>
             <li><b>Keep the deterministic mock.</b> WardBeat’s offline mock stays in the loop for dev and as a disaster-recovery fallback — a stalled or unavailable endpoint degrades to the mock rather than breaking the app.</li>
           </ul>
+          <p class="instead"><b>Instead of a public hosted model API</b> — calling a public LLM API (or even the hosted NIM demo the app runs on today) means clinical text leaves the tenant to reach the model. For a hospital that is often a non-starter regardless of the vendor’s contractual assurances. Foundry-managed NIM endpoints run the same models on GPUs inside the customer’s own tenant and region, reached over a Private Endpoint, so the prompt never crosses a public boundary.</p>
+          <p class="point"><b>WHY</b> Because Foundry serves the identical OpenAI-compatible contract, the move is a base-URL and credential change in <code>src/lib/ai/client.ts</code> — configuration, not a rewrite. That is what makes in-tenant inference cheap to adopt: the app already speaks the protocol Foundry speaks. The risk it addresses is the hardest one in clinical AI — data sovereignty — solved without giving up the model quality or the code the team already has.</p>
         </div>
 
         <div class="tech">
@@ -321,6 +348,8 @@
             <li><b>HA on the data.</b> Postgres Flexible Server runs zone-redundant HA; the GPU endpoints are right-sized rather than over-provisioned.</li>
             <li><b>Zone redundancy.</b> Applied across the Container Apps environment and data tier wherever the region offers it.</li>
           </ul>
+          <p class="instead"><b>Instead of a single-zone deployment</b> — running in one availability zone is cheaper and simpler, but a single datacentre fault takes the ward tool offline. Zone-redundant HA spreads replicas and the Postgres primary/standby across physically separate zones in the same region, so a zone failure fails over rather than fails down — without leaving the region and its data-residency guarantee.</p>
+          <p class="point"><b>WHY</b> The scale rules are chosen per plane because the two planes have opposite shapes: the web app’s load tracks clinician traffic and scales on HTTP concurrency, while the AI plane’s load is spiky and idle-heavy and scales to zero. Matching each rule to its workload addresses two risks at once — being under-provisioned during a rush, and paying for idle GPU-adjacent compute overnight.</p>
         </div>
 
         <div class="tech">
@@ -340,6 +369,9 @@
             <li><b>No stored cloud secret.</b> The pipeline federates into Azure via OIDC rather than holding a service-principal key.</li>
             <li><b>Safe releases.</b> A new revision takes traffic gradually; a bad deploy is a one-click shift back.</li>
           </ul>
+          <p class="instead"><b>Instead of click-ops in the portal</b> — building the stack by hand in the Azure portal produces environments no one can reproduce and that drift apart over time; the difference between dev and prod becomes whatever was clicked differently on each. Bicep declares the entire stack as code, so dev and prod are the same template with different parameters and cannot silently diverge.</p>
+          <p class="instead"><b>Instead of a stored service-principal secret</b> — the usual CI pattern stores an Azure client secret in the pipeline, a long-lived cloud credential sitting in a settings store waiting to leak. OIDC federation lets GitHub Actions exchange its own signed token for a short-lived Azure token at deploy time, scoped to a specific repo and branch, so there is no cloud secret to store or rotate at all.</p>
+          <p class="point"><b>WHY</b> Infrastructure-as-code addresses environment drift and un-auditable changes — every change to the stack is a reviewable diff. Federated credentials address the CI-secret leak, the way build pipelines most often get compromised. Together they make a release a reviewed, reproducible, secret-free event, with blue-green revisions turning rollback into a weight shift rather than a rebuild.</p>
         </div>
 
         <div class="tech">
@@ -349,6 +381,7 @@
             <li><b>Right-sized GPU.</b> The model endpoints are sized to measured throughput, the single largest line item, and no larger.</li>
             <li><b>Elastic by default.</b> Serverless containers mean idle capacity is not paid for; caching cuts origin traffic.</li>
           </ul>
+          <p class="point"><b>WHY</b> GPU inference is the largest line item by a wide margin, so cost control is really about GPU utilisation. Right-sizing the endpoints to measured throughput and scaling the AI plane to zero off-hours addresses the specific waste that dominates AI-app bills — paying peak GPU rates for capacity that sits idle most of the day.</p>
         </div>
 
         <div class="tech">
@@ -406,8 +439,49 @@
         </svg>
 
         <p>The two container images build from the same repository, so the web app and the AI plane version together. Because a Container Apps revision is immutable and traffic is split by weight, a release can be rolled out gradually and rolled back by shifting weight back to the previous revision — no rebuild, no downtime. The whole target is Bicep, so a new environment is one parameterised deployment away, and dev and prod stay identical but isolated.</p>
+        <p class="point"><b>WHY</b> Immutability is the quiet safety property doing the work here. Because the previous revision still exists untouched, rollback is a weight shift back to a known-good artefact that is already running — not a frantic rebuild of last week’s image under pressure. That turns a bad deploy from an incident into a non-event, which is exactly the property a clinical tool needs on release day.</p>
+
+        <div class="safety-callout"><b>Front Door + WAF, the one public surface.</b> The edge is deliberately the only internet-facing component. Front Door terminates TLS, runs the managed OWASP rule set against every request, and caches static assets close to users. Choosing a managed WAF edge over exposing the container app directly addresses the whole class of edge threats — injection, clickjacking, malformed-request and volumetric attacks — with a maintained rule set, rather than leaving the app to defend itself. It is the single door, and it is a hardened one.</div>
 
         <div class="safety-callout"><b>Reference architecture, ready to build.</b> Everything on this page is a proposal grounded in current Azure best practice and in how WardBeat is already put together. The stateless AI plane, the single-database design and the standard OpenAI-compatible model contract are exactly what make this deployment a configuration and infrastructure exercise rather than a re-architecture.</div>
+      </div>
+    </section>
+
+    <!-- 5. NEXT STEPS -->
+    <section id="next">
+      <div class="wrap">
+        <span class="sec-num">05</span>
+        <h2>Next steps</h2>
+        <p>Everything above is a target, not a running system. Turning it into one is a short, ordered path — each step de-risks the next, and none of them ask the application to change shape.</p>
+
+        <div class="walk">
+          <div class="wstep">
+            <span class="n">1</span>
+            <div>
+              <h4>Write the Bicep and the CI/CD</h4>
+              <p>Declare the whole stack — VNet and subnets, the Container Apps environment and both apps, Postgres, Blob, Key Vault, ACR, Front Door and the managed identities — as parameterised Bicep, and stand up the GitHub Actions pipeline with an OIDC federated credential. This is the foundation everything else deploys onto.</p>
+              <p class="point"><b>WHY</b> Doing infrastructure-as-code first means every later step is a reviewable diff against a reproducible baseline, and dev and prod are the same template from day one rather than reconciled after the fact.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">2</span>
+            <div>
+              <h4>Wire the private DNS</h4>
+              <p>Create the private DNS zones for each Private Endpoint — Postgres, Blob, Key Vault, ACR and the Foundry endpoint — and link them to the VNet, so the app resolves each service to its private IP rather than its public one. This is the step that actually makes the data plane private.</p>
+              <p class="point"><b>WHY</b> Private Endpoints without private DNS resolve to public IPs and quietly defeat the whole isolation model; getting DNS right is what closes the exfiltration and reconnaissance threats the architecture is designed around.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">3</span>
+            <div>
+              <h4>Add observability</h4>
+              <p>Point both container apps, Postgres, Foundry and Front Door at a single Log Analytics workspace, instrument the apps with Application Insights, and promote the existing AI eval gates to production alerts on latency, error rate and quality.</p>
+              <p class="point"><b>WHY</b> A private system you cannot see into is a liability; correlated traces and the eval harnesses running as live signals turn the deployment from a black box into something the team can operate and trust.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="safety-callout"><b>Still a proposal.</b> These steps describe how WardBeat <em>would</em> move to Azure, not work that has shipped. Today it runs on Docker against hosted NVIDIA NIM; the stateless AI plane, single-database design and OpenAI-compatible model contract are what keep this path a configuration-and-infrastructure exercise rather than a rewrite. For the sequencing of this alongside the rest of the product, see the full <a href="/about-roadmap.html">Roadmap</a> tab.</div>
       </div>
     </section>
 

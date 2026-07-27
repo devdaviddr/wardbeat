@@ -13,6 +13,7 @@ const TABS = [
   { title: 'Monitoring', href: '/about/monitoring' },
   { title: 'Azure', href: '/about/azure' },
   { title: 'Demo', href: '/about/demo' },
+  { title: 'Roadmap', href: '/about/roadmap' },
 ]
 
 export function AboutTabs() {
