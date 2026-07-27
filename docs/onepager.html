@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WardBeat — architecture &amp; how-it-works brief</title>
+</head>
+<body>
+<style>
+  :root {
+    --paper: #f6f8f9;
+    --surface: #ffffff;
+    --ink: #0e2028;
+    --muted: #566a72;
+    --faint: #7f9298;
+    --line: #d9e2e5;
+    --accent: #0f766e;
+    --accent-soft: #d6ece9;
+    --fit: #15803d;
+    --fit-soft: #dcfce7;
+    --barrier: #b45309;
+    --barrier-soft: #fbe7cd;
+    --nim: #5f9400;
+    --python: #1f5f8b;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.15; }
+
+  /* ---- header ---- */
+  header {
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(120% 140% at 88% -20%, rgba(15,118,110,0.07), transparent 60%),
+      var(--surface);
+  }
+  .head-grid {
+    display: flex; flex-wrap: wrap; align-items: flex-end;
+    justify-content: space-between; gap: 24px;
+    padding: 44px 0 34px;
+  }
+  .wordmark {
+    display: flex; align-items: baseline; gap: 12px;
+    font-size: 46px; font-weight: 800; letter-spacing: -0.03em; margin: 10px 0 0;
+  }
+  .wordmark .beat { color: var(--accent); }
+  .tagline { font-size: 18px; color: var(--muted); max-width: 40ch; margin: 12px 0 0; font-weight: 400; }
+  .ecg { display: block; width: 100%; height: 34px; margin-top: 22px; color: var(--accent); opacity: 0.85; }
+  .status-col { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .pill {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.02em;
+    padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line);
+    color: var(--muted); background: var(--surface); white-space: nowrap;
+  }
+  .pill.live { color: var(--fit); border-color: #b7e3c4; background: var(--fit-soft); }
+  .pill.live b { font-weight: 700; }
+
+  section { padding: 40px 0; border-bottom: 1px solid var(--line); }
+  .sec-label {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--faint); margin: 0 0 18px;
+  }
+  h2 { font-size: 25px; font-weight: 750; letter-spacing: -0.02em; margin: 0 0 8px; }
+  .lede { font-size: 16.5px; color: var(--muted); max-width: 68ch; margin: 0 0 4px; }
+
+  /* ---- problem ---- */
+  .prob { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 8px; }
+  .prob p { margin: 0; font-size: 14.5px; color: var(--muted); }
+  .prob b { color: var(--ink); font-weight: 650; display: block; margin-bottom: 3px; }
+
+  /* ---- pipeline ---- */
+  .flow-scroll { overflow-x: auto; padding-bottom: 6px; }
+  .flow { display: flex; align-items: stretch; gap: 0; min-width: 760px; }
+  .stage {
+    flex: 1; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 16px 15px; position: relative; min-width: 132px;
+  }
+  .stage .n {
+    font-family: var(--mono); font-size: 11px; color: var(--faint);
+    letter-spacing: 0.1em;
+  }
+  .stage h3 { font-size: 16px; margin: 3px 0 6px; font-weight: 700; }
+  .stage p { margin: 0; font-size: 12.8px; color: var(--muted); line-height: 1.45; }
+  .stage .tag {
+    display: inline-block; margin-top: 11px; font-family: var(--mono);
+    font-size: 10.5px; letter-spacing: 0.03em; padding: 3px 7px; border-radius: 5px;
+  }
+  .arrow { align-self: center; flex: 0 0 26px; text-align: center; color: var(--faint); font-size: 18px; }
+  .t-next { background: #e7edf0; color: var(--ink); }
+  .t-py { background: #e2edf4; color: var(--python); }
+  .t-nim { background: #eaf3d6; color: var(--nim); }
+  .t-data { background: #efe9f5; color: #6b46a8; }
+
+  /* ---- architecture planes ---- */
+  .planes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 6px; }
+  .plane { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 18px; }
+  .plane .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .plane h3 { font-size: 16.5px; margin: 6px 0 8px; font-weight: 700; }
+  .plane ul { margin: 0; padding-left: 16px; color: var(--muted); font-size: 13.5px; }
+  .plane li { margin-bottom: 3px; }
+  .plane.next { border-top: 3px solid var(--ink); }
+  .plane.next .cap { color: var(--ink); }
+  .plane.py { border-top: 3px solid var(--python); }
+  .plane.py .cap { color: var(--python); }
+  .plane.nim { border-top: 3px solid var(--nim); }
+  .plane.nim .cap { color: var(--nim); }
+  .frontdoor { margin-top: 16px; font-size: 13.5px; color: var(--muted); }
+  .frontdoor b { color: var(--ink); }
+
+  /* ---- decisions ---- */
+  .decisions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 28px; margin-top: 6px; }
+  .dec { display: flex; gap: 13px; }
+  .dec .k {
+    flex: 0 0 auto; width: 30px; height: 30px; border-radius: 7px;
+    background: var(--accent-soft); color: var(--accent);
+    display: grid; place-items: center; font-family: var(--mono); font-size: 14px; font-weight: 700;
+  }
+  .dec h3 { font-size: 15px; margin: 3px 0 2px; font-weight: 700; }
+  .dec p { margin: 0; font-size: 13.6px; color: var(--muted); }
+
+  /* ---- metrics ---- */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 6px; }
+  .metric { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 16px 16px 14px; }
+  .metric .v {
+    font-family: var(--mono); font-size: 30px; font-weight: 700; letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums; color: var(--accent); line-height: 1;
+  }
+  .metric .l { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .metric .l b { color: var(--ink); font-weight: 650; }
+
+  /* ---- roadmap ---- */
+  .road { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin-top: 10px; }
+  .phase { position: relative; padding: 26px 12px 0 0; }
+  .phase::before {
+    content: ""; position: absolute; top: 6px; left: 0; width: 11px; height: 11px;
+    border-radius: 50%; background: var(--surface); border: 2px solid var(--faint);
+  }
+  .phase::after {
+    content: ""; position: absolute; top: 11px; left: 11px; right: 0; height: 2px; background: var(--line);
+  }
+  .phase:last-child::after { display: none; }
+  .phase.done::before { background: var(--accent); border-color: var(--accent); }
+  .phase .ver { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+  .phase.done .ver { color: var(--accent); }
+  .phase .desc { font-size: 12.6px; color: var(--muted); margin-top: 3px; }
+  .phase .done-tag { font-family: var(--mono); font-size: 10px; color: var(--fit); letter-spacing: 0.05em; }
+
+  /* ---- why nim ---- */
+  .why { background: var(--ink); color: #dfeaed; border-radius: 10px; padding: 26px 28px; margin-top: 6px; }
+  .why .sec-label { color: #6fb3aa; }
+  .why h2 { color: #ffffff; }
+  .why p { color: #b9cace; max-width: 72ch; font-size: 14.5px; }
+  .why .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .why .chip {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.02em;
+    border: 1px solid #2c4650; color: #cfe0e2; padding: 6px 11px; border-radius: 6px;
+  }
+
+  footer { padding: 26px 0 40px; }
+  .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center;
+    font-family: var(--mono); font-size: 12px; color: var(--faint); }
+  .foot a { color: var(--accent); text-decoration: none; }
+
+  @media (max-width: 720px) {
+    .prob, .planes, .metrics, .decisions { grid-template-columns: 1fr; }
+    .road { grid-template-columns: 1fr 1fr; gap: 18px 0; }
+    .phase::after { display: none; }
+    .wordmark { font-size: 38px; }
+    .status-col { align-items: flex-start; }
+  }
+</style>
+
+<header>
+  <div class="wrap">
+    <div class="head-grid">
+      <div>
+        <p class="eyebrow">Portfolio · Generative-AI solution architecture</p>
+        <h1 class="wordmark">Ward<span class="beat">Beat</span></h1>
+        <p class="tagline">A hospital ward-flow copilot — it reads the notes and shows who's fit to leave and what's blocking them.</p>
+      </div>
+      <div class="status-col">
+        <span class="pill live"><b>● v0.2.1 — live on NVIDIA NIM</b></span>
+        <span class="pill">Next.js 16 · FastAPI · Postgres</span>
+        <span class="pill">github.com/devdaviddr/wardbeat</span>
+      </div>
+    </div>
+    <svg class="ecg" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
+      <polyline points="0,20 380,20 400,20 412,8 424,32 436,20 470,20 482,20 492,4 502,36 512,20 1000,20"
+        fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="sec-label">The problem</p>
+    <h2>A capacity problem that's really an information problem</h2>
+    <p class="lede">Wards lose bed capacity not because patients can't leave, but because the reason they're stuck is buried in prose. WardBeat makes that legible in real time.</p>
+    <div class="prob">
+      <p><b>Invisible barriers</b>A patient is medically fit but stuck on meds, transport, social care, or a review — and no one has one current view of why.</p>
+      <p><b>Signal buried in notes</b>Discharge status and blockers live in free-text nursing and ward-round notes, not structured fields.</p>
+      <p><b>Reactive, not planned</b>Bed managers firefight in the afternoon; discharges that could happen before noon slip.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="sec-label">How it works — one click, "Run extraction"</p>
+    <h2>From free-text note to a cited, structured board</h2>
+    <p class="lede" style="margin-bottom:22px;">Each note flows through five stages. Colour marks the runtime that owns each step.</p>
+    <div class="flow-scroll">
+      <div class="flow">
+        <div class="stage">
+          <div class="n">01</div><h3>Read</h3>
+          <p>The BFF pulls each patient's notes from the database.</p>
+          <span class="tag t-next">Next.js · Drizzle</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="stage">
+          <div class="n">02</div><h3>Extract</h3>
+          <p>A schema-constrained prompt asks the model for strict JSON: fit-flag, EDD, barriers.</p>
+          <span class="tag t-nim">NIM · Nemotron Nano</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="stage">
+          <div class="n">03</div><h3>Ground</h3>
+          <p>Each barrier's quote is located in the note; anything unverifiable is dropped.</p>
+          <span class="tag t-py">FastAPI</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="stage">
+          <div class="n">04</div><h3>Persist</h3>
+          <p>Structured barriers + discharge status are written back to Postgres.</p>
+          <span class="tag t-data">Postgres</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="stage">
+          <div class="n">05</div><h3>Render</h3>
+          <p>The board updates; every barrier chip opens its highlighted source sentence.</p>
+          <span class="tag t-next">Next.js · RSC</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="sec-label">Architecture — two runtimes, one front door</p>
+    <h2>TypeScript runs the product; Python runs the intelligence</h2>
+    <div class="planes">
+      <div class="plane next">
+        <div class="cap">Experience · BFF</div>
+        <h3>Next.js 16</h3>
+        <ul><li>Ward board UI + auth / RBAC</li><li>Server actions, DB (Drizzle)</li><li>The only public surface</li></ul>
+      </div>
+      <div class="plane py">
+        <div class="cap">AI plane · internal</div>
+        <h3>FastAPI</h3>
+        <ul><li>Extraction + grounding</li><li>Prompt, rate-limit harness</li><li>Mock ↔ live behind one flag</li></ul>
+      </div>
+      <div class="plane nim">
+        <div class="cap">Model · inference</div>
+        <h3>NVIDIA NIM</h3>
+        <ul><li>Nemotron Nano 9B</li><li>OpenAI-compatible endpoint</li><li>Hosted free tier → on-prem</li></ul>
+      </div>
+    </div>
+    <p class="frontdoor">The browser only ever talks to Next.js; the Python AI plane is <b>internal-only</b>, called server-side with a shared service token. Polyglot <b>by design</b> — each ecosystem where it's strongest — not sprawl.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="sec-label">Design decisions</p>
+    <h2>The choices an interviewer will probe</h2>
+    <div class="decisions">
+      <div class="dec"><div class="k">✓</div><div><h3>Grounding over trust</h3><p>Every barrier cites its source sentence; unverifiable model output is dropped, never shown. In healthcare you show the evidence.</p></div></div>
+      <div class="dec"><div class="k">↔</div><div><h3>Mock ↔ live by one flag</h3><p>Same <span style="font-family:var(--mono);font-size:12px">/extract</span> contract runs a deterministic offline extractor or real NIM — and the mock is the fallback if a call fails, so the board never breaks.</p></div></div>
+      <div class="dec"><div class="k">◎</div><div><h3>Measured, not assumed</h3><p>An eval harness scores extraction F1 against labelled ground truth. It caught a bad first model choice and drove the prompt from 69% → 88%.</p></div></div>
+      <div class="dec"><div class="k">⊣</div><div><h3>GenAI where it belongs</h3><p>The LLM does language → structure and reasoning. Forecasting and optimisation are classical ML/OR — deliberately not an LLM's job.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="sec-label">Verified — v0.2.1, live on hosted NIM</p>
+    <h2>Quality is a number, not a vibe</h2>
+    <div class="metrics">
+      <div class="metric"><div class="v">88%</div><div class="l"><b>Barrier F1</b> — live, gate 0.85</div></div>
+      <div class="metric"><div class="v">100%</div><div class="l"><b>MFFD accuracy</b> — fit-for-discharge call</div></div>
+      <div class="metric"><div class="v">92%</div><div class="l"><b>Recall</b> — barriers found</div></div>
+      <div class="metric"><div class="v">120</div><div class="l"><b>Unit tests</b> green · lint · typecheck · build</div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="sec-label">Roadmap — one release spec per phase</p>
+    <h2>Shipped the foundation; the GenAI surface grows from it</h2>
+    <div class="road">
+      <div class="phase done"><div class="ver">v0.1.0</div><div class="desc">Scaffold &amp; SDD process</div><div class="done-tag">SHIPPED</div></div>
+      <div class="phase done"><div class="ver">v0.2.x</div><div class="desc">Barrier board + extraction</div><div class="done-tag">SHIPPED</div></div>
+      <div class="phase"><div class="ver">v0.3.0</div><div class="desc">Flow copilot (RAG)</div></div>
+      <div class="phase"><div class="ver">v0.4.0</div><div class="desc">Agents + actions (HITL)</div></div>
+      <div class="phase"><div class="ver">v0.5.0</div><div class="desc">Forecasting &amp; narration</div></div>
+    </div>
+  </div>
+</section>
+
+<section style="border-bottom:none;">
+  <div class="wrap">
+    <div class="why">
+      <p class="sec-label">Why NVIDIA NIM</p>
+      <h2>The deciding factor for clinical data</h2>
+      <p>NIM microservices are self-hostable containers with an OpenAI-compatible API. The demo runs on the free hosted tier; the identical code redeploys <b>on-prem inside a hospital's own GPUs</b> — so patient-adjacent data never leaves the trust. That data-sovereignty path is the reason a hosted frontier API can't win here.</p>
+      <div class="row">
+        <span class="chip">On-prem data residency</span>
+        <span class="chip">OpenAI-compatible — no lock-in</span>
+        <span class="chip">TensorRT-optimised inference</span>
+        <span class="chip">Hosted demo → on-prem prod, same code</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <span>WardBeat · a portfolio project by devdaviddr</span>
+      <span>Next.js 16 · FastAPI · NVIDIA NIM · PostgreSQL · Drizzle</span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
