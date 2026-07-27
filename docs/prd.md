@@ -2,13 +2,13 @@
 
 [← Back to README](../README.md)
 
-|                    |                                                                     |
-| ------------------ | ------------------------------------------------------------------- |
-| **Status**         | Draft (v0.1)                                                        |
-| **Owner**          | Daniel                                                              |
-| **Last updated**   | 2026-07-27                                                          |
-| **Type**           | Portfolio project — showcase of generative-AI solution architecture |
-| **Companion spec** | `specs/0026-genai-ward-flow-platform.md` (to follow)                |
+|                    |                                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| **Status**         | Draft (v0.1)                                                                                                  |
+| **Owner**          | Daniel                                                                                                        |
+| **Last updated**   | 2026-07-27                                                                                                    |
+| **Type**           | Portfolio project — showcase of generative-AI solution architecture                                           |
+| **Companion spec** | [`specs/0026-barrier-intelligence-ward-board.md`](../specs/0026-barrier-intelligence-ward-board.md) (Phase 1) |
 
 ---
 
@@ -182,7 +182,7 @@ observability.
 
 ```mermaid
 flowchart TB
-    subgraph EXP["Experience plane — Next.js 16 (the scaffolded platform)"]
+    subgraph EXP["Experience & BFF plane — Next.js 16"]
         BOARD["Ward board + barrier cards"]
         COPILOT["Flow copilot (chat)"]
         ACTIONS["Action queue (human approval)"]
@@ -191,10 +191,10 @@ flowchart TB
 
     subgraph SAFE["Guardrails & governance (cross-cutting)"]
         GR["NeMo Guardrails — topical / safety / PII / jailbreak"]
-        AUDIT["Audit log + RBAC (platform)"]
+        AUDIT["Audit log + RBAC (Next.js platform)"]
     end
 
-    subgraph REASON["Reasoning plane — agentic orchestration (LangGraph)"]
+    subgraph REASON["Reasoning plane — FastAPI · LangGraph agents"]
         SUP["Supervisor / router"]
         A1["Discharge-Readiness agent"]
         A2["Flow-Forecast agent"]
@@ -203,7 +203,7 @@ flowchart TB
         A5["Query agent (NL → SQL)"]
     end
 
-    subgraph GENAI["Model plane — NVIDIA NIM microservices (OpenAI-compatible)"]
+    subgraph GENAI["Model plane — NVIDIA NIM (free hosted tier / on-prem)"]
         LLM_BIG["LLM NIM — Nemotron Super (reasoning, tool-calling)"]
         LLM_SM["LLM NIM — Nemotron Nano (extraction, routing, summarise)"]
         EMB["Embedding NIM — llama-3.2-nv-embedqa-1b-v2"]
@@ -211,7 +211,7 @@ flowchart TB
         ASR["(opt) Riva/Parakeet ASR NIM — bedside voice notes"]
     end
 
-    subgraph DET["Deterministic services (non-GenAI)"]
+    subgraph DET["Deterministic services — FastAPI · ML/OR (non-GenAI)"]
         LOS["LOS / discharge-date model"]
         DEM["Demand forecast (time-series)"]
         OPT["Bed-allocation optimiser (OR)"]
@@ -225,13 +225,13 @@ flowchart TB
         NOTES["Clinical notes (synthetic)"]
     end
 
-    FEED --> INGEST["Ingestion & structuring"]
+    FEED --> INGEST["Ingestion & structuring (FastAPI)"]
     NOTES --> INGEST
     INGEST -->|schema-constrained extraction| LLM_SM
     INGEST --> OPS
     KB -->|chunk + embed| EMB --> VEC
 
-    EXP --> GR --> REASON
+    EXP -->|internal call · service token| GR --> REASON
     SUP --> A1 & A2 & A3 & A4 & A5
     A1 & A4 & A5 -->|RAG: retrieve then rerank then generate| EMB
     EMB --> VEC --> RER --> LLM_BIG
@@ -352,6 +352,50 @@ queue is the human-in-the-loop UI.
 > model; the expensive reasoning model is reserved for genuine multi-step work. This is
 > the cost/latency story interviewers look for.
 
+### 7.10 Service architecture — polyglot (Next.js BFF + FastAPI AI plane)
+
+The logical planes above map onto **two runtimes, one front door**. TypeScript runs the
+product; **Python/FastAPI runs the intelligence** — because that's where the agent, RAG,
+ML, guardrail, and eval ecosystems actually live (LangGraph, NeMo Retriever/Guardrails,
+scikit-learn/XGBoost, OR-Tools, RAGAS). This is a deliberate choice, not language sprawl.
+
+```mermaid
+flowchart LR
+    U["Clinician browser / PWA"] -->|HTTPS via Cloudflare Tunnel| NX["Next.js 16 — BFF + UI + Auth/RBAC"]
+    NX -->|"internal only · service token · OpenAPI + SSE"| API["FastAPI — AI/ML plane: LangGraph, RAG, ML/OR, guardrails, eval"]
+    API -->|OpenAI-compatible| NIM["NVIDIA NIM — build.nvidia.com free tier / on-prem"]
+    NX -->|"Drizzle · owns migrations"| PG[("Postgres + pgvector")]
+    API -->|"SQLAlchemy · reads + ai_* tables"| PG
+```
+
+**Who owns what**
+
+| Runtime        | Owns                                                                                               | Rationale                                                      |
+| -------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **Next.js 16** | UI, auth/RBAC, sessions, Web Push, ward-ops CRUD, streaming proxy to the browser                   | The scaffolded platform's strength; auth enforced in one place |
+| **FastAPI**    | LangGraph agents, RAG pipeline, deterministic ML/OR, NeMo Guardrails, eval harness, note ingestion | Python-native GenAI/ML ecosystem                               |
+| **NVIDIA NIM** | Inference (LLM / embed / rerank / ASR)                                                             | OpenAI-compatible; hosted free tier → on-prem                  |
+
+**The four boundaries (the parts juniors get wrong)**
+
+1. **One front door.** The browser only ever calls Next.js; **FastAPI is internal-only**
+   (private Docker network, not on the Cloudflare Tunnel). Next.js _server-side_ calls it.
+2. **Auth once.** Next.js validates the Auth.js session, then calls FastAPI with a
+   **shared service token** (or mTLS) plus user/role context — **no Auth.js re-implementation
+   in Python.**
+3. **Single migration authority.** **Drizzle owns the schema and migrations.** FastAPI reads
+   via SQLAlchemy/asyncpg and only _owns_ a separated set of tables (`ai_*`, vector tables) —
+   avoids the classic dual-migration footgun.
+4. **Typed contract + streaming.** FastAPI's auto-generated **OpenAPI** feeds a typed TS
+   client (or Zod validation); the copilot **streams via SSE** from FastAPI, and Next.js
+   proxies the token stream to the browser.
+
+**Don't over-fragment.** Start as **one modular FastAPI service** (routers: `/agents`,
+`/rag`, `/predict`, `/eval`), added as a single `ai` service in the existing
+**docker-compose** stack. Split off the GPU-bound inference or the optimiser into separate
+services **only** when scaling/deploy needs genuinely diverge — the same "earn each layer"
+discipline as the harness.
+
 ---
 
 ## 8. Why NVIDIA NIM (the deployment argument)
@@ -425,17 +469,18 @@ The whole project can be **built and demoed for £0**, which is the point for a 
 The scaffolded boilerplate is not decoration — it removes ~40% of the undifferentiated
 build so the project can be about the AI:
 
-| Need                                  | Already in the scaffold        |
-| ------------------------------------- | ------------------------------ |
-| Auth, sessions, **RBAC**, admin       | Auth.js v5 + role gating       |
-| Relational store **+ vector store**   | Postgres 17 → add **pgvector** |
-| **Real-time clinical alerts**         | Web Push (VAPID)               |
-| Responsive **ward-board UI** shell    | App shell + shadcn/ui          |
-| Server-side mutations & streaming     | Server Actions / RSC           |
-| Audit-friendly structure, docs, specs | Spec-driven process, `docs/`   |
+| Need                                   | Already in the scaffold        |
+| -------------------------------------- | ------------------------------ |
+| Auth, sessions, **RBAC**, admin        | Auth.js v5 + role gating       |
+| Relational store **+ vector store**    | Postgres 17 → add **pgvector** |
+| **Real-time clinical alerts**          | Web Push (VAPID)               |
+| Responsive **ward-board UI** shell     | App shell + shadcn/ui          |
+| Server-side mutations & streaming      | Server Actions / RSC           |
+| Container stack for a new `ai` service | Docker Compose (add FastAPI)   |
+| Audit-friendly structure, docs, specs  | Spec-driven process, `docs/`   |
 
-The GenAI planes (7.2–7.8) are the **net-new** work; the experience and data plumbing are
-inherited.
+The GenAI planes (7.2–7.8) plus the **FastAPI AI service** (§7.10) are the **net-new**
+work; the experience tier, data plumbing, and container stack are inherited.
 
 ---
 
@@ -520,6 +565,15 @@ metric, not a surprise.
 A: RAGAS for retrieval, F1 for extraction against labelled synthetic data, LLM-as-judge
 for action quality, and a red-team suite for safety — all as **CI gates** with golden
 datasets so a model swap can't silently regress.
+
+**Q: Why two languages — why not do it all in Next.js (or all in Python)?**
+A: **Right tool per tier.** Next.js is the BFF/UI/auth tier; **FastAPI is the AI/ML tier**
+because LangGraph, NeMo Retriever/Guardrails, scikit-learn, OR-Tools, and RAGAS are all
+Python-native — I'd be fighting the ecosystem in TypeScript. It's **one internal service**
+behind Next.js (single front door, auth enforced once, Drizzle owns migrations), added as
+one container in the existing Compose stack — polyglot by design, not sprawl. All-Python
+would mean rebuilding the auth/PWA/app-shell I already have; all-TS would mean a worse GenAI
+toolchain.
 
 **Q: Is this prompt engineering, or something more?**
 A: **Harness engineering.** I treat the model as an unreliable component and engineer
