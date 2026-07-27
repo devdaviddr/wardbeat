@@ -127,6 +127,7 @@ For the installable PWA (service worker is production-only): `pnpm build && pnpm
 
 | Doc                                             | What's inside                                                          |
 | ----------------------------------------------- | ---------------------------------------------------------------------- |
+| 🖼️ **[One-pager](docs/onepager.html)**          | Single-page architecture & how-it-works brief (open in a browser)      |
 | 🩺 **[PRD](docs/prd.md)**                       | Product vision, GenAI reference architecture (NVIDIA NIM), roadmap     |
 | 📐 **[Specs](specs/README.md)**                 | Spec-driven development — WardBeat features + inherited platform specs |
 | 📋 **[Features](docs/features.md)**             | Complete inherited feature list and what's included                    |
