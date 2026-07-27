@@ -93,6 +93,6 @@ From **v0.2.0**, WardBeat plans each release as a folder under
 [release-spec process](releases/README.md). The numbered specs above (`0001`–`0025`) remain
 as history; `0026` was migrated here as `v0.2.0`.
 
-| Release    | Title                                           | `spec.md`                                                                  | `spec-imp.md`                                                               |
-| ---------- | ----------------------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| **v0.2.0** | Barrier intelligence & ward board (Phase 1 MVP) | [spec](releases/v0.2.0-barrier-intelligence-ward-board/spec.md) — Proposed | [plan](releases/v0.2.0-barrier-intelligence-ward-board/spec-imp.md) — Draft |
+| Release    | Title                                           | `spec.md`                                                                 | `spec-imp.md`                                                                 |
+| ---------- | ----------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **v0.2.0** | Barrier intelligence & ward board (Phase 1 MVP) | [spec](releases/v0.2.0-barrier-intelligence-ward-board/spec.md) — Shipped | [plan](releases/v0.2.0-barrier-intelligence-ward-board/spec-imp.md) — Shipped |

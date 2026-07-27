@@ -1,7 +1,7 @@
 ---
 release: v0.2.0
 title: Barrier intelligence & ward board — implementation plan
-status: Ready # Draft | In Progress | Ready | Shipped
+status: Shipped # Draft | In Progress | Ready | Shipped
 spec: ./spec.md
 branch: feature/v0.2.0-barrier-intelligence-ward-board
 created: 2026-07-27
@@ -197,7 +197,7 @@ is visible.
 - [x] Extraction F1 ≥ 0.85 (96%); grounding suppression verified (ai unit test).
 - [x] `.env.example` + `src/lib/env.ts` updated; `docker compose up db ai` clean from scratch.
 - [x] `CHANGELOG.md` updated.
-- [ ] Merged to `main`; `v0.2.0` tagged; `spec.md` + `spec-imp.md` set to `Shipped`.
+- [x] Merged to `main`; `v0.2.0` tagged; `spec.md` + `spec-imp.md` set to `Shipped`.
 
 ## Task checklist
 

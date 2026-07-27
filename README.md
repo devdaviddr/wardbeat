@@ -199,9 +199,10 @@ reference: **[Deployment](docs/deployment.md)**.
 **WardBeat product** (planned — see [`specs/`](specs/README.md)):
 
 - [x] Repository scaffold & development process ([0025](specs/0025-wardbeat-foundation.md))
-- [ ] Ward, bed, and patient-flow domain model
-- [ ] Live ward board — occupancy, admissions, discharges
-- [ ] AI-assisted flow insights (bottlenecks, next-best actions)
+- [x] Ward, bed, and patient-flow domain model ([v0.2.0](specs/releases/v0.2.0-barrier-intelligence-ward-board/spec.md))
+- [x] Live ward board with AI-extracted, cited discharge barriers ([v0.2.0](specs/releases/v0.2.0-barrier-intelligence-ward-board/spec.md))
+- [ ] Natural-language flow copilot (RAG) — v0.3.0
+- [ ] AI-assisted flow insights & agents (bottlenecks, next-best actions)
 
 ## Contributing
 
