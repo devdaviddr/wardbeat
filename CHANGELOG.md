@@ -15,6 +15,17 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.2.1] - 2026-07-27
+
+### Changed
+
+- **Live NIM extraction verified and tuned.** Default extraction model is now
+  `nvidia/nvidia-nemotron-nano-9b-v2` (the previous default hung on the free
+  tier). Improved the extraction prompt (tight barrier-type definitions +
+  few-shot), lifting live barrier-extraction F1 from 69% → **88%** (precision
+  85%, recall 92%, MFFD accuracy 100%) — above the 0.85 gate — measured by the
+  eval harness against real hosted NIM.
+
 ## [0.2.0] - 2026-07-27
 
 ### Added

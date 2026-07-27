@@ -65,7 +65,7 @@ services:
       NIM_MOCK: ${NIM_MOCK:-true}
       NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
       NIM_BASE_URL: ${NIM_BASE_URL:-https://integrate.api.nvidia.com/v1}
-      NIM_EXTRACT_MODEL: ${NIM_EXTRACT_MODEL:-nvidia/llama-3.1-nemotron-nano-8b-v1}
+      NIM_EXTRACT_MODEL: ${NIM_EXTRACT_MODEL:-nvidia/nvidia-nemotron-nano-9b-v2}
       AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-}
     ports:
       - '8000:8000' # dev convenience; keep internal-only (off the tunnel) in prod
