@@ -59,6 +59,45 @@ See **[Features](docs/features.md)** for the full inherited list.
 > playbook describe the pipeline as it will be re-introduced later; they are
 > reference, not the current wiring.
 
+## How it works
+
+WardBeat reads the ward's **free-text notes** and turns them into a live board of
+**who is fit to leave and what's blocking them** — every finding traceable to the
+sentence it came from. When a bed manager hits **Run extraction**:
+
+```mermaid
+flowchart TD
+    U["Bed manager clicks 'Run extraction'"] --> NX["Next.js server action (BFF)"]
+    NX -->|read notes| PG[("Postgres")]
+    NX -->|"POST /extract + service token (per note)"| API["FastAPI ai service (internal)"]
+    API -->|schema-constrained prompt| NIM["NVIDIA NIM — Nemotron Nano 9B"]
+    NIM -->|"JSON: mffd, edd, barriers[]"| API
+    API -->|"ground each quote to a note span; drop unverifiable"| NX
+    NX -->|persist barriers + discharge status| PG
+    NX -->|revalidate| BOARD["Ward board re-renders: barrier chips + citations"]
+```
+
+1. **Read** — Next.js (the BFF) pulls each patient's notes from Postgres.
+2. **Extract** — it sends each note to the internal **FastAPI** service, which prompts
+   a small **NVIDIA NIM** model to return strict JSON `{ mffd, edd, barriers[] }`. The
+   note is treated as data to read, never instructions to follow (prompt-injection
+   defence).
+3. **Ground** — FastAPI verifies every barrier's quoted evidence actually appears in the
+   note, records the character span, and **drops anything it can't locate** — so the
+   board only ever shows cited, real findings.
+4. **Persist** — Next.js writes the structured barriers back to Postgres (Drizzle) and
+   denormalises MFFD/EDD onto each encounter.
+5. **Render** — the board refreshes; barrier chips are clickable to reveal the highlighted
+   source sentence.
+
+**Two runtimes, one front door:** the browser only ever talks to Next.js (UI, auth,
+database); the Python **FastAPI** AI plane is internal-only, called server-side with a
+shared token. Extraction runs on real NIM, or a deterministic **offline mock** (one env
+flag) that also serves as the fallback if a live call fails — so the board never breaks.
+Quality is measured, not assumed: `pnpm eval:extraction` scores barrier **F1** against
+labelled ground truth (88% on live NIM, gate 0.85). Full design in the
+**[PRD](docs/prd.md)**; run it via the **[demo runbook](docs/DEMO.md)**.
+
 ## Quick start
 
 **Prerequisites:** Node 22 (see `.nvmrc`) · [pnpm](https://pnpm.io) (`corepack enable`) · Docker
