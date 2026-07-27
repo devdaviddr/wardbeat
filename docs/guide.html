@@ -136,6 +136,8 @@
         <a class="jump" href="#problem">Problem</a>
         <a class="jump" href="#solution">What it does</a>
         <a class="jump" href="#architecture">Architecture</a>
+        <a class="jump" href="#tooling">AI &amp; models</a>
+        <a class="jump" href="#evaluation">Evals</a>
         <a class="jump" href="#stack">Stack</a>
       </div>
     </div>
@@ -247,6 +249,32 @@
           <div class="plane data"><div class="cap">Data</div><h3>Postgres + pgvector</h3><ul><li>Ward data, AI output, and the policy vectors</li><li>One database, no separate vector store</li></ul></div>
         </div>
 
+                <p class="subhead">The AI plane’s API</p>
+        <p>Every capability is one internal HTTP call. The browser never sees these; only Next.js calls them, over the private network, with a shared service token. Note where the LLM is used and where it is deliberately not.</p>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px">
+            <thead>
+              <tr style="text-align:left">
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Endpoint</th>
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">What it does</th>
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Model</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /extract</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Note text into grounded barriers, EDD, and the fit-to-leave flag</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron (JSON, temp 0)</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /embed</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Text into vectors for meaning-based search</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">nv-embedqa</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /copilot/route</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Classify a question: ward-state, policy, or out of scope</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /copilot/query-intent</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Turn a ward question into a validated filter, never SQL</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /copilot/rerank</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Reorder retrieved passages by true relevance</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">nv-rerankqa</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /copilot/answer</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Compose a cited answer from passages, or refuse</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /agent/recommend</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">One policy-grounded action per barrier</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /forecast/discharge</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Probability of discharge and predicted days</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--fit);font-weight:600">Deterministic, no LLM</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /forecast/demand</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Expected admissions and the net bed position</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--fit);font-weight:600">Deterministic, no LLM</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /forecast/narrate</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Turn those numbers into a short shift briefing</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron (narrator)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
         <p class="subhead">One request, end to end</p>
         <p>The AI plane is a toolbox of model calls, and Next.js drives them. A retrieval question, for example, is Next.js embedding the query, running the vector search itself (that is where the database lives), then asking the AI plane to rerank the results and write a cited answer. Below is a single Run extraction request crossing all four planes.</p>
         <svg viewBox="0 0 760 300" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="archLifeTitle">
@@ -296,10 +324,135 @@
       </div>
     </section>
 
-    <!-- 4. STACK -->
-    <section id="stack">
+        <!-- 4. AI TOOLING & MODELS -->
+    <section id="tooling">
       <div class="wrap">
         <span class="sec-num">04</span>
+        <h2>AI tooling &amp; models</h2>
+        <p>The guiding rule is to use generative AI where it belongs and no further. Language models do the language: reading notes into structured data, answering questions from retrieved sources, and turning numbers into prose. Everything numeric or safety-critical stays in plain, testable code. The choices below follow from two constraints: clinical data should be able to stay inside the hospital, and quality has to be measurable.</p>
+
+        <div class="tech">
+          <div class="tech-head"><h3>NVIDIA NIM</h3><span class="tag">Inference platform</span></div>
+          <p class="what">Self-hostable inference microservices behind an OpenAI-compatible API. One vendor supplies the language, embedding, and rerank models the product needs.</p>
+          <ul class="why">
+            <li><b>Data sovereignty.</b> The same containers run on the hospital’s own GPUs, so patient data never leaves the trust.</li>
+            <li><b>No lock-in.</b> The API is OpenAI-compatible, so the client code is standard and the models can be swapped.</li>
+            <li><b>Demo to production is a config change.</b> The hosted free tier runs the demo; production points the same code at on-prem NIM by swapping a base URL and key.</li>
+          </ul>
+          <p class="instead"><b>Instead of</b> a hosted frontier API (no on-prem option, data leaves the trust) or raw self-hosting with vLLM (you rebuild serving, optimisation, embedding, and reranking yourself). NIM is the middle path.</p>
+        </div>
+
+        <p class="subhead">The three models</p>
+        <p>Each model is the smallest one that does its job well. Nothing here needs a frontier model, and a smaller model is faster, cheaper, and easier to run on-prem.</p>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px">
+            <thead>
+              <tr style="text-align:left">
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Model</th>
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Role</th>
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Why this one</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line)"><b>Nemotron Nano 9B</b><br><code style="font-size:11px">nvidia-nemotron-nano-9b-v2</code></td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line)">Extraction, question routing, action reasoning, and briefing narration</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">A small reasoning model, right-sized for reading a note into JSON or drafting a grounded sentence. Cheap and fast enough to run on every note. Used with JSON mode and temperature 0 so output is structured and repeatable.</td>
+              </tr>
+              <tr style="background:var(--paper)">
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line)"><b>NV-EmbedQA E5 v5</b><br><code style="font-size:11px">nv-embedqa-e5-v5</code> · 1024-dim</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line)">Embeddings for policy retrieval</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Tuned for retrieval and asymmetric: questions and passages are encoded differently, which lifts recall when a short question has to match a longer passage.</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line)"><b>Llama-3.2 NV-RerankQA 1B</b><br><code style="font-size:11px">llama-3.2-nv-rerankqa-1b-v2</code></td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line)">Reranking retrieved passages</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">A precise cross-encoder that reorders the cheap vector shortlist, so the answer step sees the most relevant passages first. Small and fast.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="subhead">The harness around the model</p>
+        <p>A prompt is the smallest part. Most of the reliability comes from the code wrapped around each model call.</p>
+        <div class="grid2">
+          <div class="card"><h3>Offline mock, one flag</h3><p>Every capability has a deterministic offline stand-in. With no API key, or one flag flipped, the whole system runs with no model at all — and a failed live call falls back to the mock rather than breaking the app.</p></div>
+          <div class="card"><h3>Rate limit &amp; timeout</h3><p>A token-bucket limiter keeps calls under the tier’s request budget, and every call is bounded by a timeout so a stalled model can never wedge a batch.</p></div>
+          <div class="card"><h3>Structured output, then validate</h3><p>Models are asked for strict JSON, and the result is re-checked in code against allow-lists. The model’s field names and values are never trusted as-is.</p></div>
+          <div class="card"><h3>Grounded or nothing</h3><p>Extracted claims are matched back to the source note; answers must cite a retrieved passage or refuse. Unverifiable output is dropped.</p></div>
+        </div>
+
+        <div class="safety-callout"><b>When not to use a language model.</b> Discharge probability and bed demand come from a small, transparent statistical model with readable weights, not the LLM. Numbers have to be calibrated and testable; the LLM only narrates them, and is forbidden from inventing or changing a figure. Knowing where to stop using AI is part of the design.</div>
+      </div>
+    </section>
+
+        <!-- 5. EVALUATION -->
+    <section id="evaluation">
+      <div class="wrap">
+        <span class="sec-num">05</span>
+        <h2>Evaluation</h2>
+        <p>AI quality here is a number, not a feeling. Each capability has its own harness with three parts: a labelled synthetic dataset, a metric that fits the task, and a hard gate. The harnesses run against the live NVIDIA NIM models and exit non-zero when a gate is missed, so they can act as a release gate. Below are the figures from the current live run.</p>
+
+        <div class="metrics">
+          <div class="metric"><div class="v">88%</div><div class="l">Barrier-extraction F1 (gate 0.85)</div></div>
+          <div class="metric"><div class="v">100%</div><div class="l">RAG hit-rate &amp; groundedness (gate 0.90)</div></div>
+          <div class="metric"><div class="v">100%</div><div class="l">Ward-state query-intent accuracy (gate 0.90)</div></div>
+          <div class="metric"><div class="v">100%</div><div class="l">Action appropriateness &amp; grounding (gate 0.90)</div></div>
+          <div class="metric"><div class="v">0.92</div><div class="l">Discharge rank correlation, Spearman ρ (gate 0.70)</div></div>
+          <div class="metric"><div class="v">100%</div><div class="l">Narration numeric-consistency (gate 0.90)</div></div>
+        </div>
+
+        <p class="subhead">The four harnesses</p>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px">
+            <thead>
+              <tr style="text-align:left">
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Harness</th>
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">What it checks</th>
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Gate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line)"><b>Extraction</b><br><code style="font-size:11px">eval:extraction</code></td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">For each labelled note, the extracted barrier types are scored against the planted ground truth as precision, recall, and F1, plus fit-to-leave accuracy.</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap">F1 ≥ 0.85</td>
+              </tr>
+              <tr style="background:var(--paper)">
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line)"><b>Copilot</b><br><code style="font-size:11px">eval:copilot</code></td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Policy path: does the vector search then rerank retrieve the expected document (hit-rate), and is the answer grounded? Ward path: does the question become the right structured filter (query-intent accuracy)?</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap">all ≥ 0.90</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line)"><b>Actions</b><br><code style="font-size:11px">eval:actions</code></td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">For each labelled barrier, is the recommended action the appropriate one, and is its rationale grounded in a retrieved policy passage?</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap">both ≥ 0.90</td>
+              </tr>
+              <tr style="background:var(--paper)">
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line)"><b>Forecast &amp; narration</b><br><code style="font-size:11px">eval:forecast</code></td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Does the discharge model rank patients sensibly, measured by Spearman rank correlation against a truth score? And does the briefing state only numbers it was given (numeric-consistency), proving the narrator never invents figures?</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap">ρ ≥ 0.70; consistency ≥ 0.90</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="safety-callout"><b>Measured, not guessed.</b> The extraction harness earned its keep early: it caught the first model choice underperforming and let the prompt be tuned from a measured 69% to 88% F1. Without the number, that regression would have been invisible.</div>
+
+        <p class="subhead">Why these metrics</p>
+        <div class="grid2">
+          <div class="card"><h3>F1 for extraction</h3><p>Extraction can fail two ways — missing a real barrier or inventing one. F1 balances recall against precision, so neither is hidden.</p></div>
+          <div class="card"><h3>Hit-rate &amp; groundedness for RAG</h3><p>Retrieval is only useful if the right passage comes back, and an answer is only safe if it is grounded in what was retrieved. Both are checked.</p></div>
+          <div class="card"><h3>Rank correlation for the forecast</h3><p>The forecast is used to order patients by dischargeability, so it is scored on getting the order right, not on hitting an exact probability.</p></div>
+          <div class="card"><h3>Numeric-consistency for narration</h3><p>The one failure that matters for a narrator is stating a wrong number. Checking that every figure came from the input catches exactly that.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. STACK -->
+    <section id="stack">
+      <div class="wrap">
+        <span class="sec-num">06</span>
         <h2>Stack</h2>
         <p>TypeScript runs the product and Python runs the AI, because the AI ecosystem lives in Python. One internal service, one front door, one database.</p>
         <div class="grid2">
