@@ -101,20 +101,60 @@ async function main() {
   }
 
   const rho = spearman(predicted, truth)
+
+  // Narration numeric-consistency: every integer the briefing states must be one
+  // of the numbers it was given (the LLM narrates, never invents figures).
+  const stats: Record<string, number> = {
+    occupied: 12,
+    free: 4,
+    mffd_delayed: 7,
+    predicted_discharges_24h: 6,
+    expected_admissions: 6,
+    net_beds: -3,
+    window_hours: 12,
+  }
+  const nres = await fetch(`${AI_URL}/forecast/narrate`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...(AI_TOKEN ? { 'x-service-token': AI_TOKEN } : {}),
+    },
+    body: JSON.stringify({
+      stats,
+      at_risk: [{ label: 'A1', barriers: ['tto', 'transport'] }],
+      predicted_discharges: [{ label: 'A1', p: 0.8, predicted_days: 1 }],
+    }),
+  })
+  const { briefing } = (await nres.json()) as { briefing: string }
+  // Allowed = every number the narrator was given (stats + their abs, plus the
+  // predicted-discharge p and days).
+  const allowed = new Set<number>([1, 0.8])
+  Object.values(stats).forEach((v) => {
+    allowed.add(v)
+    allowed.add(Math.abs(v))
+  })
+  // Decimal-aware extraction so "0.8" is one token, not "0" and "8".
+  const stated = (briefing.match(/\d+(?:\.\d+)?/g) ?? []).map(Number)
+  const numConsistency = stated.length
+    ? stated.filter((n) => allowed.has(n)).length / stated.length
+    : 1
+
   const pct = (x: number) => x.toFixed(2)
-  console.log('\n── Forecast (discharge-model) eval ──────────────────')
-  console.log(`  patients          : ${features.length}`)
-  console.log(`  Spearman ρ (pred vs truth) : ${pct(rho)}  (gate ${pct(GATE)})`)
+  console.log('\n── Forecast & narration eval ────────────────────────')
+  console.log(`  patients                  : ${features.length}`)
+  console.log(`  discharge Spearman ρ      : ${pct(rho)}  (gate ${pct(GATE)})`)
+  console.log(
+    `  narration consistency     : ${pct(numConsistency)}  (gate 0.90)`,
+  )
+  console.log(`  briefing → ${briefing}`)
   console.log('─────────────────────────────────────────────────────')
 
   await client.end()
-  if (rho < GATE) {
-    console.error(
-      `\n❌ Ranking correlation ${pct(rho)} below gate ${pct(GATE)}`,
-    )
+  if (rho < GATE || numConsistency < 0.9) {
+    console.error('\n❌ Forecast/narration eval below gate')
     process.exit(1)
   }
-  console.log('\n✅ Forecast eval gate met.')
+  console.log('\n✅ Forecast eval gates met.')
 }
 
 main().catch((err) => {

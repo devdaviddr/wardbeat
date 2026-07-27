@@ -1,8 +1,12 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
+from typing import Any
+
 from app.forecast import demand_forecast, discharge_forecast
+from app.narrate import narrate_briefing
 from app.security import require_service_token
+from app.settings import get_settings
 
 router = APIRouter(prefix="/forecast", dependencies=[Depends(require_service_token)])
 
@@ -57,3 +61,19 @@ async def demand(req: DemandRequest) -> DemandResponse:
     return DemandResponse(
         **demand_forecast(req.free_beds, req.predicted_discharges, req.window_hours)
     )
+
+
+class NarrateRequest(BaseModel):
+    stats: dict[str, Any] = Field(default_factory=dict)
+    at_risk: list[dict[str, Any]] = Field(default_factory=list)
+    predicted_discharges: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class NarrateResponse(BaseModel):
+    briefing: str
+
+
+@router.post("/narrate", response_model=NarrateResponse)
+async def narrate(req: NarrateRequest) -> NarrateResponse:
+    result = await narrate_briefing(get_settings(), req.model_dump())
+    return NarrateResponse(**result)
