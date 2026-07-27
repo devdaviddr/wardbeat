@@ -17,6 +17,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "sync:about": "cp docs/guide.html public/about.html",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,mjs,cjs}\"",

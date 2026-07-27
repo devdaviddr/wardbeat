@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WardBeat — The complete guide</title>
+    <style>
+      :root {
+        --paper: #f6f8f9; --surface: #ffffff; --ink: #0e2028; --muted: #566a72; --faint: #7f9298;
+        --line: #d9e2e5; --accent: #0f766e; --accent-soft: #d6ece9; --fit: #15803d; --barrier: #b45309;
+        --nim: #5f9400; --python: #1f5f8b; --data: #6b46a8;
+        --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+      body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+      .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+      a { color: var(--accent); }
+      h1, h2, h3 { text-wrap: balance; line-height: 1.15; }
+      .eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0; }
+
+      /* sticky nav */
+      .topbar { position: sticky; top: 0; z-index: 20; background: rgba(246,248,249,0.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+      .topbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 10px 0; }
+      .brand { display: flex; align-items: baseline; gap: 8px; font-size: 18px; font-weight: 800; letter-spacing: -0.03em; margin-right: auto; }
+      .brand .beat { color: var(--accent); }
+      .topbar a.jump { font-family: var(--mono); font-size: 12px; text-decoration: none; color: var(--muted); padding: 3px 4px; }
+      .topbar a.jump:hover { color: var(--accent); }
+
+      /* hero */
+      header.hero { border-bottom: 1px solid var(--line); background: radial-gradient(120% 140% at 88% -20%, rgba(15,118,110,0.08), transparent 60%), var(--surface); }
+      .hero-inner { padding: 48px 0 40px; }
+      h1.title { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; margin: 12px 0 8px; }
+      .lede { font-size: 18px; color: var(--muted); max-width: 66ch; margin: 0; }
+      .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+      .pill { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; color: var(--muted); background: var(--surface); }
+      .pill.live { color: var(--fit); border-color: #b7e3c4; background: #dcfce7; }
+      .pill.learn { color: var(--accent); border-color: #a9d5cf; background: var(--accent-soft); }
+      .ecg { display: block; width: 100%; height: 30px; margin-top: 24px; color: var(--accent); opacity: 0.8; }
+
+      section { padding: 40px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 60px; }
+      .sec-num { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: 0.1em; }
+      h2 { font-size: 26px; font-weight: 780; letter-spacing: -0.02em; margin: 4px 0 12px; }
+      h3 { font-size: 17px; margin: 0 0 4px; }
+      p { max-width: 74ch; }
+      .subhead { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin: 28px 0 12px; }
+      code { font-family: var(--mono); font-size: 0.86em; background: #eef3f4; padding: 1px 5px; border-radius: 4px; }
+
+      .thesis { background: var(--ink); color: #dfeaed; border-radius: 12px; padding: 22px 26px; margin-top: 8px; }
+      .thesis b { color: #fff; }
+      .safety-callout { background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 14px 18px; margin-top: 14px; font-size: 14px; }
+      .safety-callout b { color: var(--ink); }
+
+      .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      .card { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 16px; }
+      .card h3 { font-size: 15px; }
+      .card p { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; }
+
+      .planes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .plane { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 16px; }
+      .plane .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .plane ul { margin: 8px 0 0; padding-left: 16px; color: var(--muted); font-size: 13.5px; }
+      .plane.next { border-top: 3px solid var(--ink); } .plane.next .cap { color: var(--ink); }
+      .plane.py { border-top: 3px solid var(--python); } .plane.py .cap { color: var(--python); }
+      .plane.nim { border-top: 3px solid var(--nim); } .plane.nim .cap { color: var(--nim); }
+      .plane.data { border-top: 3px solid var(--data); } .plane.data .cap { color: var(--data); }
+
+      .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 4px; }
+      .step { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 6px 9px; }
+      .step.nim { border-color: #cfe39a; background: #f2f8e4; color: var(--nim); }
+      .step.py { border-color: #cfe0ee; background: #eef4fa; color: var(--python); }
+      .step.next { border-color: #d7dee1; background: #eef2f3; color: var(--ink); }
+      .step.data { border-color: #e2d8ef; background: #f2ecfa; color: var(--data); }
+      .arrow { color: var(--faint); }
+      .capability { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px 18px; margin-top: 12px; }
+      .capability p { font-size: 14px; color: var(--muted); margin: 6px 0 0; }
+
+      /* educational primer */
+      .primer-intro { background: var(--ink); color: #dfeaed; border-radius: 12px; padding: 20px 24px; margin: 8px 0 6px; }
+      .primer-intro p { margin: 0; font-size: 15px; max-width: none; }
+      .primer-intro b { color: #fff; }
+      .concept { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 15px 18px; margin-top: 10px; }
+      .concept .cnum { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.08em; }
+      .concept h3 { font-size: 16px; margin: 2px 0 6px; }
+      .concept .plain { font-size: 14px; margin: 0; }
+      .concept .plain b { color: var(--ink); }
+      .concept .analogy { font-size: 13px; color: var(--muted); font-style: italic; margin: 8px 0 0; padding-left: 12px; border-left: 2px solid var(--accent-soft); max-width: none; }
+      .concept .inapp { font-size: 13px; color: var(--muted); margin: 10px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; max-width: none; }
+      .concept .inapp b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--nim); display: inline-block; margin-right: 4px; }
+
+      /* step walkthrough */
+      .walk { margin-top: 12px; }
+      .wstep { display: grid; grid-template-columns: 26px 1fr; gap: 0 14px; padding-bottom: 12px; }
+      .wstep .n { font-family: var(--mono); font-weight: 700; font-size: 12.5px; color: #fff; background: var(--accent); border-radius: 7px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+      .wstep h4 { margin: 3px 0 2px; font-size: 14px; }
+      .wstep p { margin: 0; font-size: 13.5px; color: var(--muted); max-width: none; }
+      .wstep p b { color: var(--ink); font-weight: 600; }
+      .point { font-size: 13px; color: var(--muted); margin: 4px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; max-width: none; }
+      .point b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
+
+      .personas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .timeline { border-left: 2px solid var(--line); margin: 8px 0 0; padding-left: 20px; }
+      .tstep { position: relative; padding-bottom: 18px; }
+      .tstep::before { content: ""; position: absolute; left: -26px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+      .tstep .surface { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+      .tstep h3 { font-size: 15.5px; margin: 2px 0 3px; }
+      .tstep p { font-size: 14px; color: var(--muted); margin: 0; }
+
+      .tech { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px 18px; margin-top: 12px; }
+      .tech-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+      .tech-head h3 { font-size: 17px; margin: 0; }
+      .tag { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+      .tech .what { font-size: 13.5px; color: var(--muted); margin: 8px 0 8px; }
+      .tech .why { margin: 0; padding-left: 18px; font-size: 13.5px; } .tech .why li { margin-bottom: 4px; }
+      .tech .instead { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; }
+      .tech .instead b { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
+
+      .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .metric { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 14px 16px; }
+      .metric .v { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; }
+      .metric .l { font-size: 12px; color: var(--muted); margin-top: 6px; }
+      .rel { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin-top: 8px; font-size: 14px; }
+      .rel .v { font-family: var(--mono); color: var(--accent); }
+      .rel .d { color: var(--muted); }
+
+      footer { padding: 30px 0 56px; font-family: var(--mono); font-size: 12px; color: var(--faint); }
+      @media (max-width: 720px) { .grid2, .planes, .personas, .metrics { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="wrap topbar-inner">
+        <span class="brand">Ward<span class="beat">Beat</span></span>
+        <a class="jump" href="/about.html">Overview</a>
+        <a class="jump" href="/about-architecture.html">Architecture</a>
+        <a class="jump" href="/about-azure.html">Azure</a>
+        <a class="jump" href="#reference">Reference</a>
+        <a class="jump" href="#mapping">Mapping</a>
+        <a class="jump" href="#practices">Best practices</a>
+        <a class="jump" href="#delivery">Delivery</a>
+      </div>
+    </div>
+
+    <header class="hero">
+      <div class="wrap hero-inner">
+        <p class="eyebrow">Product guide · Azure</p>
+        <h1 class="title">WardBeat on Azure</h1>
+        <p class="lede">A proposed reference deployment for running WardBeat in a hospital’s own Azure tenant — private networking end to end, managed GPU model endpoints, and clinical data that never leaves the region.</p>
+        <div class="pills">
+          <span class="pill learn">◇ proposed reference architecture</span>
+          <span class="pill">Container Apps · AI Foundry · Postgres Flexible Server</span>
+        </div>
+        <svg class="ecg" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,20 380,20 400,20 412,8 424,32 436,20 470,20 482,20 492,4 502,36 512,20 1000,20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+        </svg>
+        <div class="safety-callout"><b>Proposed, not yet built.</b> This page describes a target reference architecture — how we would deploy WardBeat on Microsoft Azure using current best practices. Today WardBeat runs on Docker against hosted NVIDIA NIM. Because the app already speaks a standard OpenAI-compatible model contract and keeps a stateless AI plane, the move to Azure is largely a matter of infrastructure and configuration, not a rewrite.</div>
+      </div>
+    </header>
+
+    <!-- 1. REFERENCE ARCHITECTURE -->
+    <section id="reference">
+      <div class="wrap">
+        <span class="sec-num">01</span>
+        <h2>Reference architecture</h2>
+        <p>One virtual network, one public door. Azure Front Door with its WAF is the only internet-facing surface; everything else — the two container apps, the database, object storage, the model endpoints, secrets and the registry — is reached over Private Endpoints inside the VNet. Every service authenticates with a managed identity, so there are no passwords or long-lived keys in the app.</p>
+
+        <svg viewBox="0 0 760 560" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="azRefTitle">
+  <title id="azRefTitle">Proposed WardBeat deployment on Azure: a public edge and an all-private data plane in one virtual network</title>
+  <defs>
+    <marker id="arrowAzTopo" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#7f9298"></path></marker>
+  </defs>
+  <text x="20" y="16" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">PUBLIC · INTERNET-FACING</text>
+  <rect x="20" y="24" width="150" height="50" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+  <text x="95" y="46" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">Clinician browser</text>
+  <text x="95" y="62" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">PWA app shell</text>
+  <text x="180" y="43" font-family="ui-monospace, monospace" font-size="9.5" fill="#7f9298">HTTPS</text>
+  <line x1="170" y1="49" x2="246" y2="49" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowAzTopo)"></line>
+  <rect x="250" y="22" width="250" height="54" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+  <text x="375" y="45" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">Front Door + WAF</text>
+  <text x="375" y="62" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">TLS · OWASP · edge cache</text>
+
+  <rect x="8" y="98" width="744" height="456" rx="12" fill="none" stroke="#0078d4" stroke-width="1" stroke-dasharray="5 3"></rect>
+  <text x="20" y="116" font-family="ui-monospace, monospace" font-size="10" fill="#0078d4">VNET · PRIVATE · one region · NSGs per subnet</text>
+
+  <polyline points="375,76 375,140 185,140 185,178" fill="none" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowAzTopo)"></polyline>
+  <text x="196" y="135" font-family="ui-monospace, monospace" font-size="9.5" fill="#7f9298">via Front Door only</text>
+
+  <rect x="24" y="150" width="322" height="200" rx="10" fill="#ffffff" stroke="#0078d4" stroke-width="1.2"></rect>
+  <text x="36" y="168" font-family="ui-monospace, monospace" font-size="10" fill="#0078d4">CONTAINER APPS ENVIRONMENT</text>
+  <rect x="36" y="178" width="298" height="72" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+  <text x="185" y="199" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">wardbeat-web · Next.js 16</text>
+  <text x="185" y="215" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">external ingress · KEDA autoscale</text>
+  <text x="185" y="231" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">orchestrator + only DB writer</text>
+  <line x1="185" y1="250" x2="185" y2="274" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowAzTopo)"></line>
+  <text x="196" y="267" font-family="ui-monospace, monospace" font-size="9.5" fill="#7f9298">internal HTTP</text>
+  <rect x="36" y="274" width="298" height="68" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+  <text x="185" y="296" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">wardbeat-ai · FastAPI</text>
+  <text x="185" y="312" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">internal ingress · stateless · scale to zero</text>
+  <text x="185" y="328" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">reachable only from wardbeat-web</text>
+
+  <line x1="346" y1="250" x2="390" y2="250" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowAzTopo)"></line>
+
+  <rect x="392" y="150" width="352" height="246" rx="10" fill="#ffffff" stroke="#0078d4" stroke-width="1.2"></rect>
+  <text x="404" y="168" font-family="ui-monospace, monospace" font-size="10" fill="#0078d4">BACKING SERVICES · PRIVATE ENDPOINTS</text>
+  <rect x="404" y="178" width="328" height="46" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+  <text x="568" y="197" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" fill="#0e2028" font-weight="600">Azure AI Foundry — NIM endpoints</text>
+  <text x="568" y="213" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">Nemotron · embed · rerank · GPU</text>
+  <rect x="404" y="230" width="328" height="46" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+  <text x="568" y="249" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Postgres Flexible Server</text>
+  <text x="568" y="265" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">pgvector · zone-redundant HA · Entra</text>
+  <rect x="404" y="282" width="160" height="44" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+  <text x="484" y="301" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Blob Storage</text>
+  <text x="484" y="316" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">uploads</text>
+  <rect x="572" y="282" width="160" height="44" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+  <text x="652" y="301" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Key Vault</text>
+  <text x="652" y="316" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">secrets</text>
+  <rect x="404" y="332" width="160" height="44" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+  <text x="484" y="351" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" fill="#0e2028" font-weight="600">Container Registry</text>
+  <text x="484" y="366" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">images · MI pull</text>
+  <rect x="572" y="332" width="160" height="44" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+  <text x="652" y="351" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Log Analytics</text>
+  <text x="652" y="366" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">Monitor · App Insights</text>
+
+  <rect x="24" y="410" width="720" height="58" rx="8" fill="#f6f8f9" stroke="#d9e2e5" stroke-width="1"></rect>
+  <text x="36" y="428" font-family="ui-monospace, monospace" font-size="9.5" fill="#0078d4">MANAGED IDENTITY · WORKLOAD IDENTITY</text>
+  <text x="36" y="445" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">web MI → Key Vault · Postgres (Entra) · Blob · ACR</text>
+  <text x="36" y="460" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">AI MI → AI Foundry · Key Vault · ACR · RBAC least-privilege · no secrets in code</text>
+  <rect x="24" y="478" width="720" height="58" rx="8" fill="#f6f8f9" stroke="#d9e2e5" stroke-width="1"></rect>
+  <text x="36" y="496" font-family="ui-monospace, monospace" font-size="9.5" fill="#0078d4">DELIVERY &amp; GOVERNANCE</text>
+  <text x="36" y="513" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">Whole stack as Bicep · separate dev and prod · blue-green via Container Apps revisions</text>
+  <text x="36" y="528" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">GitHub Actions deploy with an OIDC federated credential — no stored cloud secret</text>
+</svg>
+
+        <p>The shape mirrors the app’s own design. WardBeat already splits into a web front door that owns all state and a stateless AI plane behind it, so <code>wardbeat-web</code> takes external ingress and <code>wardbeat-ai</code> takes internal-only ingress in the same Container Apps environment. The database stays a single Postgres with pgvector, holding ward data, AI outputs and policy vectors together. The only genuinely new surface is Front Door at the edge — everything below it is private.</p>
+
+        <div class="safety-callout"><b>Sovereignty by construction.</b> Every resource sits in the customer’s own tenant and chosen region; the GPU model endpoints run in-region on Azure, and private networking keeps clinical data on the Microsoft backbone. The on-prem story WardBeat was built for becomes an in-tenant story — the same guarantee, delivered as managed infrastructure.</div>
+      </div>
+    </section>
+
+    <!-- 2. COMPONENT MAPPING -->
+    <section id="mapping">
+      <div class="wrap">
+        <span class="sec-num">02</span>
+        <h2>Component mapping</h2>
+        <p>Each WardBeat piece maps cleanly onto a managed Azure service. Nothing in the table changes what WardBeat <em>is</em> — the planes, the single database, the recommend-only agent all stay. Azure supplies the surrounding platform, so the team runs less and ships the same product.</p>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px">
+            <thead>
+              <tr style="text-align:left">
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">WardBeat piece</th>
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Azure service</th>
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Web (Next.js)</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Container Apps <em>(external ingress)</em></td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Reachable only via Front Door; KEDA autoscale on HTTP concurrency.</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)">AI plane (FastAPI)</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Container Apps <em>(internal ingress)</em></td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Reachable only from the web app inside the environment; can scale to zero off-hours.</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Models (NIM)</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Azure AI Foundry managed endpoints</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">NIM microservices from the Foundry catalog; GPU-backed, OpenAI-compatible, called over a Private Endpoint.</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Database</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">PostgreSQL Flexible Server + pgvector</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Zone-redundant HA, Private Endpoint, Entra ID auth — no password in the app.</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Uploads</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Blob Storage</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Replaces MinIO; reached over a Private Endpoint.</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Images</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Container Registry (ACR)</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Container Apps pull via managed identity — no admin credentials.</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Secrets</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Key Vault</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">All secrets here; accessed by managed identity, never in code or plain env.</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Identity</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Managed Identity + Entra ID</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">A user-assigned identity per service; RBAC least-privilege throughout.</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Edge</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Front Door + WAF</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">The only internet-facing surface; TLS, OWASP rules, static-asset caching.</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Telemetry</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Monitor + App Insights</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Both container apps instrumented; diagnostics from Postgres, Foundry and Front Door flow to Log Analytics.</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)">IaC</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Bicep</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">The whole stack declared as code; separate dev and prod.</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)">CI/CD</td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">GitHub Actions (OIDC)</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Federated credential — build, push to ACR, deploy a new revision, no stored cloud secret.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. BEST PRACTICES -->
+    <section id="practices">
+      <div class="wrap">
+        <span class="sec-num">03</span>
+        <h2>Best practices</h2>
+        <p>The design follows the Azure Well-Architected Framework: identity over secrets, private over public, managed over self-run, and everything expressed as code. Each block below is a decision, not just a service pick.</p>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Identity &amp; secrets</h3><span class="tag">Security</span></div>
+          <p class="what">Every service gets its own user-assigned managed identity, and all secrets live in Key Vault. Nothing carries a password.</p>
+          <ul class="why">
+            <li><b>Workload identity everywhere.</b> The web app’s identity grants Key Vault read, Postgres access via an Entra token, Blob access and ACR pull; the AI plane’s identity grants the AI Foundry endpoint plus Key Vault. RBAC is scoped least-privilege per resource.</li>
+            <li><b>No standing credentials.</b> Postgres uses Entra authentication rather than a stored password, and ACR is pulled by identity rather than admin keys.</li>
+            <li><b>Entra to the model where possible.</b> Prefer Entra ID / managed-identity auth to the Foundry endpoints; fall back to keys in Key Vault only where the endpoint requires it.</li>
+          </ul>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Private networking</h3><span class="tag">Network</span></div>
+          <p class="what">One VNet, and only Front Door faces the internet. The Container Apps environment, Postgres, AI Foundry, Blob, Key Vault and ACR are all reached over Private Endpoints with private DNS.</p>
+          <ul class="why">
+            <li><b>No public data plane.</b> Clinical data never traverses the public internet; it stays on the Microsoft backbone inside the VNet.</li>
+            <li><b>Subnet isolation.</b> NSGs guard each subnet, and the AI plane’s internal ingress means it is not addressable from outside the environment at all.</li>
+          </ul>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Models on AI Foundry</h3><span class="tag">Inference</span></div>
+          <p class="what">The three NVIDIA NIM models — Nemotron for chat and extraction, an embedding model, a reranker — are deployed from the Azure AI Foundry model catalog as managed GPU endpoints, private and OpenAI-compatible.</p>
+          <ul class="why">
+            <li><b>Same contract, new base URL.</b> Foundry serves the identical OpenAI-compatible API WardBeat already uses, so the hosted-demo → Azure move is a base-URL and credential change, not a rewrite.</li>
+            <li><b>Private and in-region.</b> The AI plane calls the endpoints over a Private Endpoint; the GPUs run in the chosen region, so inference stays in-tenant.</li>
+            <li><b>Keep the deterministic mock.</b> WardBeat’s offline mock stays in the loop for dev and as a disaster-recovery fallback — a stalled or unavailable endpoint degrades to the mock rather than breaking the app.</li>
+          </ul>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Reliability &amp; scale</h3><span class="tag">Resilience</span></div>
+          <p class="what">Zone redundancy where offered, elastic compute where it helps, and a database built for high availability.</p>
+          <ul class="why">
+            <li><b>Autoscale that fits the workload.</b> KEDA scales <code>wardbeat-web</code> on HTTP concurrency; <code>wardbeat-ai</code> scales on concurrency and to zero off-hours, since extraction is bursty.</li>
+            <li><b>HA on the data.</b> Postgres Flexible Server runs zone-redundant HA; the GPU endpoints are right-sized rather than over-provisioned.</li>
+            <li><b>Zone redundancy.</b> Applied across the Container Apps environment and data tier wherever the region offers it.</li>
+          </ul>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Observability</h3><span class="tag">Operations</span></div>
+          <p class="what">Azure Monitor with Log Analytics and Application Insights instruments both container apps; diagnostics from Postgres, Foundry and Front Door land in the same workspace.</p>
+          <ul class="why">
+            <li><b>One place to look.</b> Traces, metrics and logs correlate across the web app, the AI plane and the model endpoints.</li>
+            <li><b>Alerts that matter.</b> Latency, error rates and the AI eval gates are alerted on — the same eval harnesses that guard quality today become production signals.</li>
+          </ul>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Delivery</h3><span class="tag">DevOps</span></div>
+          <p class="what">The whole stack is Bicep, deployed by GitHub Actions authenticating through an OIDC federated credential, with blue-green cutovers on Container Apps revisions.</p>
+          <ul class="why">
+            <li><b>Infrastructure as code.</b> Dev and prod are separate parameterised deployments of the same Bicep, so environments do not drift.</li>
+            <li><b>No stored cloud secret.</b> The pipeline federates into Azure via OIDC rather than holding a service-principal key.</li>
+            <li><b>Safe releases.</b> A new revision takes traffic gradually; a bad deploy is a one-click shift back.</li>
+          </ul>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Cost</h3><span class="tag">Efficiency</span></div>
+          <p class="what">Pay for what the ward actually uses. The AI plane scales to zero off-hours, the web app scales with real traffic, and Front Door caches static assets at the edge.</p>
+          <ul class="why">
+            <li><b>Right-sized GPU.</b> The model endpoints are sized to measured throughput, the single largest line item, and no larger.</li>
+            <li><b>Elastic by default.</b> Serverless containers mean idle capacity is not paid for; caching cuts origin traffic.</li>
+          </ul>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Data residency</h3><span class="tag">Governance</span></div>
+          <p class="what">Everything sits in the customer’s Azure tenant and chosen region — compute, data, and the models.</p>
+          <ul class="why">
+            <li><b>In-tenant, in-region.</b> Models run in-region on Azure; private networking keeps clinical data in the VNet and on the Microsoft backbone.</li>
+            <li><b>The on-prem promise, kept.</b> WardBeat was built so clinical data could stay inside the trust; on Azure that becomes an in-tenant guarantee under the customer’s own governance.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. DELIVERY PIPELINE -->
+    <section id="delivery">
+      <div class="wrap">
+        <span class="sec-num">04</span>
+        <h2>Delivery pipeline</h2>
+        <p>A push to the main branch builds a container image, pushes it to the private registry, and deploys a new Container Apps revision — then shifts traffic to it. GitHub Actions authenticates to Azure through an OIDC federated credential, so no cloud secret is ever stored in the repository or the runner.</p>
+
+        <svg viewBox="0 0 760 200" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="azCiTitle">
+          <title id="azCiTitle">Proposed continuous delivery flow from GitHub Actions to a new Container Apps revision with blue-green traffic shift</title>
+          <defs>
+            <marker id="arrowAzCi" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#7f9298"></path>
+            </marker>
+          </defs>
+
+          <rect x="14" y="60" width="150" height="60" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="89" y="84" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">GitHub Actions</text>
+          <text x="89" y="100" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#7f9298">OIDC federated</text>
+          <text x="89" y="112" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#7f9298">no stored secret</text>
+
+          <rect x="200" y="60" width="140" height="60" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="270" y="88" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Build image</text>
+          <text x="270" y="104" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#7f9298">web + ai</text>
+
+          <rect x="376" y="60" width="150" height="60" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+          <text x="451" y="84" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Container Registry</text>
+          <text x="451" y="100" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#566a72">push tagged image</text>
+
+          <rect x="562" y="60" width="184" height="60" rx="8" fill="#eef4fb" stroke="#0078d4" stroke-width="1.5"></rect>
+          <text x="654" y="84" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">New Container Apps revision</text>
+          <text x="654" y="100" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#566a72">MI pull from ACR</text>
+
+          <line x1="164" y1="90" x2="198" y2="90" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowAzCi)"></line>
+          <line x1="340" y1="90" x2="374" y2="90" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowAzCi)"></line>
+          <line x1="526" y1="90" x2="560" y2="90" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowAzCi)"></line>
+
+          <!-- traffic shift loop -->
+          <rect x="490" y="150" width="256" height="34" rx="8" fill="#f6f8f9" stroke="#0078d4" stroke-width="1.2" stroke-dasharray="4 3"></rect>
+          <text x="618" y="171" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#0e2028" font-weight="600">Shift traffic — blue-green cutover</text>
+          <line x1="654" y1="120" x2="654" y2="148" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowAzCi)"></line>
+          <text x="646" y="140" text-anchor="end" font-family="ui-monospace, monospace" font-size="9.5" fill="#7f9298">gradual · rollback = shift back</text>
+        </svg>
+
+        <p>The two container images build from the same repository, so the web app and the AI plane version together. Because a Container Apps revision is immutable and traffic is split by weight, a release can be rolled out gradually and rolled back by shifting weight back to the previous revision — no rebuild, no downtime. The whole target is Bicep, so a new environment is one parameterised deployment away, and dev and prod stay identical but isolated.</p>
+
+        <div class="safety-callout"><b>Reference architecture, ready to build.</b> Everything on this page is a proposal grounded in current Azure best practice and in how WardBeat is already put together. The stateless AI plane, the single-database design and the standard OpenAI-compatible model contract are exactly what make this deployment a configuration and infrastructure exercise rather than a re-architecture.</div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">WardBeat · product guide · proposed Azure reference architecture · Container Apps · AI Foundry · PostgreSQL/pgvector</div>
+    </footer>
+  </body>
+</html>

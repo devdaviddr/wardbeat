@@ -13,6 +13,22 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 ## [Unreleased]
 
+### Added
+
+- **AI configuration in Settings.** Admins get a read-only AI configuration card
+  showing whether the AI plane is running live on NVIDIA NIM or the deterministic
+  mock, the extraction/embedding/rerank model ids, the model endpoint host, and
+  the operational limits (rate-limit budget, timeout, embedding dimensions).
+  Values come from a new token-gated `GET /config` on the AI service, so they can
+  never drift from what the service actually uses; secret values are never
+  exposed, only whether a key or token is configured. Settings is now grouped
+  into sections (Account, Files & notifications, System, Administration). See
+  `specs/releases/v0.8.0-ai-configuration-settings/`.
+- **Product guide as an in-app About section.** A rewritten platform guide
+  (problem, product, patient flow, architecture, AI tooling and models, and the
+  evaluation harnesses) is served in-app at `/about`, `/about/architecture`, and
+  `/about/azure`, with a sidebar entry and a public standalone copy.
+
 ### Fixed
 
 - **"Run extraction" no longer hangs.** The ward-board extraction now bounds

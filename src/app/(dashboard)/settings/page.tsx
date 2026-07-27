@@ -9,6 +9,7 @@ import {
 import { getLinkedAccounts } from '@/lib/auth/account-actions'
 import { getVapidPublicKey } from '@/lib/push'
 import { listMyFiles } from '@/lib/storage/actions'
+import { getAiConfiguration, type AiConfiguration } from '@/lib/ai/config'
 import { env } from '@/lib/env'
 import { SettingsClient } from './settings-client'
 
@@ -22,8 +23,9 @@ export default async function SettingsPage() {
 
   const isAdmin = (session.user.roles ?? []).includes('admin')
 
-  // Fetch data in parallel
-  const [users, roles, files, linkedAccounts] = await Promise.all([
+  // Fetch data in parallel. The AI configuration is admin-only and read over the
+  // internal service token (never from the browser).
+  const [users, roles, files, linkedAccounts, aiConfig] = await Promise.all([
     isAdmin ? getAllUsersWithRoles() : Promise.resolve([] as UserWithRoles[]),
     isAdmin
       ? getAllRoles()
@@ -32,6 +34,9 @@ export default async function SettingsPage() {
         ),
     listMyFiles(),
     getLinkedAccounts(),
+    isAdmin
+      ? getAiConfiguration()
+      : Promise.resolve(null as AiConfiguration | null),
   ])
 
   // Ensure user properties are never undefined (they're required by auth)
@@ -56,6 +61,7 @@ export default async function SettingsPage() {
       linkedAccounts={linkedAccounts}
       pushPublicKey={getVapidPublicKey()}
       isAdmin={isAdmin}
+      aiConfig={aiConfig}
       buildVersion={env.APP_VERSION}
       buildSha={env.APP_GIT_SHA}
     />

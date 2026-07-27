@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WardBeat — The complete guide</title>
+    <style>
+      :root {
+        --paper: #f6f8f9; --surface: #ffffff; --ink: #0e2028; --muted: #566a72; --faint: #7f9298;
+        --line: #d9e2e5; --accent: #0f766e; --accent-soft: #d6ece9; --fit: #15803d; --barrier: #b45309;
+        --nim: #5f9400; --python: #1f5f8b; --data: #6b46a8;
+        --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+      body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+      .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+      a { color: var(--accent); }
+      h1, h2, h3 { text-wrap: balance; line-height: 1.15; }
+      .eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0; }
+
+      /* sticky nav */
+      .topbar { position: sticky; top: 0; z-index: 20; background: rgba(246,248,249,0.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+      .topbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 10px 0; }
+      .brand { display: flex; align-items: baseline; gap: 8px; font-size: 18px; font-weight: 800; letter-spacing: -0.03em; margin-right: auto; }
+      .brand .beat { color: var(--accent); }
+      .topbar a.jump { font-family: var(--mono); font-size: 12px; text-decoration: none; color: var(--muted); padding: 3px 4px; }
+      .topbar a.jump:hover { color: var(--accent); }
+
+      /* hero */
+      header.hero { border-bottom: 1px solid var(--line); background: radial-gradient(120% 140% at 88% -20%, rgba(15,118,110,0.08), transparent 60%), var(--surface); }
+      .hero-inner { padding: 48px 0 40px; }
+      h1.title { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; margin: 12px 0 8px; }
+      .lede { font-size: 18px; color: var(--muted); max-width: 66ch; margin: 0; }
+      .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+      .pill { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; color: var(--muted); background: var(--surface); }
+      .pill.live { color: var(--fit); border-color: #b7e3c4; background: #dcfce7; }
+      .pill.learn { color: var(--accent); border-color: #a9d5cf; background: var(--accent-soft); }
+      .ecg { display: block; width: 100%; height: 30px; margin-top: 24px; color: var(--accent); opacity: 0.8; }
+
+      section { padding: 40px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 60px; }
+      .sec-num { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: 0.1em; }
+      h2 { font-size: 26px; font-weight: 780; letter-spacing: -0.02em; margin: 4px 0 12px; }
+      h3 { font-size: 17px; margin: 0 0 4px; }
+      p { max-width: 74ch; }
+      .subhead { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin: 28px 0 12px; }
+      code { font-family: var(--mono); font-size: 0.86em; background: #eef3f4; padding: 1px 5px; border-radius: 4px; }
+
+      .thesis { background: var(--ink); color: #dfeaed; border-radius: 12px; padding: 22px 26px; margin-top: 8px; }
+      .thesis b { color: #fff; }
+      .safety-callout { background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 14px 18px; margin-top: 14px; font-size: 14px; }
+      .safety-callout b { color: var(--ink); }
+
+      .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      .card { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 16px; }
+      .card h3 { font-size: 15px; }
+      .card p { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; }
+
+      .planes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .plane { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 16px; }
+      .plane .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .plane ul { margin: 8px 0 0; padding-left: 16px; color: var(--muted); font-size: 13.5px; }
+      .plane.next { border-top: 3px solid var(--ink); } .plane.next .cap { color: var(--ink); }
+      .plane.py { border-top: 3px solid var(--python); } .plane.py .cap { color: var(--python); }
+      .plane.nim { border-top: 3px solid var(--nim); } .plane.nim .cap { color: var(--nim); }
+      .plane.data { border-top: 3px solid var(--data); } .plane.data .cap { color: var(--data); }
+
+      .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 4px; }
+      .step { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 6px 9px; }
+      .step.nim { border-color: #cfe39a; background: #f2f8e4; color: var(--nim); }
+      .step.py { border-color: #cfe0ee; background: #eef4fa; color: var(--python); }
+      .step.next { border-color: #d7dee1; background: #eef2f3; color: var(--ink); }
+      .step.data { border-color: #e2d8ef; background: #f2ecfa; color: var(--data); }
+      .arrow { color: var(--faint); }
+      .capability { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px 18px; margin-top: 12px; }
+      .capability p { font-size: 14px; color: var(--muted); margin: 6px 0 0; }
+
+      /* educational primer */
+      .primer-intro { background: var(--ink); color: #dfeaed; border-radius: 12px; padding: 20px 24px; margin: 8px 0 6px; }
+      .primer-intro p { margin: 0; font-size: 15px; max-width: none; }
+      .primer-intro b { color: #fff; }
+      .concept { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 15px 18px; margin-top: 10px; }
+      .concept .cnum { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.08em; }
+      .concept h3 { font-size: 16px; margin: 2px 0 6px; }
+      .concept .plain { font-size: 14px; margin: 0; }
+      .concept .plain b { color: var(--ink); }
+      .concept .analogy { font-size: 13px; color: var(--muted); font-style: italic; margin: 8px 0 0; padding-left: 12px; border-left: 2px solid var(--accent-soft); max-width: none; }
+      .concept .inapp { font-size: 13px; color: var(--muted); margin: 10px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; max-width: none; }
+      .concept .inapp b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--nim); display: inline-block; margin-right: 4px; }
+
+      /* step walkthrough */
+      .walk { margin-top: 12px; }
+      .wstep { display: grid; grid-template-columns: 26px 1fr; gap: 0 14px; padding-bottom: 12px; }
+      .wstep .n { font-family: var(--mono); font-weight: 700; font-size: 12.5px; color: #fff; background: var(--accent); border-radius: 7px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+      .wstep h4 { margin: 3px 0 2px; font-size: 14px; }
+      .wstep p { margin: 0; font-size: 13.5px; color: var(--muted); max-width: none; }
+      .wstep p b { color: var(--ink); font-weight: 600; }
+      .point { font-size: 13px; color: var(--muted); margin: 4px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; max-width: none; }
+      .point b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
+
+      .personas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .timeline { border-left: 2px solid var(--line); margin: 8px 0 0; padding-left: 20px; }
+      .tstep { position: relative; padding-bottom: 18px; }
+      .tstep::before { content: ""; position: absolute; left: -26px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+      .tstep .surface { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+      .tstep h3 { font-size: 15.5px; margin: 2px 0 3px; }
+      .tstep p { font-size: 14px; color: var(--muted); margin: 0; }
+
+      .tech { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px 18px; margin-top: 12px; }
+      .tech-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+      .tech-head h3 { font-size: 17px; margin: 0; }
+      .tag { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+      .tech .what { font-size: 13.5px; color: var(--muted); margin: 8px 0 8px; }
+      .tech .why { margin: 0; padding-left: 18px; font-size: 13.5px; } .tech .why li { margin-bottom: 4px; }
+      .tech .instead { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; }
+      .tech .instead b { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
+
+      .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .metric { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 14px 16px; }
+      .metric .v { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; }
+      .metric .l { font-size: 12px; color: var(--muted); margin-top: 6px; }
+      .rel { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin-top: 8px; font-size: 14px; }
+      .rel .v { font-family: var(--mono); color: var(--accent); }
+      .rel .d { color: var(--muted); }
+
+      footer { padding: 30px 0 56px; font-family: var(--mono); font-size: 12px; color: var(--faint); }
+      @media (max-width: 720px) { .grid2, .planes, .personas, .metrics { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="wrap topbar-inner">
+        <span class="brand">Ward<span class="beat">Beat</span></span>
+        <a class="jump" href="/about.html">Overview</a>
+        <a class="jump" href="/about-architecture.html">Architecture</a>
+        <a class="jump" href="/about-azure.html">Azure</a>
+        <a class="jump" href="#topology">Topology</a>
+        <a class="jump" href="#aiflow">AI flow</a>
+        <a class="jump" href="#harness">Harness</a>
+        <a class="jump" href="#lifecycle">Lifecycle</a>
+        <a class="jump" href="#data">Data</a>
+      </div>
+    </div>
+
+    <header class="hero">
+      <div class="wrap hero-inner">
+        <p class="eyebrow">Product guide · Architecture</p>
+        <h1 class="title">Architecture</h1>
+        <p class="lede">Four cooperating planes behind a single front door, a stateless AI toolbox that never touches the database, and a fixed harness of guards wrapped around every model call.</p>
+        <div class="pills">
+          <span class="pill live">● live on NVIDIA NIM</span>
+          <span class="pill">Next.js 16 · FastAPI · Postgres/pgvector</span>
+        </div>
+        <svg class="ecg" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,20 380,20 400,20 412,8 424,32 436,20 470,20 482,20 492,4 502,36 512,20 1000,20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+        </svg>
+      </div>
+    </header>
+
+    <!-- 1. SYSTEM TOPOLOGY -->
+    <section id="topology">
+      <div class="wrap">
+        <span class="sec-num">01</span>
+        <h2>System topology</h2>
+        <p>WardBeat is built as four cooperating planes behind a single front door. The browser only ever talks to one of them — the Next.js experience layer — which is at once the front-end, the orchestrator of every AI workflow, and the single writer to the database. Behind it sit a stateless AI toolbox, the NVIDIA NIM inference models, and PostgreSQL. The design goal is simple: keep clinical data and control in one place, and make the AI plane something you can scale, test, and swap between hosted and on-prem models without touching the rest of the system.</p>
+
+        <p class="subhead">The four planes</p>
+
+        <svg viewBox="0 0 760 360" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="archTopoTitle">
+          <title id="archTopoTitle">WardBeat system topology across four planes</title>
+          <defs>
+            <marker id="arrowArch1" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#7f9298"></path>
+            </marker>
+          </defs>
+          <text x="20" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#7f9298" font-weight="600">BROWSER</text>
+          <rect x="20" y="34" width="150" height="46" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="95" y="58" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#0e2028" font-weight="600">Clinician browser</text>
+          <text x="95" y="72" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">PWA app shell</text>
+
+          <rect x="14" y="102" width="732" height="238" rx="10" fill="none" stroke="#7f9298" stroke-width="1" stroke-dasharray="4 3"></rect>
+          <text x="26" y="120" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">INTERNAL NETWORK</text>
+
+          <rect x="20" y="132" width="200" height="86" rx="8" fill="#ffffff" stroke="#0e2028" stroke-width="1.5"></rect>
+          <text x="120" y="156" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#0e2028" font-weight="600">Experience / BFF</text>
+          <text x="120" y="174" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">Next.js 16</text>
+          <text x="120" y="190" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">Orchestrator + DB writer</text>
+          <text x="120" y="206" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">edge proxy: RBAC + CSP</text>
+
+          <rect x="540" y="132" width="200" height="86" rx="8" fill="#ffffff" stroke="#6b46a8" stroke-width="1.5"></rect>
+          <text x="640" y="156" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#0e2028" font-weight="600">Data / knowledge</text>
+          <text x="640" y="174" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">PostgreSQL 17 + pgvector</text>
+          <text x="640" y="190" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">Ward domain + AI outputs</text>
+          <text x="640" y="206" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">hnsw cosine index</text>
+
+          <rect x="20" y="258" width="200" height="70" rx="8" fill="#ffffff" stroke="#1f5f8b" stroke-width="1.5"></rect>
+          <text x="120" y="282" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#0e2028" font-weight="600">AI plane</text>
+          <text x="120" y="300" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">FastAPI · Python 3.12</text>
+          <text x="120" y="316" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">stateless, no database</text>
+
+          <rect x="540" y="258" width="200" height="70" rx="8" fill="#ffffff" stroke="#5f9400" stroke-width="1.5"></rect>
+          <text x="640" y="282" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#0e2028" font-weight="600">Model plane</text>
+          <text x="640" y="300" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">NVIDIA NIM</text>
+          <text x="640" y="316" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">OpenAI-compatible API</text>
+
+          <line x1="95" y1="80" x2="115" y2="130" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch1)"></line>
+          <text x="150" y="94" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">HTTPS only</text>
+
+          <line x1="220" y1="175" x2="538" y2="175" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch1)"></line>
+          <text x="300" y="167" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">pooled client (single writer)</text>
+
+          <line x1="120" y1="218" x2="120" y2="256" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch1)"></line>
+          <text x="128" y="242" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">x-service-token</text>
+
+          <line x1="220" y1="293" x2="538" y2="293" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch1)"></line>
+          <text x="330" y="285" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">bearer key, rate-limited</text>
+        </svg>
+
+        <div class="planes">
+          <div class="plane next">
+            <span class="cap">Experience / BFF</span>
+            <h3>Next.js 16</h3>
+            <ul>
+              <li>The only plane the browser talks to.</li>
+              <li>App Router, RSC, Server Actions — mutations are actions, not public API routes.</li>
+              <li>Edge proxy does route protection, role-based access control from a JWT claim (no DB at the edge), and a per-request nonce CSP plus HSTS and X-Frame-Options DENY.</li>
+              <li>The single database writer and the orchestrator of every AI workflow.</li>
+            </ul>
+          </div>
+          <div class="plane py">
+            <span class="cap">AI plane</span>
+            <h3>FastAPI · Python 3.12</h3>
+            <ul>
+              <li>Small, stateless, internal-only — no database of its own.</li>
+              <li>A toolbox of NIM-backed primitives, never exposed to the browser.</li>
+              <li>Every endpoint except <code>/health</code> requires a shared <code>x-service-token</code> header.</li>
+              <li>Holds an in-process token-bucket rate limiter (~40 requests/min of NIM free-tier headroom); every capability degrades to a deterministic offline mock if NIM is unavailable.</li>
+            </ul>
+          </div>
+          <div class="plane nim">
+            <span class="cap">Model plane</span>
+            <h3>NVIDIA NIM</h3>
+            <ul>
+              <li>Self-hostable inference microservices behind an OpenAI-compatible API, authenticated with a bearer key.</li>
+              <li>Nemotron nano 9B — extraction, reasoning and narration chat.</li>
+              <li>nv-embedqa-e5-v5 — embeddings, 1024-dim.</li>
+              <li>llama-3.2-nv-rerankqa — rerank. The hosted free tier runs the demo; identical containers run on the trust’s own GPUs in production.</li>
+            </ul>
+          </div>
+          <div class="plane data">
+            <span class="cap">Data / knowledge</span>
+            <h3>PostgreSQL 17 + pgvector</h3>
+            <ul>
+              <li>Single writer — Next.js, via Drizzle migrations.</li>
+              <li>Holds the ward domain and the AI outputs written back after each workflow.</li>
+              <li>Stores the policy knowledge base as vectors with an hnsw cosine index for nearest-neighbour search.</li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="subhead">The AI plane is a stateless toolbox</p>
+        <p>Here is the key idea. The AI plane holds no state and never reaches the database — Next.js is the orchestrator and the only thing that touches Postgres. So a Retrieval-Augmented-Generation query is not one big call to a black box; it is a short sequence that Next.js drives. Next.js calls <code>/embed</code> to turn the question into a vector, runs the pgvector nearest-neighbour search <em>itself</em> (that is where the database lives), calls <code>/copilot/rerank</code> to reorder the candidates, then calls <code>/copilot/answer</code> to compose a grounded, cited answer. The agent follows the same shape — Next.js retrieves the relevant policy from pgvector, then calls <code>/agent/recommend</code> — and so does forecasting, where Next.js gathers the features and calls the <code>/forecast/*</code> endpoints. Because the AI plane never holds state and never sees the database, it is easy to scale horizontally, easy to test in isolation, and trivial to swap between hosted and on-prem models.</p>
+
+        <p class="subhead">The AI plane’s API</p>
+        <p>Every capability is one internal HTTP call. The browser never sees these; only Next.js calls them, over the private network, with a shared service token. Note where the LLM is used and where it is deliberately not.</p>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px">
+            <thead>
+              <tr style="text-align:left">
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Endpoint</th>
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">What it does</th>
+                <th style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)">Model</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /extract</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Note text into grounded barriers, EDD, and the fit-to-leave flag</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron (JSON, temp 0)</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /embed</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Text into vectors for meaning-based search</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">nv-embedqa</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /copilot/route</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Classify a question: ward-state, policy, or out of scope</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /copilot/query-intent</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Turn a ward question into a validated filter, never SQL</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /copilot/rerank</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Reorder retrieved passages by true relevance</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">nv-rerankqa</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /copilot/answer</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Compose a cited answer from passages, or refuse</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /agent/recommend</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">One policy-grounded action per barrier</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /forecast/discharge</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Probability of discharge and predicted days</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--fit);font-weight:600">Deterministic, no LLM</td></tr>
+              <tr><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /forecast/demand</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Expected admissions and the net bed position</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--fit);font-weight:600">Deterministic, no LLM</td></tr>
+              <tr style="background:var(--paper)"><td style="padding:8px 10px;border-bottom:1px solid var(--line)"><code>POST /forecast/narrate</code></td><td style="padding:8px 10px;border-bottom:1px solid var(--line)">Turn those numbers into a short shift briefing</td><td style="padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">Nemotron (narrator)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. THE AI FLOW -->
+    <section id="aiflow">
+      <div class="wrap">
+        <span class="sec-num">02</span>
+        <h2>The AI flow</h2>
+        <p>The guiding rule runs through every capability below: generative AI does only the language and the reasoning, and deterministic code does the forecasting and holds the data. A language model reads a note into structured data, decides how to route a question, drafts a grounded action, and narrates a briefing — but it never computes a probability, queries the database, or takes an action on its own. The four pipelines that follow are the whole of WardBeat’s AI, each one a short sequence Next.js drives, each one ending in something a clinician can verify or a gate a human controls.</p>
+
+        <div class="capability">
+          <h3>1 · Barrier extraction — reading notes into data</h3>
+          <p>The job: turn free-text ward notes into structured, board-ready barriers — without letting the model invent any of them. A creative read is welcome; an unverified claim is not. <span style="color:var(--faint)">Uses temperature 0, structured output / JSON mode, grounding, and a deterministic fallback.</span></p>
+
+          <svg viewBox="0 0 740 250" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="extractTitle">
+            <title id="extractTitle">Barrier extraction pipeline: note to Nemotron JSON, sanitise, then a grounding gate that snaps quotes to real offsets and drops any barrier it cannot locate before persisting to the board.</title>
+            <defs>
+              <marker id="arrowFunc1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="#7f9298"/>
+              </marker>
+            </defs>
+
+            <rect x="16" y="96" width="104" height="52" rx="8" fill="#eef2f3" stroke="#0e2028" stroke-width="1.5"/>
+            <text x="68" y="118" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Ward note</text>
+            <text x="68" y="134" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">free text</text>
+
+            <rect x="156" y="88" width="130" height="68" rx="8" fill="#f2f8e4" stroke="#5f9400" stroke-width="1.5"/>
+            <text x="221" y="112" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Nemotron</text>
+            <text x="221" y="128" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#566a72">temp 0 · JSON</text>
+            <text x="221" y="143" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">strict schema</text>
+
+            <rect x="322" y="88" width="130" height="68" rx="8" fill="#eef4fa" stroke="#1f5f8b" stroke-width="1.5"/>
+            <text x="387" y="110" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Sanitise</text>
+            <text x="387" y="126" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">5-type allow-list</text>
+            <text x="387" y="141" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">default conf 80</text>
+
+            <rect x="488" y="88" width="130" height="68" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"/>
+            <text x="553" y="110" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Grounding gate</text>
+            <text x="553" y="126" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">quote → offsets</text>
+            <text x="553" y="141" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">exact · fuzzy .75</text>
+
+            <rect x="654" y="52" width="70" height="52" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"/>
+            <text x="689" y="74" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#0e2028">Board</text>
+            <text x="689" y="90" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">grounded</text>
+
+            <rect x="654" y="140" width="70" height="52" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"/>
+            <text x="689" y="162" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#566a72">Drop</text>
+            <text x="689" y="178" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">ungrounded</text>
+
+            <line x1="120" y1="122" x2="152" y2="122" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc1)"/>
+            <line x1="286" y1="122" x2="318" y2="122" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc1)"/>
+            <line x1="452" y1="122" x2="484" y2="122" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc1)"/>
+
+            <path d="M618 108 L636 108 Q650 108 650 92 L650 82" fill="none" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc1)"/>
+            <text x="628" y="66" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#0f766e">found → keep</text>
+
+            <path d="M618 138 L636 138 Q650 138 650 152 L650 162" fill="none" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc1)"/>
+            <text x="628" y="212" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#566a72">missing → delete</text>
+
+            <line x1="221" y1="156" x2="221" y2="196" stroke="#7f9298" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#arrowFunc1)"/>
+            <rect x="150" y="200" width="142" height="38" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"/>
+            <text x="221" y="217" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#566a72">model off / fails</text>
+            <text x="221" y="231" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">keyword fallback</text>
+          </svg>
+
+          <div class="walk">
+            <div class="wstep"><span class="n">1</span><div><h4>Model reads, code constrains</h4><p>The note text goes to Nemotron at temperature 0 in JSON mode, bounded by a configurable <code>max_tokens</code>, and the model returns strict JSON. Determinism here means the same note yields the same read.</p></div></div>
+            <div class="wstep"><span class="n">2</span><div><h4>Sanitise the raw output</h4><p>Code enforces a five-barrier-type allow-list, drops empty verbatim quotes, and defaults missing confidence to 80. Anything the model returns that is off-schema simply does not survive this step.</p></div></div>
+            <div class="wstep"><span class="n">3</span><div><h4>The grounding gate</h4><p>For every barrier, its verbatim quote is searched back in the source note — an exact case-insensitive match first, then a fuzzy sliding-window match at ≥0.75 similarity — and snapped to real character offsets. A quote that cannot be located means the barrier is <b>deleted</b> and the result is flagged ungrounded.</p></div></div>
+            <div class="wstep"><span class="n">4</span><div><h4>Only grounded barriers persist</h4><p>What reaches the board is exactly the set that survived the gate, each linked to its source sentence so a clinician can click through to the evidence. If the model is off or fails outright, a deterministic keyword extractor takes over.</p></div></div>
+          </div>
+
+          <p class="point"><b>The point</b> — the model may be creative about <em>reading</em>, but every claim is mechanically verified against the source before anyone sees it; a hallucinated barrier physically cannot reach the board.</p>
+        </div>
+
+        <div class="capability">
+          <h3>2 · Copilot — the right retrieval for each kind of question</h3>
+          <p>The job: answer two very different kinds of question — “what is happening on my ward right now?” and “what does policy say?” — each with the retrieval it actually needs. Two data shapes, two tools. <span style="color:var(--faint)">Uses structured output, embeddings, vector search, RAG, reranking, and grounded citation.</span></p>
+
+          <svg viewBox="0 0 740 300" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="copilotTitle">
+            <title id="copilotTitle">Copilot routing: a classifier splits a question into a ward-state path (validated JSON filter over board data) or a policy path (embed, vector search, rerank), and both paths reconverge on a cited answer or a grounded refusal.</title>
+            <defs>
+              <marker id="arrowFunc2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="#7f9298"/>
+              </marker>
+            </defs>
+
+            <rect x="16" y="128" width="96" height="48" rx="8" fill="#eef2f3" stroke="#0e2028" stroke-width="1.5"/>
+            <text x="64" y="150" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Question</text>
+            <text x="64" y="166" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">from clinician</text>
+
+            <rect x="148" y="120" width="118" height="64" rx="8" fill="#f2f8e4" stroke="#5f9400" stroke-width="1.5"/>
+            <text x="207" y="144" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Classifier</text>
+            <text x="207" y="160" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">ward_state · policy</text>
+            <text x="207" y="174" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">out_of_scope</text>
+
+            <rect x="316" y="44" width="128" height="60" rx="8" fill="#f2f8e4" stroke="#5f9400" stroke-width="1.5"/>
+            <text x="380" y="66" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#0e2028">Build JSON filter</text>
+            <text x="380" y="82" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#566a72">{mffd, barrier}</text>
+            <text x="380" y="96" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">what, never how</text>
+
+            <rect x="472" y="44" width="120" height="60" rx="8" fill="#f2ecfa" stroke="#6b46a8" stroke-width="1.5"/>
+            <text x="532" y="66" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#0e2028">Board data</text>
+            <text x="532" y="82" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">allow-list filter</text>
+            <text x="532" y="96" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">beds light up</text>
+
+            <rect x="316" y="196" width="128" height="60" rx="8" fill="#f2ecfa" stroke="#6b46a8" stroke-width="1.5"/>
+            <text x="380" y="218" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#0e2028">Vector search</text>
+            <text x="380" y="234" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">embed · pgvector</text>
+            <text x="380" y="248" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">by meaning</text>
+
+            <rect x="472" y="196" width="120" height="60" rx="8" fill="#f2f8e4" stroke="#5f9400" stroke-width="1.5"/>
+            <text x="532" y="218" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#0e2028">Rerank</text>
+            <text x="532" y="234" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">sharper model</text>
+            <text x="532" y="248" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">shortlist</text>
+
+            <rect x="624" y="120" width="100" height="64" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"/>
+            <text x="674" y="142" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#0e2028">Answer</text>
+            <text x="674" y="158" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">cite passages</text>
+            <text x="674" y="174" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">or refuse</text>
+
+            <line x1="112" y1="152" x2="144" y2="152" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc2)"/>
+
+            <path d="M266 140 L292 140 Q302 140 302 100 L302 74 L312 74" fill="none" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc2)"/>
+            <text x="300" y="120" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#5f9400">ward_state</text>
+
+            <path d="M266 164 L292 164 Q302 164 302 204 L302 226 L312 226" fill="none" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc2)"/>
+            <text x="300" y="192" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#6b46a8">policy</text>
+
+            <line x1="444" y1="74" x2="468" y2="74" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc2)"/>
+            <line x1="444" y1="226" x2="468" y2="226" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc2)"/>
+
+            <path d="M592 74 L608 74 Q620 74 620 114 L620 132" fill="none" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc2)"/>
+            <path d="M592 226 L608 226 Q620 226 620 186 L620 170" fill="none" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc2)"/>
+          </svg>
+
+          <div class="walk">
+            <div class="wstep"><span class="n">1</span><div><h4>Classify the question</h4><p>A first pass decides whether the question is about <code>ward_state</code>, about <code>policy</code>, or <code>out_of_scope</code>. That single decision routes everything downstream.</p></div></div>
+            <div class="wstep"><span class="n">2</span><div><h4>Ward-state → validated filter</h4><p>The model translates the question into a small, validated JSON filter like <code>{mffd:true, barrier:"transport"}</code>, sanitised against an allow-list and run over the board data. The model chooses <b>what</b> to filter, never <b>how</b> to query — no SQL, no database access — and the matching beds light up.</p></div></div>
+            <div class="wstep"><span class="n">3</span><div><h4>Policy → genuine RAG</h4><p>The question is embedded and the policy passages are vector-searched by meaning in pgvector, then the shortlist is reranked with a sharper model to surface the most relevant few.</p></div></div>
+            <div class="wstep"><span class="n">4</span><div><h4>Answer from evidence, or refuse</h4><p>The model answers from <b>only</b> the numbered passages, citing each one it used — or it returns <code>grounded:false</code> and refuses (“I don’t have policy that covers that”). Weak support becomes a refusal, not a guess.</p></div></div>
+          </div>
+
+          <p class="point"><b>The point</b> — structured data gets a validated filter; unstructured data gets vector RAG; both paths end the same way, by citing evidence or admitting there is none.</p>
+        </div>
+
+        <div class="capability">
+          <h3>3 · Action recommender — a narrow, human-gated agent</h3>
+          <p>The job: given a patient’s barriers, propose the next concrete step for each — grounded in policy, capped to a safe menu, and never acting on its own. Retrieve, then reason, then hand to a human. <span style="color:var(--faint)">Uses agents &amp; tools, retrieval, and grounding.</span></p>
+
+          <svg viewBox="0 0 740 236" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="agentTitle">
+            <title id="agentTitle">Action recommender: retrieve policy from pgvector, reason over barriers plus policy to propose one allow-listed action per barrier, then a human approves or dismisses — nothing is sent to pharmacy or transport.</title>
+            <defs>
+              <marker id="arrowFunc3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="#7f9298"/>
+              </marker>
+            </defs>
+
+            <rect x="16" y="92" width="100" height="52" rx="8" fill="#eef2f3" stroke="#0e2028" stroke-width="1.5"/>
+            <text x="66" y="114" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Barriers</text>
+            <text x="66" y="130" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">for a patient</text>
+
+            <rect x="152" y="84" width="128" height="68" rx="8" fill="#f2f8e4" stroke="#5f9400" stroke-width="1.5"/>
+            <text x="216" y="107" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Retrieve</text>
+            <text x="216" y="123" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">tool call →</text>
+            <text x="216" y="138" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">relevant policy</text>
+
+            <rect x="152" y="176" width="128" height="46" rx="8" fill="#f2ecfa" stroke="#6b46a8" stroke-width="1.5"/>
+            <text x="216" y="197" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="600" fill="#0e2028">pgvector</text>
+            <text x="216" y="212" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">policy passages</text>
+
+            <rect x="316" y="84" width="140" height="68" rx="8" fill="#f2f8e4" stroke="#5f9400" stroke-width="1.5"/>
+            <text x="386" y="106" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Reason</text>
+            <text x="386" y="122" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">one action / barrier</text>
+            <text x="386" y="137" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">allow-list · priority 1–3</text>
+
+            <rect x="492" y="84" width="120" height="68" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"/>
+            <text x="552" y="106" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#0e2028">Proposal</text>
+            <text x="552" y="122" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">cited rationale</text>
+            <text x="552" y="137" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">recommend only</text>
+
+            <rect x="648" y="84" width="76" height="68" rx="8" fill="#eef2f3" stroke="#0e2028" stroke-width="1.5"/>
+            <text x="686" y="104" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#0e2028">Human</text>
+            <text x="686" y="120" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">approve /</text>
+            <text x="686" y="134" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">dismiss</text>
+
+            <line x1="116" y1="118" x2="148" y2="118" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc3)"/>
+            <line x1="216" y1="152" x2="216" y2="172" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc3)"/>
+            <line x1="280" y1="118" x2="312" y2="118" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc3)"/>
+            <line x1="456" y1="118" x2="488" y2="118" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc3)"/>
+            <line x1="612" y1="118" x2="644" y2="118" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc3)"/>
+            <text x="628" y="72" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#0f766e">human gate</text>
+
+            <text x="686" y="176" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#566a72">approve → in progress</text>
+            <text x="686" y="190" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#566a72">+ audit row</text>
+          </svg>
+
+          <div class="walk">
+            <div class="wstep"><span class="n">1</span><div><h4>Retrieve the relevant policy</h4><p>A tool call into pgvector pulls the policy passages that bear on this patient’s barriers — the agent gathers evidence before it reasons.</p></div></div>
+            <div class="wstep"><span class="n">2</span><div><h4>Reason over barriers plus policy</h4><p>The model proposes exactly one action per barrier from a closed allow-list — chase TTOs, book transport, arrange social care, escalate a review, or other — each with a one-sentence rationale grounded in cited policy and a priority of 1–3. Off-menu actions are coerced to a safe default.</p></div></div>
+            <div class="wstep"><span class="n">3</span><div><h4>Recommend only — a human decides</h4><p>Nothing acts autonomously. A person Approves or Dismisses each recommendation; approving marks the barrier <em>in progress</em> and writes an audit row. Nothing is ever sent to pharmacy or transport.</p></div></div>
+          </div>
+
+          <p class="point"><b>The point</b> — autonomy is capped by design: a fixed action menu, mandatory policy grounding, and a human gate on every single recommendation.</p>
+        </div>
+
+        <div class="capability">
+          <h3>4 · Forecast &amp; narrate — the deliberate absence of an LLM</h3>
+          <p>The job: predict discharge likelihood and demand, then explain it in plain language — while keeping the model as far from the arithmetic as possible. The numbers are calculated; only the prose is generated. <span style="color:var(--faint)">Uses the discipline of knowing when <em>not</em> to use an LLM.</span></p>
+
+          <svg viewBox="0 0 740 224" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="forecastTitle">
+            <title id="forecastTitle">Forecast and narrate: a deterministic logistic model with readable monotone weights computes the probability with no LLM involved, then the finished numbers are handed to the model only to write a short briefing using exactly those numbers.</title>
+            <defs>
+              <marker id="arrowFunc4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="#7f9298"/>
+              </marker>
+            </defs>
+
+            <rect x="16" y="80" width="116" height="64" rx="8" fill="#eef2f3" stroke="#0e2028" stroke-width="1.5"/>
+            <text x="74" y="102" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#0e2028">Signals</text>
+            <text x="74" y="118" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">MFFD · barriers</text>
+            <text x="74" y="132" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">social-care pkg</text>
+
+            <rect x="168" y="60" width="200" height="104" rx="8" fill="#eef4fa" stroke="#1f5f8b" stroke-width="1.5"/>
+            <text x="268" y="86" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Deterministic model</text>
+            <text x="268" y="103" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">logistic · monotone weights</text>
+            <text x="268" y="118" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">inspectable · unit-tested</text>
+            <rect x="196" y="128" width="144" height="24" rx="6" fill="#ffffff" stroke="#1f5f8b" stroke-width="1"/>
+            <text x="268" y="144" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#1f5f8b">NO language model</text>
+
+            <rect x="404" y="80" width="110" height="64" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"/>
+            <text x="459" y="102" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#0e2028">Numbers</text>
+            <text x="459" y="118" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">probability</text>
+            <text x="459" y="132" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">demand baseline</text>
+
+            <rect x="550" y="72" width="134" height="80" rx="8" fill="#f2f8e4" stroke="#5f9400" stroke-width="1.5"/>
+            <text x="617" y="96" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Narrator</text>
+            <text x="617" y="112" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">2–4 sentences</text>
+            <text x="617" y="126" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">exactly these</text>
+            <text x="617" y="140" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">numbers</text>
+
+            <line x1="132" y1="112" x2="164" y2="112" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc4)"/>
+            <line x1="368" y1="112" x2="400" y2="112" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc4)"/>
+            <line x1="514" y1="112" x2="546" y2="112" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFunc4)"/>
+            <text x="530" y="66" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#5f9400">narrate only</text>
+
+            <text x="617" y="176" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#566a72">never invent or recompute</text>
+          </svg>
+
+          <div class="walk">
+            <div class="wstep"><span class="n">1</span><div><h4>Numbers from a transparent model</h4><p>A deterministic logistic model with readable, monotone weights produces the figures: being medically fit pushes discharge odds up, while each open barrier and a slow social-care package pushes them down, combined into a probability. Demand is a documented baseline. No language model touches any figure — it is inspectable and unit-tested.</p></div></div>
+            <div class="wstep"><span class="n">2</span><div><h4>Narrate, don’t recompute</h4><p>The finished numbers go to the model with one instruction: write a 2-to-4-sentence briefing using <b>exactly</b> these numbers, never inventing or recomputing one. The model does the language; the model never does the maths.</p></div></div>
+          </div>
+
+          <p class="point"><b>The point</b> — asking an LLM to predict a length-of-stay would be the anti-pattern (unaccountable, unfalsifiable); splitting the calculable part (a testable model) from the linguistic part (narration) is the lesson made concrete.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. THE MODEL-CALL HARNESS -->
+    <section id="harness">
+      <div class="wrap">
+        <span class="sec-num">03</span>
+        <h2>The model-call harness</h2>
+        <p>The four pipelines above each reach a language model exactly once or twice — but the prompt is the smallest part of what happens. Every single model call in WardBeat is wrapped in the same fixed sequence of guards, and most of the reliability comes from that wrapper, not from the words sent to the model. The harness runs the same way whether the caller is extraction, the copilot, or the agent: acquire a token, bound the call in time, force structured output, re-validate it in code, ground it against the source, and — if anything is off or fails — degrade to a deterministic mock so the endpoint always returns something usable.</p>
+
+        <svg viewBox="0 0 760 360" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="harnessTitle">
+          <title id="harnessTitle">The fixed harness wrapped around every model call: a request passes a rate-limit token and a timeout in the AI plane, reaches the model at temperature 0 in JSON mode, then its output is tolerantly parsed, validated against allow-lists, and grounded to the source before returning a result — and any failure or disabled state branches to a deterministic mock that returns the same shape of result.</title>
+          <defs>
+            <marker id="arrowHarness1" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#7f9298"></path>
+            </marker>
+            <marker id="arrowHarnessMock" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#1f5f8b"></path>
+            </marker>
+          </defs>
+
+          <!-- band labels -->
+          <text x="20" y="26" font-family="ui-monospace, monospace" font-size="10" fill="#1f5f8b">AI PLANE (Python)</text>
+          <text x="330" y="26" font-family="ui-monospace, monospace" font-size="10" fill="#5f9400">MODEL CALL</text>
+          <text x="520" y="26" font-family="ui-monospace, monospace" font-size="10" fill="#0f766e">VERIFY IN CODE</text>
+
+          <!-- TOP ROW: Request -> Rate limit -> Timeout -> Model call -> Parse -->
+          <!-- request -->
+          <rect x="20" y="44" width="96" height="52" rx="8" fill="#eef2f3" stroke="#0e2028" stroke-width="1.5"></rect>
+          <text x="68" y="66" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">Request</text>
+          <text x="68" y="82" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">from Next.js</text>
+
+          <!-- rate limit -->
+          <rect x="140" y="44" width="110" height="52" rx="8" fill="#eef4fa" stroke="#1f5f8b" stroke-width="1.5"></rect>
+          <text x="195" y="64" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Rate limit</text>
+          <text x="195" y="79" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">token bucket</text>
+          <text x="195" y="91" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#566a72">~40 req/min</text>
+
+          <!-- timeout -->
+          <rect x="274" y="44" width="110" height="52" rx="8" fill="#eef4fa" stroke="#1f5f8b" stroke-width="1.5"></rect>
+          <text x="329" y="64" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Timeout</text>
+          <text x="329" y="79" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#566a72">45s edge</text>
+          <text x="329" y="91" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#566a72">30s model</text>
+
+          <!-- model call -->
+          <rect x="408" y="40" width="128" height="60" rx="8" fill="#f2f8e4" stroke="#5f9400" stroke-width="1.5"></rect>
+          <text x="472" y="62" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">Model call</text>
+          <text x="472" y="78" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#566a72">temp 0 · JSON</text>
+          <text x="472" y="91" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">response_format</text>
+
+          <!-- tolerant parse -->
+          <rect x="560" y="44" width="110" height="52" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="615" y="64" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Parse</text>
+          <text x="615" y="79" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">tolerant</text>
+          <text x="615" y="91" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#566a72">first {...}</text>
+
+          <!-- MIDDLE ROW: Validate -> Ground -> Result -->
+          <!-- validate -->
+          <rect x="140" y="170" width="128" height="56" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"></rect>
+          <text x="204" y="192" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Validate</text>
+          <text x="204" y="207" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">vs allow-lists</text>
+          <text x="204" y="219" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">coerce / drop</text>
+
+          <!-- ground -->
+          <rect x="316" y="170" width="128" height="56" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"></rect>
+          <text x="380" y="192" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Ground</text>
+          <text x="380" y="207" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">match to source</text>
+          <text x="380" y="219" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">or drop / refuse</text>
+
+          <!-- result -->
+          <rect x="492" y="170" width="128" height="56" rx="8" fill="#eef2f3" stroke="#0e2028" stroke-width="1.5"></rect>
+          <text x="556" y="196" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">Result</text>
+          <text x="556" y="212" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">to Next.js</text>
+
+          <!-- BOTTOM ROW: deterministic mock (fallback), far left, clear of everything -->
+          <rect x="20" y="290" width="262" height="50" rx="8" fill="#ffffff" stroke="#1f5f8b" stroke-width="1" stroke-dasharray="4 3"></rect>
+          <text x="151" y="312" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028" font-weight="600">Deterministic mock</text>
+          <text x="151" y="328" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">flag off / unavailable / any step raises → same result shape</text>
+
+          <!-- happy path arrows (top row) -->
+          <line x1="116" y1="70" x2="138" y2="70" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowHarness1)"></line>
+          <line x1="250" y1="70" x2="272" y2="70" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowHarness1)"></line>
+          <line x1="384" y1="70" x2="406" y2="70" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowHarness1)"></line>
+          <line x1="536" y1="70" x2="558" y2="70" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowHarness1)"></line>
+
+          <!-- parse down and left to validate: drop below parse, run left through empty band at y=138, into validate top -->
+          <path d="M615 96 L615 138 Q615 148 605 148 L214 148 Q204 148 204 158 L204 168" fill="none" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowHarness1)"></path>
+
+          <!-- validate -> ground -->
+          <line x1="268" y1="198" x2="314" y2="198" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowHarness1)"></line>
+          <!-- ground -> result -->
+          <line x1="444" y1="198" x2="490" y2="198" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowHarness1)"></line>
+
+          <!-- failure branch: from Model call, down the far-left column to the mock box top.
+               Runs through empty space to the left of every box. -->
+          <path d="M408 92 L400 92 Q392 92 392 102 L392 120 Q392 130 382 130 L14 130 Q4 130 4 140 L4 300 Q4 310 14 310 L16 310" fill="none" stroke="#1f5f8b" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arrowHarnessMock)"></path>
+          <text x="30" y="170" font-family="ui-monospace, monospace" font-size="9.5" fill="#1f5f8b">off / fail</text>
+          <text x="30" y="182" font-family="ui-monospace, monospace" font-size="9.5" fill="#1f5f8b">any step raises</text>
+
+          <!-- mock back to result: from mock right edge, up the clear channel at x=300, along y=252, into Result bottom -->
+          <path d="M282 315 L300 315 Q310 315 310 305 L310 262 Q310 252 320 252 L556 252 Q556 252 556 242 L556 228" fill="none" stroke="#1f5f8b" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arrowHarnessMock)"></path>
+          <text x="360" y="248" font-family="ui-monospace, monospace" font-size="9.5" fill="#1f5f8b">same-shape result</text>
+        </svg>
+
+        <div class="walk">
+          <div class="wstep"><span class="n">1</span><div><h4>Rate limit</h4><p>The AI plane holds an async token-bucket limiter sized to about <b>40 requests a minute</b> — headroom under the NIM free tier. A call has to acquire a token before it can reach a model, so a burst of extractions queues politely instead of tripping the provider’s limit.</p></div></div>
+          <div class="wstep"><span class="n">2</span><div><h4>Timeout</h4><p>The Next.js→AI-plane call is bounded by a <b>45-second abort timeout</b>, and the AI-plane→model call by a <b>30-second</b> one. A stalled connection cannot wedge a batch — the timeout fires, the call fails cleanly, and the fallback takes over.</p></div></div>
+          <div class="wstep"><span class="n">3</span><div><h4>Structured output</h4><p>The model runs at <b>temperature 0</b> with JSON mode (<code>response_format: json_object</code>) so output is repeatable and machine-readable. A tolerant parser extracts the first <code>{...}</code> block even if the model wraps its JSON in prose, so a chatty preamble never breaks the call.</p></div></div>
+          <div class="wstep"><span class="n">4</span><div><h4>Validate</h4><p>The parsed JSON is re-checked in code against <b>allow-lists</b> — barrier types, action types, intent fields. The model’s field names and values are never trusted as-is; unknown values are coerced to safe defaults or dropped entirely.</p></div></div>
+          <div class="wstep"><span class="n">5</span><div><h4>Ground</h4><p>Extracted claims are matched back to their source — a quote is located in the note, an answer must cite a retrieved passage — and anything that cannot be tied to evidence is <b>dropped or refused</b>. This is the same grounding gate the pipelines depend on, applied uniformly.</p></div></div>
+          <div class="wstep"><span class="n">6</span><div><h4>Mock fallback</h4><p>If the model backend is disabled by a flag, is unavailable, or any step above raises, the call degrades to a <b>deterministic offline mock</b> that returns the same shape of result. The endpoint always returns something usable, and the app never hard-breaks.</p></div></div>
+        </div>
+
+        <div class="safety-callout"><b>The prompt is the smallest part.</b> Blue boxes are the AI-plane guards, green is the model call itself, and teal is the code that verifies whatever the model returned. The model is trusted to be creative inside a fixed cage — and everything outside the green box is plain, testable code that runs the same way every time.</div>
+      </div>
+    </section>
+
+    <!-- 4. REQUEST LIFECYCLE -->
+    <section id="lifecycle">
+      <div class="wrap">
+        <span class="sec-num">04</span>
+        <h2>Request lifecycle</h2>
+        <p>Take a single Run extraction request — a clinician asks WardBeat to read a ward note and pull out the discharge barriers. It crosses all four planes and returns to Postgres, with Next.js in control the whole way, and the harness from the previous section wrapping the model call in the middle.</p>
+
+        <svg viewBox="0 0 760 300" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="archLifeTitle">
+          <title id="archLifeTitle">Run extraction request lifecycle across the four planes</title>
+          <defs>
+            <marker id="arrowArch2" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#7f9298"></path>
+            </marker>
+          </defs>
+
+          <text x="60" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#7f9298">BROWSER</text>
+          <line x1="60" y1="34" x2="60" y2="286" stroke="#d9e2e5" stroke-width="1"></line>
+
+          <text x="245" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#0e2028">NEXT.JS</text>
+          <line x1="245" y1="34" x2="245" y2="286" stroke="#d9e2e5" stroke-width="1"></line>
+
+          <text x="470" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#1f5f8b">AI PLANE</text>
+          <line x1="470" y1="34" x2="470" y2="286" stroke="#d9e2e5" stroke-width="1"></line>
+
+          <text x="640" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#5f9400">NIM</text>
+          <line x1="640" y1="34" x2="640" y2="286" stroke="#d9e2e5" stroke-width="1"></line>
+
+          <text x="712" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#6b46a8">DB</text>
+          <line x1="712" y1="34" x2="712" y2="286" stroke="#d9e2e5" stroke-width="1"></line>
+
+          <line x1="60" y1="60" x2="243" y2="60" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+          <text x="70" y="52" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">1 · Server Action: run extraction</text>
+
+          <line x1="245" y1="96" x2="468" y2="96" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+          <text x="255" y="88" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">2 · POST /extract + x-service-token</text>
+
+          <line x1="470" y1="132" x2="638" y2="132" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+          <text x="480" y="124" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">3 · Nemotron, JSON mode</text>
+
+          <line x1="640" y1="164" x2="472" y2="164" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+          <text x="480" y="180" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">4 · grounded barriers, EDD, MFFD</text>
+
+          <line x1="468" y1="204" x2="247" y2="204" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+          <text x="255" y="220" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">5 · validated result</text>
+
+          <line x1="245" y1="248" x2="710" y2="248" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowArch2)"></line>
+          <text x="255" y="240" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">6 · Next.js writes AI output to Postgres</text>
+        </svg>
+
+        <div class="walk">
+          <div class="wstep">
+            <span class="n">1</span>
+            <div>
+              <h4>The browser asks Next.js — and nothing else</h4>
+              <p>The clinician triggers a Server Action. The request passes the edge proxy, which checks the JWT session and role before the work begins. No API route is exposed; the browser cannot reach the AI plane, NIM or Postgres.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">2</span>
+            <div>
+              <h4>Next.js calls the AI plane over the private network</h4>
+              <p>Next.js sends the note text to <code>/extract</code> on the internal-only AI plane, carrying the shared <code>x-service-token</code> header. This hop never leaves the internal network.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">3</span>
+            <div>
+              <h4>The AI plane calls NIM — inside the harness</h4>
+              <p>The AI plane forwards the prompt to Nemotron over the OpenAI-compatible NIM API in JSON mode at temperature 0, authenticated with a bearer key and shaped by its token-bucket rate limiter and timeout. If NIM is unavailable, it degrades to a deterministic offline mock.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">4</span>
+            <div>
+              <h4>The model returns structured output</h4>
+              <p>Nemotron returns grounded barriers, an estimated discharge date and the medically-fit-for-discharge flag. The AI plane parses, validates and grounds the result, then hands it back — holding no state of its own.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">5</span>
+            <div>
+              <h4>The result flows back to Next.js</h4>
+              <p>Next.js receives the validated result. All orchestration — retries, validation, deciding what to persist — lives here, not in the AI plane.</p>
+            </div>
+          </div>
+          <div class="wstep">
+            <span class="n">6</span>
+            <div>
+              <h4>Next.js — and only Next.js — writes to Postgres</h4>
+              <p>The extracted barriers and flags are written to PostgreSQL through the pooled Drizzle client. The AI plane never touched the database; the single writer is the front door.</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="subhead">Deployment &amp; data residency</p>
+        <p>The same lifecycle runs identically in the hosted demo and on-prem. The whole stack ships from Docker: in production <code>docker-compose.prod.yml</code> puts a Cloudflare Tunnel in front as the public gateway — there is no inbound port — routing to <code>app:3000</code> (Next.js), which talks to <code>db:5432</code> (Postgres) and <code>minio:9000</code> for uploads, with the AI plane as its own pinned image and every container running as a non-root user. Going on-prem is a config change — swap the NIM base URL and key — not a rewrite, which is exactly what keeps clinical data inside the trust’s own walls.</p>
+      </div>
+    </section>
+
+    <!-- 5. DATA & KNOWLEDGE -->
+    <section id="data">
+      <div class="wrap">
+        <span class="sec-num">05</span>
+        <h2>Data &amp; knowledge</h2>
+        <p>The AI plane holds nothing; all of it lands here. WardBeat keeps everything in a single <b>PostgreSQL 17</b> database with the <b>pgvector</b> extension. Next.js is the only writer — schema and migrations are defined once, in TypeScript, through Drizzle ORM. That one database holds three kinds of data — the ward domain, the AI outputs, and the policy knowledge base — sitting right alongside the platform and identity tables. There is no separate vector database to run: the policy vectors live in the same Postgres as the relational ward data.</p>
+
+        <p class="subhead">The data model</p>
+        <svg viewBox="0 0 760 430" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="dm-title">
+          <title id="dm-title">The WardBeat data model, grouped into platform, ward domain, AI outputs and policy knowledge base tables</title>
+          <rect x="16" y="16" width="728" height="112" rx="8" fill="#f6f8f9" stroke="#d9e2e5"/>
+          <text x="32" y="40" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Platform &amp; identity</text>
+          <g font-family="ui-monospace, monospace" font-size="11" fill="#0e2028">
+            <rect x="32" y="52" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="77" y="69" text-anchor="middle">users</text>
+            <rect x="132" y="52" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="177" y="69" text-anchor="middle">accounts</text>
+            <rect x="232" y="52" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="277" y="69" text-anchor="middle">sessions</text>
+            <rect x="332" y="52" width="150" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="407" y="69" text-anchor="middle">verificationTokens</text>
+            <rect x="492" y="52" width="120" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="552" y="69" text-anchor="middle">authenticators</text>
+            <rect x="622" y="52" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="667" y="69" text-anchor="middle">roles</text>
+            <rect x="32" y="86" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="77" y="103" text-anchor="middle">userRoles</text>
+            <rect x="132" y="86" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="177" y="103" text-anchor="middle">files</text>
+            <rect x="232" y="86" width="150" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="307" y="103" text-anchor="middle">pushSubscriptions</text>
+          </g>
+
+          <rect x="16" y="146" width="356" height="112" rx="8" fill="#f6f8f9" stroke="#d9e2e5"/>
+          <text x="32" y="170" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Ward domain</text>
+          <g font-family="ui-monospace, monospace" font-size="11" fill="#0e2028">
+            <rect x="32" y="182" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="77" y="199" text-anchor="middle">wards</text>
+            <rect x="132" y="182" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="177" y="199" text-anchor="middle">patients</text>
+            <rect x="232" y="182" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="277" y="199" text-anchor="middle">beds</text>
+            <rect x="32" y="216" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="77" y="233" text-anchor="middle">encounters</text>
+            <rect x="132" y="216" width="90" height="26" rx="6" fill="#ffffff" stroke="#d9e2e5"/><text x="177" y="233" text-anchor="middle">notes</text>
+          </g>
+
+          <rect x="388" y="146" width="356" height="112" rx="8" fill="#eef7f5" stroke="#0f766e"/>
+          <text x="404" y="170" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0f766e">AI outputs</text>
+          <g font-family="ui-monospace, monospace" font-size="11" fill="#0e2028">
+            <rect x="404" y="182" width="110" height="26" rx="6" fill="#ffffff" stroke="#0f766e"/><text x="459" y="199" text-anchor="middle">aiExtractions</text>
+            <rect x="524" y="182" width="90" height="26" rx="6" fill="#ffffff" stroke="#0f766e"/><text x="569" y="199" text-anchor="middle">barriers</text>
+            <rect x="404" y="216" width="140" height="26" rx="6" fill="#ffffff" stroke="#0f766e"/><text x="474" y="233" text-anchor="middle">recommendations</text>
+            <rect x="554" y="216" width="110" height="26" rx="6" fill="#ffffff" stroke="#0f766e"/><text x="609" y="233" text-anchor="middle">actionAudit</text>
+          </g>
+
+          <rect x="16" y="276" width="728" height="140" rx="8" fill="#f2ecfa" stroke="#6b46a8"/>
+          <text x="32" y="300" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#6b46a8">Policy knowledge base — the RAG corpus</text>
+          <g font-family="ui-monospace, monospace" font-size="11" fill="#0e2028">
+            <rect x="32" y="314" width="110" height="26" rx="6" fill="#ffffff" stroke="#6b46a8"/><text x="87" y="331" text-anchor="middle">policyDocs</text>
+            <rect x="152" y="314" width="120" height="26" rx="6" fill="#ffffff" stroke="#6b46a8"/><text x="212" y="331" text-anchor="middle">policyChunks</text>
+          </g>
+          <text x="32" y="368" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">Each chunk stores its passage text and a 1024-dim embedding vector,</text>
+          <text x="32" y="384" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">indexed with an hnsw cosine index for fast approximate-nearest-neighbour search.</text>
+        </svg>
+
+        <p>Because the relational ward data and the policy vectors share one Postgres via pgvector, there is no separate vector database to operate, and the vectors sit transactionally beside the data they relate to. For a corpus this size, that is the deliberate simplicity choice — one database to back up, one place where consistency is guaranteed.</p>
+
+        <p class="subhead">From note to audited action</p>
+        <svg viewBox="0 0 760 150" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="lc-title">
+          <title id="lc-title">The data lifecycle from a nursing note through extraction, encounter status, recommendation and audited approval</title>
+          <defs>
+            <marker id="arrowData1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#7f9298"/></marker>
+          </defs>
+          <rect x="16" y="40" width="120" height="56" rx="8" fill="#ffffff" stroke="#d9e2e5"/>
+          <text x="76" y="64" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Nursing note</text>
+          <text x="76" y="82" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#6b46a8">notes</text>
+          <line x1="136" y1="68" x2="164" y2="68" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowData1)"/>
+          <rect x="168" y="40" width="130" height="56" rx="8" fill="#eef7f5" stroke="#0f766e"/>
+          <text x="233" y="60" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0f766e">Extraction</text>
+          <text x="233" y="78" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#0e2028">aiExtractions</text>
+          <text x="233" y="91" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#0e2028">+ barriers</text>
+          <line x1="298" y1="68" x2="326" y2="68" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowData1)"/>
+          <rect x="330" y="40" width="120" height="56" rx="8" fill="#ffffff" stroke="#d9e2e5"/>
+          <text x="390" y="60" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Encounter</text>
+          <text x="390" y="74" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">MFFD + EDD</text>
+          <text x="390" y="90" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#6b46a8">encounters</text>
+          <line x1="450" y1="68" x2="478" y2="68" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowData1)"/>
+          <rect x="482" y="40" width="130" height="56" rx="8" fill="#eef7f5" stroke="#0f766e"/>
+          <text x="547" y="60" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0f766e">Recommendation</text>
+          <text x="547" y="82" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#0e2028">recommendations</text>
+          <line x1="612" y1="68" x2="640" y2="68" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowData1)"/>
+          <rect x="644" y="40" width="100" height="56" rx="8" fill="#d6ece9" stroke="#0f766e"/>
+          <text x="694" y="60" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0f766e">Approval</text>
+          <text x="694" y="82" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#0e2028">actionAudit</text>
+          <text x="380" y="126" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">Every step is idempotent — a re-extraction clears a note’s prior barriers inside one transaction, so a re-run never strands a note.</text>
+        </svg>
+
+        <div class="walk">
+          <div class="wstep"><span class="n">1</span><div><h4>A note is written</h4><p>A nursing note lands as a row in <b>notes</b> — the free-text ward-round or nursing entry that everything downstream is grounded in.</p></div></div>
+          <div class="wstep"><span class="n">2</span><div><h4>Extraction runs</h4><p>A row is written to <b>aiExtractions</b> (the raw model output, with the model name) and grounded rows to <b>barriers</b>. Each barrier cites a character span back in the note — and only barriers whose quote was located in the note are stored.</p></div></div>
+          <div class="wstep"><span class="n">3</span><div><h4>Encounter status is updated</h4><p>The patient’s <b>encounters</b> row is denormalised with the current MFFD flag and estimated discharge date. Latest note wins.</p></div></div>
+          <div class="wstep"><span class="n">4</span><div><h4>The agent recommends</h4><p>The agent turns each barrier into one or more <b>recommendations</b> rows — action type, rationale, priority and citations — grounded in retrieved <b>policyChunks</b>.</p></div></div>
+          <div class="wstep"><span class="n">5</span><div><h4>A human approves</h4><p>On approval an <b>actionAudit</b> row records who approved or dismissed which recommendation and when, and the barrier is marked in progress. Nothing acts on external systems.</p></div></div>
+        </div>
+
+        <p class="subhead">How the policy knowledge base is built</p>
+        <svg viewBox="0 0 760 260" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="rag-title">
+          <title id="rag-title">The ingestion pipeline that embeds policy passages, and the query path that retrieves the nearest chunks by meaning</title>
+          <defs>
+            <marker id="arrowData2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#7f9298"/></marker>
+          </defs>
+          <text x="16" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">Ingestion</text>
+          <rect x="16" y="40" width="120" height="52" rx="8" fill="#f2ecfa" stroke="#6b46a8"/>
+          <text x="76" y="62" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028">Policy doc</text>
+          <text x="76" y="79" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#6b46a8">policyDocs</text>
+          <line x1="136" y1="66" x2="164" y2="66" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowData2)"/>
+          <rect x="168" y="40" width="110" height="52" rx="8" fill="#ffffff" stroke="#d9e2e5"/>
+          <text x="223" y="62" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028">Split into</text>
+          <text x="223" y="79" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028">passages</text>
+          <line x1="278" y1="66" x2="306" y2="66" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowData2)"/>
+          <rect x="310" y="40" width="150" height="52" rx="8" fill="#ffffff" stroke="#5f9400"/>
+          <text x="385" y="60" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#5f9400">Embed (NIM)</text>
+          <text x="385" y="76" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#0e2028">nv-embedqa-e5-v5</text>
+          <text x="385" y="88" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">passage → 1024-dim</text>
+          <line x1="460" y1="66" x2="488" y2="66" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowData2)"/>
+          <rect x="492" y="40" width="150" height="52" rx="8" fill="#f2ecfa" stroke="#6b46a8"/>
+          <text x="567" y="60" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028">Store text + vector</text>
+          <text x="567" y="77" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#6b46a8">policyChunks</text>
+          <text x="567" y="112" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">hnsw cosine index</text>
+
+          <text x="16" y="164" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="600" fill="#0e2028">At query time</text>
+          <rect x="16" y="178" width="120" height="52" rx="8" fill="#ffffff" stroke="#d9e2e5"/>
+          <text x="76" y="200" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028">Question</text>
+          <text x="76" y="217" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">from the copilot</text>
+          <line x1="136" y1="204" x2="164" y2="204" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowData2)"/>
+          <rect x="168" y="178" width="150" height="52" rx="8" fill="#ffffff" stroke="#5f9400"/>
+          <text x="243" y="198" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#5f9400">Embed (NIM)</text>
+          <text x="243" y="215" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#566a72">query → 1024-dim</text>
+          <line x1="318" y1="204" x2="346" y2="204" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowData2)"/>
+          <rect x="350" y="178" width="200" height="52" rx="8" fill="#f2ecfa" stroke="#6b46a8"/>
+          <text x="450" y="200" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#0e2028">Nearest chunks by cosine</text>
+          <text x="450" y="217" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">pgvector similarity search</text>
+        </svg>
+
+        <p>Retrieval works by <b>meaning, not keywords</b>. A policy document is split into passages, each passage is embedded into a 1024-dim vector by the NVIDIA embedding model, and text plus vector are stored in <b>policyChunks</b> behind an hnsw cosine index. At query time the question is embedded the same way and pgvector finds the nearest chunks by cosine similarity. One subtlety matters: NVIDIA embedding models are <b>asymmetric</b> — passages are embedded with input_type <b>passage</b> and questions with input_type <b>query</b>, so the stored corpus and the incoming question land in the same space and match correctly.</p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">WardBeat · product guide · architecture · Next.js 16 · FastAPI · NVIDIA NIM · PostgreSQL/pgvector</div>
+    </footer>
+  </body>
+</html>

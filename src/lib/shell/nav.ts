@@ -1,4 +1,4 @@
-import { Activity, Settings, type LucideIcon } from 'lucide-react'
+import { Activity, Info, Settings, type LucideIcon } from 'lucide-react'
 
 export interface NavItem {
   title: string
@@ -17,4 +17,5 @@ export const navItems: NavItem[] = [
   // on the board (the "Actions" panel), so it's not a separate destination.
   { title: 'Ward board', href: '/dashboard', icon: Activity },
   { title: 'Settings', href: '/settings', icon: Settings },
+  { title: 'About', href: '/about', icon: Info },
 ]
