@@ -115,6 +115,23 @@ const envSchema = z
       .optional()
       .default('image/png,image/jpeg,image/webp,image/gif,application/pdf'),
 
+    // --- WardBeat AI plane (spec v0.2.0) -----------------------------------
+    // The internal FastAPI `ai` service does barrier extraction. WARDBEAT_AI_URL
+    // is where Next.js (server-side only) reaches it — `http://localhost:8000`
+    // in host dev, `http://ai:8000` in the Compose network. The service token is
+    // a shared secret the `ai` service requires on every call. The ward board is
+    // behind a feature flag (off by default).
+    WARDBEAT_AI_URL: z
+      .string()
+      .url()
+      .optional()
+      .default('http://localhost:8000'),
+    WARDBEAT_AI_SERVICE_TOKEN: optionalStr,
+    FEATURE_WARD_BOARD: z
+      .string()
+      .optional()
+      .transform((v) => v === 'true'),
+
     // --- Build identity (baked into the image at CI build time) ------------
     // ci.yml passes these as Docker build-args (APP_VERSION=git ref name,
     // APP_GIT_SHA=commit sha); the Dockerfile persists them as ENV. Surfaced
