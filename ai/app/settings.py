@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     # Model call timeout (seconds).
     nim_timeout: float = 30.0
 
+    # Completion token budget for extraction. Nemotron is a reasoning model, so
+    # this covers reasoning + the JSON payload; 1024 comfortably fits a note's
+    # barriers while keeping per-call latency (and the hang risk) down. Raise it
+    # only if extractions start getting truncated (empty content / finish_reason
+    # == "length").
+    nim_extract_max_tokens: int = 1024
+
     @property
     def use_mock(self) -> bool:
         """Fall back to the mock whenever mock is on OR no key is present."""

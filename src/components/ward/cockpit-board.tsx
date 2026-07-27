@@ -41,7 +41,8 @@ export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
       const res = await runWardExtractionAction()
       setStatus(
         res.ok
-          ? `Extracted ${res.processed} notes → ${res.barriers} barriers`
+          ? `Extracted ${res.processed} notes → ${res.barriers} barriers` +
+              (res.failed > 0 ? ` (${res.failed} failed)` : '')
           : `Failed: ${res.error ?? 'unknown error'}`,
       )
       router.refresh()
