@@ -68,7 +68,7 @@ export function CopilotChat() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-9rem)] max-w-3xl flex-col">
+    <div className="flex h-[calc(100dvh-9rem)] flex-col">
       <div>
         <h1 className="text-2xl font-semibold">Flow copilot</h1>
         <p className="text-muted-foreground text-sm">

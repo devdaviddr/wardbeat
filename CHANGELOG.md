@@ -15,6 +15,14 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.6.3] - 2026-07-27
+
+### Changed
+
+- Consistent view width: the copilot, briefing, and action-queue views no longer
+  self-constrain to a narrow column (removed `max-w-3xl`) — every view now fills
+  the same wide shell container as the ward board / dashboard.
+
 ## [0.6.2] - 2026-07-27
 
 ### Fixed
