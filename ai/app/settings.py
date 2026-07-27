@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     nim_mock: bool = True
     nvidia_api_key: str = ""
     nim_base_url: str = "https://integrate.api.nvidia.com/v1"
-    nim_extract_model: str = "nvidia/llama-3.1-nemotron-nano-8b-v1"
+    nim_extract_model: str = "nvidia/nvidia-nemotron-nano-9b-v2"
 
     # Service auth ----------------------------------------------------------
     # Shared secret; Next.js sends it as X-Service-Token. Empty = auth disabled

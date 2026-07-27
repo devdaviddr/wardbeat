@@ -46,7 +46,7 @@ The demo runs offline by default (`NIM_MOCK=true`). To use real hosted NIM:
 NIM_MOCK="false"
 NVIDIA_API_KEY="nvapi-…"      # free key from https://build.nvidia.com/models
 # optionally pick a model id from the catalogue:
-NIM_EXTRACT_MODEL="nvidia/llama-3.1-nemotron-nano-8b-v1"
+NIM_EXTRACT_MODEL="nvidia/nvidia-nemotron-nano-9b-v2"
 
 docker compose up -d --force-recreate ai
 ```
