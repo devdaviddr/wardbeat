@@ -25,10 +25,10 @@ _Nothing yet._
   board (never SQL), and **policy RAG** ("what are the discharge criteria for a
   patient on IV antibiotics?") over a discharge-policy knowledge base. Answers
   cite their sources; out-of-scope questions are refused.
-- **Retrieval plane on NVIDIA NIM** — embedding NIM (`nv-embedqa-e5-v5`, 1024-d)
-  - **pgvector** hnsw cosine ANN + a reranking interface (cosine-order fallback
-    when the hosted reranker is unavailable) + grounded LLM answer composition.
-    Postgres image is now `pgvector/pgvector:pg17`.
+- **Retrieval plane on NVIDIA NIM** — embedding NIM (`nv-embedqa-e5-v5`, 1024-d),
+  **pgvector** hnsw cosine ANN, a reranking interface (cosine-order fallback when
+  the hosted reranker is unavailable), and grounded LLM answer composition.
+  Postgres image is now `pgvector/pgvector:pg17`.
 - **Copilot chat page** (`/copilot`, feature-flagged) with path + grounded
   badges and clickable citations (policy → source passage; ward → the board).
 - Synthetic discharge-policy KB + ingestion (`pnpm db:seed:policy`), a headless
