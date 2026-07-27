@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.ratelimit import RateLimiter
-from app.routers import embed, extract, health
+from app.routers import copilot, embed, extract, health
 from app.settings import get_settings
 
 logging.basicConfig(level=logging.INFO)
@@ -33,3 +33,4 @@ app = FastAPI(
 app.include_router(health.router)
 app.include_router(extract.router)
 app.include_router(embed.router)
+app.include_router(copilot.router)
