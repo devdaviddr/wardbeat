@@ -12,7 +12,7 @@ import { SidebarNav } from '@/components/shell/sidebar-nav'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { cn } from '@/lib/utils'
 
-const BRAND = 'Boilerplate'
+const BRAND = 'WardBeat'
 
 function initials(name?: string | null): string {
   if (!name) return '?'
@@ -217,8 +217,9 @@ export function AppShell({
           tabIndex={-1}
           className="flex-1 px-4 py-6 pb-[calc(env(safe-area-inset-bottom)_+_1.5rem)] outline-none sm:px-6"
         >
-          {/* Shared content container so every page aligns and sizes the same. */}
-          <div className="mx-auto w-full max-w-4xl">{children}</div>
+          {/* Wide content container — the ward cockpit uses the full width; the
+              narrower pages (copilot, briefing, actions, settings) self-constrain. */}
+          <div className="mx-auto w-full max-w-[1536px]">{children}</div>
         </main>
       </div>
     </div>
