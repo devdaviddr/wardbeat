@@ -1,10 +1,4 @@
-import {
-  Activity,
-  LayoutDashboard,
-  ListChecks,
-  Settings,
-  type LucideIcon,
-} from 'lucide-react'
+import { Activity, ListChecks, Settings, type LucideIcon } from 'lucide-react'
 
 export interface NavItem {
   title: string
@@ -19,8 +13,8 @@ export interface NavItem {
  * view. The `/copilot` and `/briefing` routes remain reachable directly.
  */
 export const navItems: NavItem[] = [
-  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { title: 'Ward board', href: '/ward', icon: Activity },
+  // The ward board is the home/dashboard (`/dashboard`).
+  { title: 'Ward board', href: '/dashboard', icon: Activity },
   { title: 'Actions', href: '/actions', icon: ListChecks },
   { title: 'Settings', href: '/settings', icon: Settings },
 ]

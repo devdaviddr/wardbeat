@@ -15,6 +15,21 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.6.1] - 2026-07-27
+
+### Changed
+
+- **The ward board is now the dashboard** — the flow cockpit is the app's home
+  (`/dashboard`); `/ward` redirects to it. Nav collapses to Ward board · Actions
+  · Settings.
+- **Wider layout** — the content container went from `max-w-4xl` to 1536px and
+  the bed grid gains a 5-column breakpoint, so the board uses the horizontal
+  space; the narrower pages still self-constrain.
+
+### Fixed
+
+- Corrected a residual `Boilerplate` brand string in the app shell → `WardBeat`.
+
 ## [0.6.0] - 2026-07-27
 
 ### Changed
