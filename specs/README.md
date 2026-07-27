@@ -99,3 +99,4 @@ as history; `0026` was migrated here as `v0.2.0`.
 | **v0.3.0** | Flow copilot — ward-state Q&A + policy RAG      | [spec](releases/v0.3.0-flow-copilot/spec.md) — Shipped                    | [plan](releases/v0.3.0-flow-copilot/spec-imp.md) — Shipped                    |
 | **v0.4.0** | Action recommendations (agentic, HITL)          | [spec](releases/v0.4.0-action-recommendations/spec.md) — Shipped          | [plan](releases/v0.4.0-action-recommendations/spec-imp.md) — Shipped          |
 | **v0.5.0** | Forecasting & narration                         | [spec](releases/v0.5.0-forecasting-narration/spec.md) — Shipped           | [plan](releases/v0.5.0-forecasting-narration/spec-imp.md) — Shipped           |
+| **v0.6.0** | Flow cockpit — board-centric UX                 | [spec](releases/v0.6.0-flow-cockpit/spec.md) — Accepted                   | [plan](releases/v0.6.0-flow-cockpit/spec-imp.md) — Draft                      |
