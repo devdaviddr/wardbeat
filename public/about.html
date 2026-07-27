@@ -135,6 +135,7 @@
         <span class="brand">Ward<span class="beat">Beat</span></span>
         <a class="jump" href="#problem">Problem</a>
         <a class="jump" href="#solution">What it does</a>
+        <a class="jump" href="#flow">Patient flow</a>
         <a class="jump" href="#architecture">Architecture</a>
         <a class="jump" href="#tooling">AI &amp; models</a>
         <a class="jump" href="#evaluation">Evals</a>
@@ -187,10 +188,77 @@
       </div>
     </section>
 
-    <!-- 3. ARCHITECTURE -->
-    <section id="architecture">
+        <!-- 3. PATIENT FLOW -->
+    <section id="flow">
       <div class="wrap">
         <span class="sec-num">03</span>
+        <h2>Patient flow, end to end</h2>
+        <p>One patient, from admission to a freed bed, and where WardBeat helps. WardBeat never moves a patient or sends an order. It reads the notes, makes the blockers visible, and suggests the next step; a clinician decides and acts. The shaded stages below are where WardBeat adds signal.</p>
+
+        <svg viewBox="0 0 760 150" width="100%" style="height:auto;max-width:100%;display:block;margin:16px 0 8px" role="img" aria-labelledby="flowTitle">
+          <title id="flowTitle">A patient journey from admission to discharge, with the stages WardBeat assists</title>
+          <defs>
+            <marker id="arrowFlow1" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#7f9298"></path>
+            </marker>
+          </defs>
+
+          <!-- stage boxes: 1,2,6 clinical (neutral); 3,4,5 WardBeat (teal) -->
+          <rect x="8" y="44" width="104" height="62" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="60" y="70" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#0e2028" font-weight="600">Admission</text>
+          <text x="60" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#7f9298">clinician</text>
+
+          <rect x="136" y="44" width="104" height="62" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="188" y="70" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#0e2028" font-weight="600">Care &amp; notes</text>
+          <text x="188" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#7f9298">clinician</text>
+
+          <rect x="264" y="44" width="104" height="62" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"></rect>
+          <text x="316" y="70" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#0e2028" font-weight="600">Read &amp; structure</text>
+          <text x="316" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#0f766e">WardBeat</text>
+
+          <rect x="392" y="44" width="104" height="62" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"></rect>
+          <text x="444" y="70" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#0e2028" font-weight="600">Board &amp; barriers</text>
+          <text x="444" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#0f766e">WardBeat</text>
+
+          <rect x="520" y="44" width="104" height="62" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"></rect>
+          <text x="572" y="70" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#0e2028" font-weight="600">Chase actions</text>
+          <text x="572" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#0f766e">WardBeat + you</text>
+
+          <rect x="648" y="44" width="104" height="62" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="700" y="70" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#0e2028" font-weight="600">Discharge</text>
+          <text x="700" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#7f9298">clinician</text>
+
+          <!-- flow arrows -->
+          <line x1="112" y1="75" x2="136" y2="75" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFlow1)"></line>
+          <line x1="240" y1="75" x2="264" y2="75" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFlow1)"></line>
+          <line x1="368" y1="75" x2="392" y2="75" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFlow1)"></line>
+          <line x1="496" y1="75" x2="520" y2="75" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFlow1)"></line>
+          <line x1="624" y1="75" x2="648" y2="75" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowFlow1)"></line>
+
+          <!-- legend -->
+          <rect x="8" y="124" width="12" height="12" rx="3" fill="#d6ece9" stroke="#0f766e" stroke-width="1"></rect>
+          <text x="26" y="134" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">WardBeat adds signal</text>
+          <rect x="200" y="124" width="12" height="12" rx="3" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="218" y="134" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#566a72">clinician and systems of record</text>
+        </svg>
+
+        <div class="timeline">
+          <div class="tstep"><div class="surface">Admission</div><h3>A patient takes a bed</h3><p>The stay begins. In the data a new encounter opens on that bed and starts collecting notes.</p></div>
+          <div class="tstep"><div class="surface">Care &amp; notes</div><h3>The team records progress as free text</h3><p>Nurses and the ward round write notes through the stay. This is the richest and messiest source of truth on the ward, and where the discharge status really lives.</p></div>
+          <div class="tstep"><div class="surface">Read &amp; structure</div><h3>WardBeat reads each note into data</h3><p>Extraction turns the note into structured barriers, an estimated discharge date, and a medically-fit flag, each one grounded in the exact sentence it came from.</p></div>
+          <div class="tstep"><div class="surface">Board &amp; barriers</div><h3>The status becomes visible</h3><p>The bed now shows its blockers, a discharge probability, and an action badge. The fit-but-delayed patients, the ones losing bed-days, stand out at a glance.</p></div>
+          <div class="tstep"><div class="surface">Chase actions</div><h3>Barriers become a worklist</h3><p>For each barrier WardBeat suggests the next step from policy; the coordinator approves the ones to chase, be it TTOs, transport, social care, or a review. Recommend-only, and every approval is audited.</p></div>
+          <div class="tstep"><div class="surface">Discharge</div><h3>Fit, cleared, and gone by noon</h3><p>Once the patient is medically fit and the barriers are cleared, they leave and the bed frees. Because the blockers surfaced early, this happens in the morning rather than at 4pm.</p></div>
+        </div>
+
+        <div class="safety-callout"><b>WardBeat assists; people act.</b> It does not admit or discharge patients, and it does not message pharmacy or transport. Those stay with clinicians and the systems of record. Automating the admit and discharge steps so beds turn over on their own is on the roadmap; today WardBeat makes the flow visible and the barriers actionable.</div>
+      </div>
+    </section>
+
+    <!-- 4. ARCHITECTURE -->
+    <section id="architecture">
+      <div class="wrap">
+        <span class="sec-num">04</span>
         <h2>Architecture</h2>
         <p>Four planes behind a single front door. Next.js is the only thing the browser talks to, and the only thing that writes to the database. The AI work runs in a small internal service that holds no state, so it is easy to scale, test, and move on-prem.</p>
         <svg viewBox="0 0 760 360" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="archTopoTitle">
@@ -324,10 +392,10 @@
       </div>
     </section>
 
-        <!-- 4. AI TOOLING & MODELS -->
+        <!-- 5. AI TOOLING & MODELS -->
     <section id="tooling">
       <div class="wrap">
-        <span class="sec-num">04</span>
+        <span class="sec-num">05</span>
         <h2>AI tooling &amp; models</h2>
         <p>The guiding rule is to use generative AI where it belongs and no further. Language models do the language: reading notes into structured data, answering questions from retrieved sources, and turning numbers into prose. Everything numeric or safety-critical stays in plain, testable code. The choices below follow from two constraints: clinical data should be able to stay inside the hospital, and quality has to be measurable.</p>
 
@@ -386,10 +454,10 @@
       </div>
     </section>
 
-        <!-- 5. EVALUATION -->
+        <!-- 6. EVALUATION -->
     <section id="evaluation">
       <div class="wrap">
-        <span class="sec-num">05</span>
+        <span class="sec-num">06</span>
         <h2>Evaluation</h2>
         <p>AI quality here is a number, not a feeling. Each capability has its own harness with three parts: a labelled synthetic dataset, a metric that fits the task, and a hard gate. The harnesses run against the live NVIDIA NIM models and exit non-zero when a gate is missed, so they can act as a release gate. Below are the figures from the current live run.</p>
 
@@ -449,10 +517,10 @@
       </div>
     </section>
 
-    <!-- 6. STACK -->
+    <!-- 7. STACK -->
     <section id="stack">
       <div class="wrap">
-        <span class="sec-num">06</span>
+        <span class="sec-num">07</span>
         <h2>Stack</h2>
         <p>TypeScript runs the product and Python runs the AI, because the AI ecosystem lives in Python. One internal service, one front door, one database.</p>
         <div class="grid2">
