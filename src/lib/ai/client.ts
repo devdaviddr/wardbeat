@@ -124,6 +124,29 @@ export async function queryIntent(question: string): Promise<unknown> {
   return aiPost('/copilot/query-intent', { question })
 }
 
+export interface RecommendationOut {
+  barrier_id: string
+  action_type: string
+  title: string
+  rationale: string
+  priority: number
+  citations: number[]
+  grounded: boolean
+}
+
+/** Agent: reason over a patient's barriers + policy → grounded action recommendations. */
+export async function recommendActions(
+  patientLabel: string,
+  barriers: Array<{ id: string; type: string; quote: string }>,
+  policy: Array<{ text: string; source: string }>,
+): Promise<RecommendationOut[]> {
+  const res = await aiPost<{ recommendations: RecommendationOut[] }>(
+    '/agent/recommend',
+    { patient_label: patientLabel, barriers, policy },
+  )
+  return res.recommendations
+}
+
 export type CopilotRoute = 'ward_state' | 'policy' | 'out_of_scope'
 
 /** Classify a question into which answer path should handle it. */
