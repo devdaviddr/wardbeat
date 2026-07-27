@@ -97,3 +97,4 @@ as history; `0026` was migrated here as `v0.2.0`.
 | ---------- | ----------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | **v0.2.0** | Barrier intelligence & ward board (Phase 1 MVP) | [spec](releases/v0.2.0-barrier-intelligence-ward-board/spec.md) — Shipped | [plan](releases/v0.2.0-barrier-intelligence-ward-board/spec-imp.md) — Shipped |
 | **v0.3.0** | Flow copilot — ward-state Q&A + policy RAG      | [spec](releases/v0.3.0-flow-copilot/spec.md) — Shipped                    | [plan](releases/v0.3.0-flow-copilot/spec-imp.md) — Shipped                    |
+| **v0.4.0** | Action recommendations (agentic, HITL)          | [spec](releases/v0.4.0-action-recommendations/spec.md) — Shipped          | [plan](releases/v0.4.0-action-recommendations/spec-imp.md) — Shipped          |

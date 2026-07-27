@@ -26,6 +26,7 @@ pnpm db:seed                  # demo login: demo@example.com / Password123
 pnpm db:seed:ward             # Ashcombe Ward — 16 beds, 12 occupied
 pnpm db:seed:policy           # discharge-policy KB, embedded into pgvector (v0.3.0)
 pnpm db:extract               # populate the board headlessly (or use the UI button)
+pnpm db:recommend             # generate action recommendations (or use the UI button) (v0.4.0)
 ```
 
 ## 3. Run the app
@@ -49,6 +50,13 @@ Then open **Copilot** (v0.3.0) and ask:
 
 Prove the copilot quality with `pnpm eval:copilot` (retrieval hit-rate,
 grounded rate, and ward-state query-intent accuracy — gate 0.9).
+
+Finally open **Actions** (v0.4.0): the queue lists **recommended next-best
+actions** per bed — "Chase TTOs with pharmacy", "Book transport" — each with a
+policy-grounded rationale (**Why?** shows the source policy). **Approve** marks
+the barrier in progress and writes an audit record; **Dismiss** logs the
+decision. Recommend-only — nothing acts on its own. Quality: `pnpm eval:actions`
+(action-appropriateness + policy-grounded, gate 0.9).
 
 ## 4. Go live on NVIDIA NIM (optional)
 

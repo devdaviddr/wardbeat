@@ -135,6 +135,10 @@ const envSchema = z
       .string()
       .optional()
       .transform((v) => v === 'true'),
+    FEATURE_ACTIONS: z
+      .string()
+      .optional()
+      .transform((v) => v === 'true'),
 
     // --- Build identity (baked into the image at CI build time) ------------
     // ci.yml passes these as Docker build-args (APP_VERSION=git ref name,

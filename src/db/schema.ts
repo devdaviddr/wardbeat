@@ -504,3 +504,110 @@ export const policyChunksRelations = relations(policyChunks, ({ one }) => ({
 export type PolicyDoc = typeof policyDocs.$inferSelect
 export type PolicyChunk = typeof policyChunks.$inferSelect
 export type NewPolicyChunk = typeof policyChunks.$inferInsert
+
+/* -------------------------------------------------------------------------- */
+/* WardBeat — action recommendations (spec v0.4.0)                            */
+/*                                                                            */
+/* A retrieve-then-reason agent turns barriers into recommended next-best     */
+/* actions, each grounded in discharge policy. Recommend-only: an action is   */
+/* only ever a proposal a human approves/dismisses — the sole writes are the  */
+/* barrier status change and an audit row. No external side effects.          */
+/* -------------------------------------------------------------------------- */
+
+export const ACTION_TYPES = [
+  'chase_tto',
+  'book_transport',
+  'arrange_social_care',
+  'escalate_review',
+  'other',
+] as const
+export type ActionType = (typeof ACTION_TYPES)[number]
+
+export const RECOMMENDATION_STATUSES = [
+  'proposed',
+  'approved',
+  'dismissed',
+] as const
+export type RecommendationStatus = (typeof RECOMMENDATION_STATUSES)[number]
+
+export const ACTION_DECISIONS = ['approved', 'dismissed'] as const
+export type ActionDecision = (typeof ACTION_DECISIONS)[number]
+
+export const recommendations = pgTable(
+  'recommendations',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    encounterId: text('encounter_id')
+      .notNull()
+      .references(() => encounters.id, { onDelete: 'cascade' }),
+    // Nullable + set null: a re-extraction may replace the source barrier, but
+    // a decided recommendation should survive for the audit trail.
+    barrierId: text('barrier_id').references(() => barriers.id, {
+      onDelete: 'set null',
+    }),
+    actionType: text('action_type').$type<ActionType>().notNull(),
+    title: text('title').notNull(),
+    rationale: text('rationale').notNull(),
+    priority: integer('priority').notNull().default(2), // 1 (high) – 3 (low)
+    policyCitation: jsonb('policy_citation'), // [{ text, source }]
+    grounded: boolean('grounded').notNull().default(true),
+    status: text('status')
+      .$type<RecommendationStatus>()
+      .notNull()
+      .default('proposed'),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('recommendations_encounter_idx').on(table.encounterId),
+    index('recommendations_status_idx').on(table.status),
+  ],
+)
+
+export const actionAudit = pgTable(
+  'action_audit',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    recommendationId: text('recommendation_id')
+      .notNull()
+      .references(() => recommendations.id, { onDelete: 'cascade' }),
+    decision: text('decision').$type<ActionDecision>().notNull(),
+    actorUserId: text('actor_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    note: text('note'),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('action_audit_recommendation_idx').on(table.recommendationId),
+  ],
+)
+
+export const recommendationsRelations = relations(
+  recommendations,
+  ({ one, many }) => ({
+    encounter: one(encounters, {
+      fields: [recommendations.encounterId],
+      references: [encounters.id],
+    }),
+    barrier: one(barriers, {
+      fields: [recommendations.barrierId],
+      references: [barriers.id],
+    }),
+    audit: many(actionAudit),
+  }),
+)
+
+export const actionAuditRelations = relations(actionAudit, ({ one }) => ({
+  recommendation: one(recommendations, {
+    fields: [actionAudit.recommendationId],
+    references: [recommendations.id],
+  }),
+}))
+
+export type Recommendation = typeof recommendations.$inferSelect
+export type NewRecommendation = typeof recommendations.$inferInsert
+export type ActionAudit = typeof actionAudit.$inferSelect

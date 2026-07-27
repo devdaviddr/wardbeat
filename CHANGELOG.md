@@ -15,6 +15,23 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.4.0] - 2026-07-27
+
+### Added
+
+- **Action recommendations (Phase 3)** — a retrieve-then-reason **agent** turns
+  each barrier into a **recommended next-best action** (chase TTOs, book
+  transport, arrange social care, escalate a review) with a **rationale grounded
+  in discharge policy** (the agent uses the v0.3.0 policy retrieval as its tool).
+- **Action queue** (`/actions`, feature-flagged) — recommendations grouped by
+  bed with action-type / priority / policy-grounded badges, a "Why?" dialog
+  showing the source policy, and **human-in-the-loop Approve / Dismiss**.
+  **Recommend-only**: approving marks the barrier in progress and writes an
+  **audit** row; nothing acts externally.
+- `recommendations` + `action_audit` tables; a headless generator
+  (`pnpm db:recommend`); an action eval (`pnpm eval:actions`). Verified live:
+  action-appropriateness 100%, policy-grounded 100% (gate 0.9).
+
 ## [0.3.0] - 2026-07-27
 
 ### Added
@@ -25,10 +42,10 @@ _Nothing yet._
   board (never SQL), and **policy RAG** ("what are the discharge criteria for a
   patient on IV antibiotics?") over a discharge-policy knowledge base. Answers
   cite their sources; out-of-scope questions are refused.
-- **Retrieval plane on NVIDIA NIM** — embedding NIM (`nv-embedqa-e5-v5`, 1024-d)
-  - **pgvector** hnsw cosine ANN + a reranking interface (cosine-order fallback
-    when the hosted reranker is unavailable) + grounded LLM answer composition.
-    Postgres image is now `pgvector/pgvector:pg17`.
+- **Retrieval plane on NVIDIA NIM** — embedding NIM (`nv-embedqa-e5-v5`, 1024-d),
+  **pgvector** hnsw cosine ANN, a reranking interface (cosine-order fallback when
+  the hosted reranker is unavailable), and grounded LLM answer composition.
+  Postgres image is now `pgvector/pgvector:pg17`.
 - **Copilot chat page** (`/copilot`, feature-flagged) with path + grounded
   badges and clickable citations (policy → source passage; ward → the board).
 - Synthetic discharge-policy KB + ingestion (`pnpm db:seed:policy`), a headless

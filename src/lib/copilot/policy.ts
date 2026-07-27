@@ -23,17 +23,20 @@ export interface PolicyAnswer {
   reranked: boolean
 }
 
-/**
- * Policy RAG: embed the question (query NIM) → pgvector cosine ANN (top-K) →
- * rerank (top-N, cosine-order fallback) → grounded LLM answer with citations to
- * the policy passages actually used.
- */
-export async function answerPolicyQuestion(
-  question: string,
-): Promise<PolicyAnswer> {
-  const queryVec = await embedText(question, 'query')
+export interface PolicyPassage {
+  id: string
+  text: string
+  docTitle: string
+  source: string
+}
 
-  const candidates = await db
+/** Embed a query and return the top-K policy chunks by cosine similarity. */
+export async function retrievePolicy(
+  query: string,
+  k: number = TOP_K,
+): Promise<PolicyPassage[]> {
+  const queryVec = await embedText(query, 'query')
+  return db
     .select({
       id: policyChunks.id,
       text: policyChunks.text,
@@ -43,7 +46,18 @@ export async function answerPolicyQuestion(
     .from(policyChunks)
     .innerJoin(policyDocs, eq(policyChunks.docId, policyDocs.id))
     .orderBy(cosineDistance(policyChunks.embedding, queryVec))
-    .limit(TOP_K)
+    .limit(k)
+}
+
+/**
+ * Policy RAG: embed the question (query NIM) → pgvector cosine ANN (top-K) →
+ * rerank (top-N, cosine-order fallback) → grounded LLM answer with citations to
+ * the policy passages actually used.
+ */
+export async function answerPolicyQuestion(
+  question: string,
+): Promise<PolicyAnswer> {
+  const candidates = await retrievePolicy(question, TOP_K)
 
   if (candidates.length === 0) {
     return {

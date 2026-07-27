@@ -242,7 +242,8 @@ reference: **[Deployment](docs/deployment.md)**.
 - [x] Ward, bed, and patient-flow domain model ([v0.2.0](specs/releases/v0.2.0-barrier-intelligence-ward-board/spec.md))
 - [x] Live ward board with AI-extracted, cited discharge barriers ([v0.2.0](specs/releases/v0.2.0-barrier-intelligence-ward-board/spec.md))
 - [x] Natural-language flow copilot — ward-state Q&A + policy RAG ([v0.3.0](specs/releases/v0.3.0-flow-copilot/spec.md))
-- [ ] AI-assisted flow insights & agents (bottlenecks, next-best actions) — v0.4.0
+- [x] Action recommendations — agentic, policy-grounded, human-in-the-loop ([v0.4.0](specs/releases/v0.4.0-action-recommendations/spec.md))
+- [ ] Forecasting & narration (LOS / demand) — v0.5.0
 
 ## Contributing
 
