@@ -22,9 +22,11 @@ async def chat_json(
         "model": settings.nim_extract_model,
         "messages": messages,
         "temperature": 0,
-        # Generous headroom: Nemotron is a reasoning model — reasoning tokens
-        # count toward the budget, so a tight cap can leave `content` null.
-        "max_tokens": 3072,
+        # Nemotron is a reasoning model — reasoning tokens count toward the
+        # budget, so this must clear reasoning + the JSON payload without a tight
+        # cap leaving `content` null. Configurable via NIM_EXTRACT_MAX_TOKENS;
+        # the default keeps per-call latency down (see settings).
+        "max_tokens": settings.nim_extract_max_tokens,
         "response_format": {"type": "json_object"},
     }
     headers = {

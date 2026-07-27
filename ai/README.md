@@ -37,14 +37,15 @@ pytest
 
 ## Config (env)
 
-| Var                 | Default                               | Meaning                                                                |
-| ------------------- | ------------------------------------- | ---------------------------------------------------------------------- |
-| `NIM_MOCK`          | `true`                                | Offline deterministic extraction (no key/network needed)               |
-| `NVIDIA_API_KEY`    | —                                     | Free key from build.nvidia.com; enables live NIM when `NIM_MOCK=false` |
-| `NIM_BASE_URL`      | `https://integrate.api.nvidia.com/v1` | OpenAI-compatible endpoint                                             |
-| `NIM_EXTRACT_MODEL` | `nvidia/nvidia-nemotron-nano-9b-v2`   | small model for high-volume extraction                                 |
-| `AI_SERVICE_TOKEN`  | —                                     | shared secret; must match Next.js `WARDBEAT_AI_SERVICE_TOKEN`          |
-| `NIM_RPM`           | `30`                                  | rate-limit budget (headroom under the free tier's ~40 RPM)             |
+| Var                      | Default                               | Meaning                                                                |
+| ------------------------ | ------------------------------------- | ---------------------------------------------------------------------- |
+| `NIM_MOCK`               | `true`                                | Offline deterministic extraction (no key/network needed)               |
+| `NVIDIA_API_KEY`         | —                                     | Free key from build.nvidia.com; enables live NIM when `NIM_MOCK=false` |
+| `NIM_BASE_URL`           | `https://integrate.api.nvidia.com/v1` | OpenAI-compatible endpoint                                             |
+| `NIM_EXTRACT_MODEL`      | `nvidia/nvidia-nemotron-nano-9b-v2`   | small model for high-volume extraction                                 |
+| `NIM_EXTRACT_MAX_TOKENS` | `1024`                                | completion budget/call (reasoning + JSON); lower = faster              |
+| `AI_SERVICE_TOKEN`       | —                                     | shared secret; must match Next.js `WARDBEAT_AI_SERVICE_TOKEN`          |
+| `NIM_RPM`                | `30`                                  | rate-limit budget (headroom under the free tier's ~40 RPM)             |
 
 **Mock vs live:** with `NIM_MOCK=true` (or no key) the service uses a
 keyword/sentence extractor — deterministic, prompt-injection-safe, zero

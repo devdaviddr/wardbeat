@@ -13,13 +13,30 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+
+- **"Run extraction" no longer hangs.** The ward-board extraction now bounds
+  every AI-service call with a 45s timeout (a stalled connection can no longer
+  wedge the whole batch), fans notes out across encounters with bounded
+  concurrency instead of running strictly sequentially, and isolates per-note
+  failures so one bad note is counted (`(N failed)` in the status) rather than
+  aborting the run. Each note's clear-and-reinsert now runs in a transaction, so
+  a re-run can't strand a note with zero barriers.
+
+### Changed
+
+- Extraction persistence is now shared between the ward-board Server Action and
+  the `pnpm db:extract` CLI (`src/db/persist-extraction.ts`) so their write
+  paths can't drift.
+- The AI extraction call's completion-token budget is configurable via
+  `NIM_EXTRACT_MAX_TOKENS` (default `1024`, down from a hard-coded `3072`),
+  cutting per-call latency on the reasoning model.
 
 ## [0.7.0] - 2026-07-27
 
 ### Changed
 
-- **The action queue is now on the ward board** — an "Actions (N)" panel
+- **The action queue is now on the ward board** â€” an "Actions (N)" panel
   (slide-over) with Generate + approve/dismiss, plus the existing per-bed drawer.
   The standalone /actions page is retired (the route redirects to the board) and
   dropped from the nav. Extracted a shared RecommendationCard used by both the
@@ -30,7 +47,7 @@ _Nothing yet._
 ### Changed
 
 - The flow briefing is now **generated manually** (a Generate/Regenerate
-  button) instead of auto-running on every board load — it is the one NIM call
+  button) instead of auto-running on every board load â€” it is the one NIM call
   on the board and takes a few seconds, so the board now loads instantly and the
   briefing is produced on demand.
 
@@ -39,7 +56,7 @@ _Nothing yet._
 ### Changed
 
 - Consistent view width: the copilot, briefing, and action-queue views no longer
-  self-constrain to a narrow column (removed `max-w-3xl`) — every view now fills
+  self-constrain to a narrow column (removed `max-w-3xl`) â€” every view now fills
   the same wide shell container as the ward board / dashboard.
 
 ## [0.6.2] - 2026-07-27

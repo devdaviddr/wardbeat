@@ -35,53 +35,57 @@ const extractionResultSchema = z.object({
 export type ExtractionResult = z.infer<typeof extractionResultSchema>
 export type ExtractedBarrier = z.infer<typeof barrierSchema>
 
-export async function extractNote(input: {
-  noteId: string
-  encounterId?: string
-  text: string
-}): Promise<ExtractionResult> {
-  const res = await fetch(`${env.WARDBEAT_AI_URL}/extract`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...(env.WARDBEAT_AI_SERVICE_TOKEN
-        ? { 'x-service-token': env.WARDBEAT_AI_SERVICE_TOKEN }
-        : {}),
-    },
-    body: JSON.stringify({
-      note_id: input.noteId,
-      encounter_id: input.encounterId ?? null,
-      text: input.text,
-    }),
-    cache: 'no-store',
-  })
+/**
+ * Per-request timeout for AI-service calls. The `ai` service caps each NIM call
+ * at ~30s and always falls back to its deterministic mock, so `/extract` never
+ * legitimately runs longer than that — this bound exists to break a genuinely
+ * stalled connection (unreachable service, half-open socket) rather than let a
+ * fetch hang forever and take the whole batch / request down with it.
+ */
+const AI_REQUEST_TIMEOUT_MS = 45_000
 
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '')
-    throw new Error(`AI service error ${res.status}: ${detail.slice(0, 200)}`)
-  }
-
-  return extractionResultSchema.parse(await res.json())
-}
-
-/** Low-level POST to the internal AI service with the service token. */
+/** Low-level POST to the internal AI service with the service token + timeout. */
 async function aiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${env.WARDBEAT_AI_URL}${path}`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...(env.WARDBEAT_AI_SERVICE_TOKEN
-        ? { 'x-service-token': env.WARDBEAT_AI_SERVICE_TOKEN }
-        : {}),
-    },
-    body: JSON.stringify(body),
-    cache: 'no-store',
-  })
+  let res: Response
+  try {
+    res = await fetch(`${env.WARDBEAT_AI_URL}${path}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(env.WARDBEAT_AI_SERVICE_TOKEN
+          ? { 'x-service-token': env.WARDBEAT_AI_SERVICE_TOKEN }
+          : {}),
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
+    })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'TimeoutError') {
+      throw new Error(
+        `AI service ${path} timed out after ${AI_REQUEST_TIMEOUT_MS}ms`,
+      )
+    }
+    throw err
+  }
   if (!res.ok) {
     const detail = await res.text().catch(() => '')
     throw new Error(`AI service ${path} ${res.status}: ${detail.slice(0, 200)}`)
   }
   return (await res.json()) as T
+}
+
+export async function extractNote(input: {
+  noteId: string
+  encounterId?: string
+  text: string
+}): Promise<ExtractionResult> {
+  const json = await aiPost<unknown>('/extract', {
+    note_id: input.noteId,
+    encounter_id: input.encounterId ?? null,
+    text: input.text,
+  })
+  return extractionResultSchema.parse(json)
 }
 
 export async function embedText(

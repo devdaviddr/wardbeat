@@ -1,8 +1,12 @@
 import { config } from 'dotenv'
-import { asc, eq } from 'drizzle-orm'
+import { asc } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
+import {
+  persistExtraction,
+  type PersistableExtraction,
+} from './persist-extraction'
 import { aiExtractions, barriers, encounters, notes } from './schema'
 
 /**
@@ -30,19 +34,7 @@ async function extract(noteId: string, encounterId: string, text: string) {
     body: JSON.stringify({ note_id: noteId, encounter_id: encounterId, text }),
   })
   if (!res.ok) throw new Error(`ai /extract ${res.status}: ${await res.text()}`)
-  return res.json() as Promise<{
-    model: string
-    edd: string | null
-    mffd_flag: boolean
-    escalations: string[]
-    grounded: boolean
-    barriers: Array<{
-      type: string
-      status: string
-      source: { start: number | null; end: number | null; quote: string }
-      confidence: number
-    }>
-  }>
+  return res.json() as Promise<PersistableExtraction>
 }
 
 async function main() {
@@ -55,47 +47,12 @@ async function main() {
   let processed = 0
   let barrierCount = 0
 
+  // Sequential — the CLI pool is `max: 1`, so concurrent transactions would
+  // just queue. The ward board (pooled) fans these out; here order is fine.
   for (const note of rows) {
     const result = await extract(note.id, note.encounterId, note.text)
-    await db.delete(barriers).where(eq(barriers.sourceNoteId, note.id))
-    await db.delete(aiExtractions).where(eq(aiExtractions.noteId, note.id))
-    const [extraction] = await db
-      .insert(aiExtractions)
-      .values({
-        noteId: note.id,
-        model: result.model,
-        edd: result.edd ?? null,
-        mffdFlag: result.mffd_flag,
-        escalations: result.escalations,
-        grounded: result.grounded,
-        rawJson: JSON.stringify(result),
-      })
-      .returning()
-    if (result.barriers.length > 0) {
-      await db.insert(barriers).values(
-        result.barriers.map((b) => ({
-          encounterId: note.encounterId,
-          sourceNoteId: note.id,
-          extractionId: extraction?.id,
-          type: b.type as
-            'tto' | 'transport' | 'social_care' | 'review' | 'other',
-          status: b.status as 'pending' | 'in_progress' | 'cleared',
-          sourceQuote: b.source.quote,
-          sourceStart: b.source.start ?? null,
-          sourceEnd: b.source.end ?? null,
-          confidence: b.confidence,
-        })),
-      )
-      barrierCount += result.barriers.length
-    }
-    await db
-      .update(encounters)
-      .set({
-        mffdFlag: result.mffd_flag,
-        edd: result.edd ?? null,
-        lastExtractedAt: new Date(),
-      })
-      .where(eq(encounters.id, note.encounterId))
+    const saved = await persistExtraction(db, note, result)
+    barrierCount += saved.barriers
     processed++
   }
 
