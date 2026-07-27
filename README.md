@@ -128,6 +128,9 @@ For the installable PWA (service worker is production-only): `pnpm build && pnpm
 | Doc                                             | What's inside                                                          |
 | ----------------------------------------------- | ---------------------------------------------------------------------- |
 | 🖼️ **[One-pager](docs/onepager.html)**          | Single-page architecture & how-it-works brief (open in a browser)      |
+| ⚙️ **[How it works](docs/how-it-works.html)**   | The mechanics — planes, per-capability request flows, the rules        |
+| 🏥 **[In the hospital](docs/clinical.html)**    | The product in clinical use — problem, personas, a day on the ward     |
+| 🧰 **[Stack & why](docs/tech-stack.html)**      | Every technology and why it was chosen over the alternative            |
 | 🩺 **[PRD](docs/prd.md)**                       | Product vision, GenAI reference architecture (NVIDIA NIM), roadmap     |
 | 📐 **[Specs](specs/README.md)**                 | Spec-driven development — WardBeat features + inherited platform specs |
 | 📋 **[Features](docs/features.md)**             | Complete inherited feature list and what's included                    |
