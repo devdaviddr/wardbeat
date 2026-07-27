@@ -1,7 +1,8 @@
 ---
 release: v0.2.0
 title: Barrier intelligence & ward board (Phase 1 MVP)
-status: Proposed # Proposed | Accepted | Shipped | Superseded | Rejected
+status: Shipped # Proposed | Accepted | Shipped | Superseded | Rejected
+release: v0.2.0
 phase: Phase 1 — Structuring
 created: 2026-07-27
 updated: 2026-07-27

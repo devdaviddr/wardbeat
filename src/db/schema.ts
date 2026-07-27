@@ -5,6 +5,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -233,3 +234,212 @@ export type FileRecord = typeof files.$inferSelect
 export type NewFileRecord = typeof files.$inferInsert
 export type PushSubscription = typeof pushSubscriptions.$inferSelect
 export type NewPushSubscription = typeof pushSubscriptions.$inferInsert
+
+/* -------------------------------------------------------------------------- */
+/* WardBeat — ward-flow domain (spec v0.2.0)                                  */
+/*                                                                            */
+/* Barrier intelligence & ward board. Synthetic data only in v1 — no PHI.    */
+/* `notes.text` is untrusted input; the AI plane extracts structured barriers */
+/* from it (see the FastAPI `ai` service). Drizzle owns all migrations; the   */
+/* `ai_*`-shaped tables (`ai_extractions`, `barriers`) are written by the     */
+/* extraction orchestration in the Next.js server action.                     */
+/* -------------------------------------------------------------------------- */
+
+// Barrier taxonomy — why a medically-fit patient is still occupying a bed.
+export const BARRIER_TYPES = [
+  'tto', // to-take-out medications pending
+  'transport',
+  'social_care',
+  'review', // awaiting specialist / senior review
+  'other',
+] as const
+export type BarrierType = (typeof BARRIER_TYPES)[number]
+
+export const BARRIER_STATUSES = ['pending', 'in_progress', 'cleared'] as const
+export type BarrierStatus = (typeof BARRIER_STATUSES)[number]
+
+export const BED_STATUSES = ['free', 'occupied', 'cleaning'] as const
+export type BedStatus = (typeof BED_STATUSES)[number]
+
+export const wards = pgTable('wards', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+})
+
+export const patients = pgTable('patients', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  // Synthetic identifiers only — never real PHI.
+  mrn: text('mrn').notNull(),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+})
+
+export const beds = pgTable(
+  'beds',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    wardId: text('ward_id')
+      .notNull()
+      .references(() => wards.id, { onDelete: 'cascade' }),
+    label: text('label').notNull(),
+    status: text('status').$type<BedStatus>().notNull().default('free'),
+  },
+  (table) => [index('beds_ward_idx').on(table.wardId)],
+)
+
+export const encounters = pgTable(
+  'encounters',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    patientId: text('patient_id')
+      .notNull()
+      .references(() => patients.id, { onDelete: 'cascade' }),
+    bedId: text('bed_id').references(() => beds.id, { onDelete: 'set null' }),
+    admittedAt: timestamp('admitted_at', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    dischargedAt: timestamp('discharged_at', { mode: 'date' }),
+    // Current discharge status, denormalised from the latest note extraction so
+    // the ward board reads without a per-encounter aggregate join.
+    mffdFlag: boolean('mffd_flag').notNull().default(false),
+    edd: text('edd'), // ISO date string
+    lastExtractedAt: timestamp('last_extracted_at', { mode: 'date' }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [index('encounters_bed_idx').on(table.bedId)],
+)
+
+export const notes = pgTable(
+  'notes',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    encounterId: text('encounter_id')
+      .notNull()
+      .references(() => encounters.id, { onDelete: 'cascade' }),
+    authorRole: text('author_role').notNull(),
+    // Untrusted free text. The AI plane extracts, it never executes, this.
+    text: text('text').notNull(),
+    writtenAt: timestamp('written_at', { mode: 'date' }).notNull().defaultNow(),
+    // Synthetic ground-truth for the extraction eval harness (F1). Null for
+    // any real note; populated by the synthetic seed.
+    evalLabels: jsonb('eval_labels'),
+    processedAt: timestamp('processed_at', { mode: 'date' }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [index('notes_encounter_idx').on(table.encounterId)],
+)
+
+export const aiExtractions = pgTable(
+  'ai_extractions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    noteId: text('note_id')
+      .notNull()
+      .references(() => notes.id, { onDelete: 'cascade' }),
+    model: text('model').notNull(),
+    edd: text('edd'), // ISO date string; nullable
+    mffdFlag: boolean('mffd_flag').notNull().default(false),
+    escalations: jsonb('escalations'),
+    grounded: boolean('grounded').notNull().default(true),
+    // Raw model output, retained for provenance/audit.
+    rawJson: text('raw_json'),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [index('ai_extractions_note_idx').on(table.noteId)],
+)
+
+export const barriers = pgTable(
+  'barriers',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    encounterId: text('encounter_id')
+      .notNull()
+      .references(() => encounters.id, { onDelete: 'cascade' }),
+    // Source provenance — every barrier must cite the note + span it came from.
+    sourceNoteId: text('source_note_id')
+      .notNull()
+      .references(() => notes.id, { onDelete: 'cascade' }),
+    extractionId: text('extraction_id').references(() => aiExtractions.id, {
+      onDelete: 'set null',
+    }),
+    type: text('type').$type<BarrierType>().notNull(),
+    status: text('status').$type<BarrierStatus>().notNull().default('pending'),
+    sourceQuote: text('source_quote').notNull(),
+    sourceStart: integer('source_start'),
+    sourceEnd: integer('source_end'),
+    confidence: integer('confidence'), // 0-100
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [index('barriers_encounter_idx').on(table.encounterId)],
+)
+
+export const wardsRelations = relations(wards, ({ many }) => ({
+  beds: many(beds),
+}))
+
+export const bedsRelations = relations(beds, ({ one, many }) => ({
+  ward: one(wards, { fields: [beds.wardId], references: [wards.id] }),
+  encounters: many(encounters),
+}))
+
+export const patientsRelations = relations(patients, ({ many }) => ({
+  encounters: many(encounters),
+}))
+
+export const encountersRelations = relations(encounters, ({ one, many }) => ({
+  patient: one(patients, {
+    fields: [encounters.patientId],
+    references: [patients.id],
+  }),
+  bed: one(beds, { fields: [encounters.bedId], references: [beds.id] }),
+  notes: many(notes),
+  barriers: many(barriers),
+}))
+
+export const notesRelations = relations(notes, ({ one, many }) => ({
+  encounter: one(encounters, {
+    fields: [notes.encounterId],
+    references: [encounters.id],
+  }),
+  extractions: many(aiExtractions),
+}))
+
+export const aiExtractionsRelations = relations(aiExtractions, ({ one }) => ({
+  note: one(notes, { fields: [aiExtractions.noteId], references: [notes.id] }),
+}))
+
+export const barriersRelations = relations(barriers, ({ one }) => ({
+  encounter: one(encounters, {
+    fields: [barriers.encounterId],
+    references: [encounters.id],
+  }),
+  sourceNote: one(notes, {
+    fields: [barriers.sourceNoteId],
+    references: [notes.id],
+  }),
+}))
+
+export type Ward = typeof wards.$inferSelect
+export type Patient = typeof patients.$inferSelect
+export type Bed = typeof beds.$inferSelect
+export type Encounter = typeof encounters.$inferSelect
+export type Note = typeof notes.$inferSelect
+export type NewNote = typeof notes.$inferInsert
+export type AiExtraction = typeof aiExtractions.$inferSelect
+export type Barrier = typeof barriers.$inferSelect
+export type NewBarrier = typeof barriers.$inferInsert

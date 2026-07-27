@@ -76,6 +76,6 @@ Fill `spec.md` first, get it to `Accepted`, then plan in `spec-imp.md`.
 
 ## Release index
 
-| Release    | Title                                           | `spec.md`                                                         | `spec-imp.md`                                                      |
-| ---------- | ----------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------ |
-| **v0.2.0** | Barrier intelligence & ward board (Phase 1 MVP) | [spec](v0.2.0-barrier-intelligence-ward-board/spec.md) — Proposed | [plan](v0.2.0-barrier-intelligence-ward-board/spec-imp.md) — Draft |
+| Release    | Title                                           | `spec.md`                                                        | `spec-imp.md`                                                        |
+| ---------- | ----------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **v0.2.0** | Barrier intelligence & ward board (Phase 1 MVP) | [spec](v0.2.0-barrier-intelligence-ward-board/spec.md) — Shipped | [plan](v0.2.0-barrier-intelligence-ward-board/spec-imp.md) — Shipped |
