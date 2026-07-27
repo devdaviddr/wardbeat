@@ -125,27 +125,24 @@ For the installable PWA (service worker is production-only): `pnpm build && pnpm
 
 ## Documentation
 
-| Doc                                             | What's inside                                                          |
-| ----------------------------------------------- | ---------------------------------------------------------------------- |
-| 🖼️ **[One-pager](docs/onepager.html)**          | Single-page architecture & how-it-works brief (open in a browser)      |
-| ⚙️ **[How it works](docs/how-it-works.html)**   | The mechanics — planes, per-capability request flows, the rules        |
-| 🏥 **[In the hospital](docs/clinical.html)**    | The product in clinical use — problem, personas, a day on the ward     |
-| 🧰 **[Stack & why](docs/tech-stack.html)**      | Every technology and why it was chosen over the alternative            |
-| 🩺 **[PRD](docs/prd.md)**                       | Product vision, GenAI reference architecture (NVIDIA NIM), roadmap     |
-| 📐 **[Specs](specs/README.md)**                 | Spec-driven development — WardBeat features + inherited platform specs |
-| 📋 **[Features](docs/features.md)**             | Complete inherited feature list and what's included                    |
-| 🏛️ **[Architecture](docs/architecture.md)**     | Request flow, auth design, security model, project structure           |
-| 🗄️ **[Database](docs/database.md)**             | ERD, schema, migrations, Drizzle workflow, seeding                     |
-| 🔑 **[OAuth](docs/oauth.md)**                   | GitHub + Google sign-in — setup, callback URLs, linking                |
-| ✉️ **[Email](docs/email.md)**                   | SMTP setup, password reset, email verification, soft gate              |
-| 📱 **[PWA & App Shell](docs/pwa.md)**           | Manifest, service worker strategy, icons, responsive shell             |
-| 🔔 **[Web Push](docs/push.md)**                 | VAPID setup, subscribe/send, service-worker handlers                   |
-| 🛠️ **[Usage & Development](docs/usage.md)**     | Scripts, env vars, testing, Docker, extending the app                  |
-| 📦 **[Self-hosting](docs/self-hosting.md)**     | `make setup` clone-to-live + continuous deployment (`make deploy`)     |
-| 🚀 **[Deployment](docs/deployment.md)**         | Cloudflare Tunnel — quick, guided, and Terraform paths                 |
-| ⚙️ **[CI/CD](docs/ci-cd.md)**                   | Pipeline design (deferred — see the note above)                        |
-| 🔁 **[Feature → Production](docs/workflow.md)** | One playbook: branch → PR → release → deploy                           |
-| 💾 **[Backups](docs/backups.md)**               | Nightly Postgres + MinIO backups, restore runbook, offsite             |
+| Doc                                             | What's inside                                                                                                 |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 📖 **[Platform guide](docs/guide.html)**        | The complete guide — overview, hospital use, how it works, stack & why, metrics & roadmap (open in a browser) |
+| 🩺 **[PRD](docs/prd.md)**                       | Product vision, GenAI reference architecture (NVIDIA NIM), roadmap                                            |
+| 📐 **[Specs](specs/README.md)**                 | Spec-driven development — WardBeat features + inherited platform specs                                        |
+| 📋 **[Features](docs/features.md)**             | Complete inherited feature list and what's included                                                           |
+| 🏛️ **[Architecture](docs/architecture.md)**     | Request flow, auth design, security model, project structure                                                  |
+| 🗄️ **[Database](docs/database.md)**             | ERD, schema, migrations, Drizzle workflow, seeding                                                            |
+| 🔑 **[OAuth](docs/oauth.md)**                   | GitHub + Google sign-in — setup, callback URLs, linking                                                       |
+| ✉️ **[Email](docs/email.md)**                   | SMTP setup, password reset, email verification, soft gate                                                     |
+| 📱 **[PWA & App Shell](docs/pwa.md)**           | Manifest, service worker strategy, icons, responsive shell                                                    |
+| 🔔 **[Web Push](docs/push.md)**                 | VAPID setup, subscribe/send, service-worker handlers                                                          |
+| 🛠️ **[Usage & Development](docs/usage.md)**     | Scripts, env vars, testing, Docker, extending the app                                                         |
+| 📦 **[Self-hosting](docs/self-hosting.md)**     | `make setup` clone-to-live + continuous deployment (`make deploy`)                                            |
+| 🚀 **[Deployment](docs/deployment.md)**         | Cloudflare Tunnel — quick, guided, and Terraform paths                                                        |
+| ⚙️ **[CI/CD](docs/ci-cd.md)**                   | Pipeline design (deferred — see the note above)                                                               |
+| 🔁 **[Feature → Production](docs/workflow.md)** | One playbook: branch → PR → release → deploy                                                                  |
+| 💾 **[Backups](docs/backups.md)**               | Nightly Postgres + MinIO backups, restore runbook, offsite                                                    |
 
 ## Development workflow
 
