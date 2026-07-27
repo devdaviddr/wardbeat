@@ -15,6 +15,22 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.5.0] - 2026-07-27
+
+### Added
+
+- **Forecasting & narration (Phase 4)** — the clearest statement of the project's
+  thesis: **deterministic ML predicts the numbers, the LLM narrates them.**
+  - A transparent, monotone **discharge model** (P(discharge in 24h) + predicted
+    days) and a **demand baseline** (expected admissions + net bed position) —
+    pure deterministic math, **no NIM**.
+  - A **flow briefing**: the LLM turns those figures + board state into a short
+    grounded paragraph — and is forbidden from inventing numbers.
+- **Flow briefing page** (`/briefing`, feature-flagged): net bed position,
+  predicted-discharge table, fit-but-gated beds, and the AI-narrated summary.
+- Forecast eval (`pnpm eval:forecast`). Verified live: discharge-ranking
+  Spearman ρ 0.92 (gate 0.7); narration numeric-consistency 1.00 (gate 0.9).
+
 ## [0.4.0] - 2026-07-27
 
 ### Added

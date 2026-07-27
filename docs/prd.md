@@ -486,14 +486,14 @@ work; the experience tier, data plumbing, and container stack are inherited.
 
 ## 11. Phased roadmap
 
-| Phase                                 | Scope                                                            | Proves                          |
-| ------------------------------------- | ---------------------------------------------------------------- | ------------------------------- |
-| **P0 — Foundations** _(done)_         | Repo scaffold, process, PRD                                      | Delivery discipline             |
-| **P1 — Structuring** _(done, v0.2.0)_ | Synthetic data + barrier/EDD extraction → ops store + ward board | GenAI extraction, schema output |
-| **P2 — RAG copilot** _(done, v0.3.0)_ | Retrieval pipeline + grounded copilot with citations             | Production RAG + eval           |
-| **P3 — Agents** _(done, v0.4.0)_      | Recommender agent, action recommendations, human-in-the-loop     | Agentic design + safety         |
-| **P4 — Forecast & narrate**           | Deterministic LOS/demand services + narration                    | GenAI/ML separation             |
-| **P5 — Guardrails & LLMOps**          | NeMo Guardrails, RAGAS/eval dashboard, tracing                   | Trust, evaluation, ops          |
+| Phase                                        | Scope                                                            | Proves                          |
+| -------------------------------------------- | ---------------------------------------------------------------- | ------------------------------- |
+| **P0 — Foundations** _(done)_                | Repo scaffold, process, PRD                                      | Delivery discipline             |
+| **P1 — Structuring** _(done, v0.2.0)_        | Synthetic data + barrier/EDD extraction → ops store + ward board | GenAI extraction, schema output |
+| **P2 — RAG copilot** _(done, v0.3.0)_        | Retrieval pipeline + grounded copilot with citations             | Production RAG + eval           |
+| **P3 — Agents** _(done, v0.4.0)_             | Recommender agent, action recommendations, human-in-the-loop     | Agentic design + safety         |
+| **P4 — Forecast & narrate** _(done, v0.5.0)_ | Deterministic LOS/demand services + narration                    | GenAI/ML separation             |
+| **P5 — Guardrails & LLMOps**                 | NeMo Guardrails, RAGAS/eval dashboard, tracing                   | Trust, evaluation, ops          |
 
 Each phase ships as its own **release spec** under
 [`specs/releases/vX.Y.Z-*/`](../specs/releases/README.md) — a `spec.md` (what/why) plus a

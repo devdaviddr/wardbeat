@@ -17,6 +17,7 @@ const PROTECTED_PREFIXES = [
   '/ward',
   '/copilot',
   '/actions',
+  '/briefing',
 ]
 /** Auth pages an already-signed-in user should be bounced away from. */
 const AUTH_ROUTES = ['/login', '/register']

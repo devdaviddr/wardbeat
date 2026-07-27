@@ -1,8 +1,8 @@
 ---
 release: v0.5.0
 title: Forecasting & narration
-status: Accepted # Proposed | Accepted | Shipped | Superseded | Rejected
-release_tag: '—'
+status: Shipped # Proposed | Accepted | Shipped | Superseded | Rejected
+release_tag: v0.5.0
 phase: Phase 4 — Forecast & narrate
 created: 2026-07-27
 updated: 2026-07-27

@@ -1,7 +1,7 @@
 ---
 release: v0.5.0
 title: Forecasting & narration — implementation plan
-status: Draft # Draft | In Progress | Ready | Shipped
+status: Shipped # Draft | In Progress | Ready | Shipped
 spec: ./spec.md
 branch: feature/v0.5.0-forecasting-narration
 created: 2026-07-27
@@ -88,6 +88,14 @@ FastAPI (`ai`), `X-Service-Token` gated:
 
 ## Task checklist
 
-- [ ] M1 — deterministic `/forecast/discharge` + `/forecast/demand` + eval
-- [ ] M2 — `/forecast/narrate` + Next.js briefing orchestration + narration eval
-- [ ] M3 — briefing UI + nav/flag + docs + release
+- [x] M1 — deterministic `/forecast/discharge` + `/forecast/demand` + eval
+- [x] M2 — `/forecast/narrate` + Next.js briefing orchestration + narration eval
+- [x] M3 — briefing UI + nav/flag + docs + release
+
+## Progress (2026-07-27) — Shipped
+
+Built and verified live: discharge-model ranking **ρ = 0.92** (gate 0.7),
+narration **numeric-consistency 1.00** (gate 0.9) — the briefing states only
+numbers it was given. Forecasts are deterministic (no NIM); the LLM only
+narrates. `/briefing` page renders net position + predicted discharges + the
+narrated paragraph. Local gate green.
