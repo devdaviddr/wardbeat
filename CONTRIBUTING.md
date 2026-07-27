@@ -17,8 +17,11 @@ pnpm dev
 
 ## Workflow
 
-1. For a non-trivial feature, write a spec first — copy
-   [`specs/TEMPLATE.md`](specs/TEMPLATE.md) and open it as `Proposed`
+1. For a non-trivial feature, write a spec first. **WardBeat releases** use the
+   per-release structure in [`specs/releases/`](specs/releases/README.md) — copy
+   `specs/releases/_templates/{spec.md,spec-imp.md}` into a `vX.Y.Z-slug/` folder
+   (`spec.md` = what/why, `spec-imp.md` = implementation plan). For a one-off change,
+   the flat [`specs/TEMPLATE.md`](specs/TEMPLATE.md) as `Proposed` is fine
    (see [`specs/README.md`](specs/README.md)).
 2. Branch off `main`: `feature/<slug>`. There is no `develop` branch — `main`
    is the only long-lived branch.

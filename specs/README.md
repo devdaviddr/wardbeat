@@ -71,7 +71,8 @@ other — one isn't a substitute for the other.
 > **Platform vs product.** Specs `0001`–`0024` are inherited from the
 > `nextjs-fullstack-boilerplate` platform WardBeat is built on, and are kept as
 > the historical record of that foundation. **WardBeat's own product specs start
-> at [0025](0025-wardbeat-foundation.md)** and continue the numbering.
+> at [0025](0025-wardbeat-foundation.md)**; from **v0.2.0** onward they move to
+> per-release folders (see [Release specs](#release-specs-v020) below).
 >
 > Specs 0001–0004 were written retroactively to document the decisions behind
 > the existing releases; SDD is the going-forward process (0005 onward).
@@ -83,3 +84,15 @@ other — one isn't a substitute for the other.
 > was re-scoped for the portfolio use case as [0019](0019-seo-opengraph-metadata.md).
 > The old numbers aren't reused. 0017 is written but intentionally not
 > scheduled — see its "Non-goals".
+
+## Release specs (v0.2.0+)
+
+From **v0.2.0**, WardBeat plans each release as a folder under
+[`releases/`](releases/README.md), each with a **`spec.md`** (what & why) and a
+**`spec-imp.md`** (implementation plan). See the
+[release-spec process](releases/README.md). The numbered specs above (`0001`–`0025`) remain
+as history; `0026` was migrated here as `v0.2.0`.
+
+| Release    | Title                                           | `spec.md`                                                                  | `spec-imp.md`                                                               |
+| ---------- | ----------------------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **v0.2.0** | Barrier intelligence & ward board (Phase 1 MVP) | [spec](releases/v0.2.0-barrier-intelligence-ward-board/spec.md) — Proposed | [plan](releases/v0.2.0-barrier-intelligence-ward-board/spec-imp.md) — Draft |
