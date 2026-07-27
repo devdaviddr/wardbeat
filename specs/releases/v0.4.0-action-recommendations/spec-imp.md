@@ -1,7 +1,7 @@
 ---
 release: v0.4.0
 title: Action recommendations — implementation plan
-status: Draft # Draft | In Progress | Ready | Shipped
+status: Shipped # Draft | In Progress | Ready | Shipped
 spec: ./spec.md
 branch: feature/v0.4.0-action-recommendations
 created: 2026-07-27
@@ -99,7 +99,15 @@ retrieve + one reason per patient; reuse token-bucket + embedding cache.
 
 ## Task checklist
 
-- [ ] M1 — schema + migration + `/agent/recommend`
-- [ ] M2 — generate + persist recommendations (agent uses policy retrieval)
-- [ ] M3 — action queue UI + approve/dismiss + audit + nav/flag
-- [ ] M4 — eval + docs + release
+- [x] M1 — schema + migration + `/agent/recommend`
+- [x] M2 — generate + persist recommendations (agent uses policy retrieval)
+- [x] M3 — action queue UI + approve/dismiss + audit + nav/flag
+- [x] M4 — eval + docs + release
+
+## Progress (2026-07-27) — Shipped
+
+Built and verified live: **action-appropriateness 100%, policy-grounded 100%**
+(`pnpm eval:actions`, gate 0.9); 11 grounded recommendations generated for 7
+patients; approve/dismiss write barrier status + audit. Local gate green. The
+recommender is a single retrieve-then-reason step (LangGraph deliberately not
+adopted for this slice — recorded in `spec.md` alternatives).

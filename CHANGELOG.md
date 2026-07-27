@@ -15,6 +15,23 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 _Nothing yet._
 
+## [0.4.0] - 2026-07-27
+
+### Added
+
+- **Action recommendations (Phase 3)** — a retrieve-then-reason **agent** turns
+  each barrier into a **recommended next-best action** (chase TTOs, book
+  transport, arrange social care, escalate a review) with a **rationale grounded
+  in discharge policy** (the agent uses the v0.3.0 policy retrieval as its tool).
+- **Action queue** (`/actions`, feature-flagged) — recommendations grouped by
+  bed with action-type / priority / policy-grounded badges, a "Why?" dialog
+  showing the source policy, and **human-in-the-loop Approve / Dismiss**.
+  **Recommend-only**: approving marks the barrier in progress and writes an
+  **audit** row; nothing acts externally.
+- `recommendations` + `action_audit` tables; a headless generator
+  (`pnpm db:recommend`); an action eval (`pnpm eval:actions`). Verified live:
+  action-appropriateness 100%, policy-grounded 100% (gate 0.9).
+
 ## [0.3.0] - 2026-07-27
 
 ### Added

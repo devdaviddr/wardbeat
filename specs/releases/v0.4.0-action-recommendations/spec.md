@@ -1,8 +1,8 @@
 ---
 release: v0.4.0
 title: Action recommendations (agentic, human-in-the-loop)
-status: Accepted # Proposed | Accepted | Shipped | Superseded | Rejected
-release_tag: '—'
+status: Shipped # Proposed | Accepted | Shipped | Superseded | Rejected
+release_tag: v0.4.0
 phase: Phase 3 — Agents
 created: 2026-07-27
 updated: 2026-07-27
