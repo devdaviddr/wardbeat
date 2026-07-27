@@ -184,7 +184,7 @@ Point the box at the published image and update with one command. In the box's
 `.env`:
 
 ```bash
-APP_IMAGE="ghcr.io/your-org/nextjs-fullstack-boilerplate"
+APP_IMAGE="ghcr.io/devdaviddr/wardbeat"
 APP_TAG="stable"        # newest RELEASE — moves when a v* tag is pushed (recommended)
 # APP_TAG="latest"      # every green main merge (trunk tracking, no release gate)
 # APP_TAG="0.18.0"      # pin an exact release — never moves; bump it to update
@@ -221,7 +221,7 @@ make deploy-timer                              # every 60s (default; digest-skip
 ```
 
 Each tick refreshes the checkout (`git pull --ff-only`, best-effort), copies the
-operator's off-checkout `.env` from `~/.config/nextjs-fullstack-boilerplate/.env`
+operator's off-checkout `.env` from `~/.config/wardbeat/.env`
 (override with `DEPLOY_ENV_FILE`) into the project dir, then **checks whether the
 published app image actually changed** — it refreshes only that image's manifest and
 compares its digest to the last-deployed one (`~/.config/<repo>/.last-deployed-image`).
@@ -253,7 +253,7 @@ register your box as a **GitHub self-hosted runner** and enable the shipped
 1. Add a self-hosted runner on the box (GitHub → Settings → Actions → Runners).
    The runner **dials out** to GitHub, so it works behind the tunnel.
 2. Put the box's config at
-   `~/.config/nextjs-fullstack-boilerplate/.env` (chmod 600) — the runner's
+   `~/.config/wardbeat/.env` (chmod 600) — the runner's
    checkout is wiped every run (`git clean`), so `.env` can't live in the work
    tree. It needs at least `AUTH_SECRET`, `AUTH_URL`,
    `CLOUDFLARE_TUNNEL_TOKEN`, `APP_IMAGE` (and optionally `APP_TAG`). Override
@@ -358,7 +358,7 @@ external drive — see [backups.md](backups.md#optional-offsite-copy-disk-failur
 | **503 everywhere + "No ingress rules" in `cloudflared` logs** | The tunnel is _locally-managed_ (created with `cloudflared tunnel create`), so a token-run daemon gets no remote config. Create tunnels in the **dashboard** or via **Terraform** (both remotely-managed), or push a remote config: the token embedded in `~/.cloudflared/cert.pem` (`ARGO TUNNEL TOKEN` block → base64 JSON `.apiToken`) can `PUT …/cfd_tunnel/<id>/configurations`. |
 | **Quick URL changed**                                         | It's ephemeral by design — use guided/automated for a stable domain.                                                                                                                                                                                                                                                                                                                  |
 | **Rate limiting sees wrong IP**                               | Traffic must arrive via Cloudflare so `CF-Connecting-IP` is present; direct origin hits won't have it.                                                                                                                                                                                                                                                                                |
-| **`make deploy` / timer tick fails — `.env` not found**       | The box's `.env` needs at least `AUTH_SECRET`, `AUTH_URL`, `CLOUDFLARE_TUNNEL_TOKEN`, and `APP_IMAGE` (+ optionally `APP_TAG`). `make deploy` reads the project-dir `.env`; `make deploy-timer` copies it in each tick from `~/.config/nextjs-fullstack-boilerplate/.env` — override the source path with `DEPLOY_ENV_FILE`.                                                          |
+| **`make deploy` / timer tick fails — `.env` not found**       | The box's `.env` needs at least `AUTH_SECRET`, `AUTH_URL`, `CLOUDFLARE_TUNNEL_TOKEN`, and `APP_IMAGE` (+ optionally `APP_TAG`). `make deploy` reads the project-dir `.env`; `make deploy-timer` copies it in each tick from `~/.config/wardbeat/.env` — override the source path with `DEPLOY_ENV_FILE`.                                                                              |
 
 ---
 

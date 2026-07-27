@@ -2,6 +2,13 @@
 
 [← Back to README](../README.md)
 
+> **CI/CD is deferred at this stage.** WardBeat removed the GitHub Actions
+> pipelines for now, so the "CI green → image published → box pulls" half of
+> this playbook is **not currently wired** — it documents the target state for
+> when CI is re-introduced. Today: run the local gate
+> (`pnpm lint && pnpm typecheck && pnpm test && pnpm build`), merge to `main`,
+> and deploy manually (`make deploy`) if/when you self-host.
+
 One connected playbook for taking a change from a feature branch to a live
 update on your box — the git workflow ([CONTRIBUTING.md](../CONTRIBUTING.md)),
 the CI/CD mechanics ([CI/CD](ci-cd.md)), and the deploy target this repo is

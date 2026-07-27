@@ -7,9 +7,9 @@ import { ThemeProvider } from '@/components/theme/theme-provider'
 import { env } from '@/lib/env'
 import './globals.css'
 
-const APP_NAME = 'Next.js Full-Stack Boilerplate'
+const APP_NAME = 'WardBeat'
 const APP_DESCRIPTION =
-  'Production-grade Next.js boilerplate with Auth.js, Drizzle, and Postgres.'
+  'Keep a hospital ward flowing and beds utilised — AI-enabled ward operations.'
 
 export const metadata: Metadata = {
   // Absolute base for OpenGraph/Twitter image URLs and canonical links.
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   applicationName: APP_NAME,
   title: {
     default: APP_NAME,
-    template: '%s · Boilerplate',
+    template: '%s · WardBeat',
   },
   description: APP_DESCRIPTION,
   // Social share cards. The default image (public/og.png) is a committed
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   // iOS home-screen / standalone behaviour.
   appleWebApp: {
     capable: true,
-    title: 'Boilerplate',
+    title: 'WardBeat',
     statusBarStyle: 'default',
   },
   formatDetection: { telephone: false },

@@ -4,10 +4,19 @@ Guidance for AI assistants working in this repository.
 
 ## What this is
 
-A production-grade full-stack **Next.js 16** boilerplate: App Router + RSC +
-Server Actions, Auth.js v5 credentials auth, Drizzle ORM on PostgreSQL, a PWA
-with a responsive app shell, Docker, and CI. Full docs live in [`docs/`](docs/)
-(architecture, features, database, pwa, usage) — read those before large changes.
+**WardBeat** — a full-stack, AI-enabled application that helps keep a hospital
+ward flowing and beds utilised. It is built on a production-grade **Next.js 16**
+platform: App Router + RSC + Server Actions, Auth.js v5 credentials auth,
+Drizzle ORM on PostgreSQL, and a PWA with a responsive app shell (Docker for
+delivery). Product scope and the first feature slice live in
+[`specs/`](specs/) — start with `specs/0025-wardbeat-foundation.md`. Platform
+docs live in [`docs/`](docs/) (architecture, features, database, pwa, usage) —
+read those before large changes.
+
+> **CI is deferred at this stage.** The GitHub Actions pipelines were removed;
+> quality gates run locally (`pnpm lint && pnpm typecheck && pnpm test && pnpm build`).
+> Docs under `docs/` that describe CI/deploy pipelines are reference for when
+> they're re-introduced, not the current wiring.
 
 ## Stack
 

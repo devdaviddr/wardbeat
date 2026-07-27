@@ -1,8 +1,13 @@
 {
-  "name": "nextjs-fullstack-boilerplate",
-  "version": "0.19.0",
+  "name": "wardbeat",
+  "version": "0.1.0",
   "private": true,
   "license": "MIT",
+  "description": "A full-stack, AI-enabled application that helps keep a hospital ward flowing and beds utilised.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devdaviddr/wardbeat.git"
+  },
   "type": "module",
   "engines": {
     "node": ">=20.9.0"
