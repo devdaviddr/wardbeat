@@ -171,6 +171,15 @@ Five planes. GenAI concentrates in **Structuring**, **Retrieval**, and **Reasoni
 deterministic services sit alongside; everything is wrapped in guardrails and
 observability.
 
+> **Engineering approach: harness engineering, not prompt engineering.** WardBeat
+> treats each model as an **unreliable, stochastic component** and engineers
+> reliability _around_ it. The value is in the **harness** — structured/constrained
+> I/O, retrieval and context assembly, tool orchestration, guardrails, verification
+> and retry loops, and an evaluation harness that gates changes — not in a clever
+> prompt. A prompt tweak is unversioned and brittle; a harness is testable,
+> observable, and improves monotonically. Everything below (§7.1–§7.8) is a harness
+> component; the prompt is the smallest, least interesting part.
+
 ```mermaid
 flowchart TB
     subgraph EXP["Experience plane — Next.js 16 (the scaffolded platform)"]
@@ -362,15 +371,39 @@ whole design:
 4. **Complete stack, one vendor contract.** LLM + embedding + reranking + guardrails +
    speech are all NIMs (**NeMo Retriever**, **NeMo Guardrails**, **Riva**), plus reference
    **NVIDIA Blueprints** for enterprise RAG/agents — coherent, supported, versioned.
-5. **A credible migration path (portfolio-friendly).** Build against **hosted NIM endpoints
-   on `build.nvidia.com`** (free/cheap, OpenAI-compatible) for the demo, then **redeploy the
-   identical containers on-prem** for production — _same API, same models, zero app change_.
-   Demonstrating that path is itself the architectural maturity signal.
+5. **A credible migration path (portfolio-friendly).** Build against the **free hosted NIM
+   endpoints on [`build.nvidia.com/models`](https://build.nvidia.com/models)** for the demo,
+   then **redeploy the identical containers on-prem** for production — _same API, same
+   models, zero app change_. Demonstrating that path is itself the architectural maturity
+   signal.
 
 > Contrast to name explicitly if asked: a hosted frontier API (OpenAI/Anthropic) is faster
 > to prototype but **can't satisfy on-prem data-residency**; raw self-hosting (vLLM +
 > HF weights) is possible but you rebuild serving, optimisation, guardrails, and retrieval
 > yourself. **NIM is the middle path: self-hostable _and_ batteries-included.**
+
+### 8.1 Build & run economics (free tier)
+
+The whole project can be **built and demoed for £0**, which is the point for a portfolio:
+
+- **Demo runtime — hosted, free.** The [NVIDIA Developer Program](https://build.nvidia.com/models)
+  gives free, **OpenAI-compatible** endpoints for the full catalogue (Nemotron, the
+  `*-nv-embedqa-*` and `*-nv-rerankqa-*` NIMs, etc.) — **no credit card**, base URL
+  `https://integrate.api.nvidia.com/v1`. Point the app's OpenAI client at it and swap the
+  model id; nothing else changes.
+- **The catch — ~40 requests/minute.** This is a **design input, not a footnote.** A single
+  copilot turn fans out to embedding + rerank + supervisor + agent + guardrail calls, so the
+  free tier sustains only a handful of full agent turns per minute. The harness is built to
+  respect it: **request queue + backoff**, **embedding/result caching**, **batched note
+  extraction**, and a **small synthetic dataset**. Designing around a rate limit is itself a
+  credible engineering signal.
+- **Production path — still cheap.** Self-hosting NIM containers is **free for developers on
+  up to 16 GPUs** under the Developer Program, so the on-prem data-sovereignty story doesn't
+  require a licence spend to prototype — only GPUs.
+
+> **Interview line:** _"I built it on NVIDIA's free hosted NIM tier, engineered the harness
+> around a 40 RPM ceiling, and the exact same OpenAI-compatible code redeploys to on-prem
+> NIM containers — free for dev up to 16 GPUs — for the data-residency story."_
 
 ---
 
@@ -488,10 +521,19 @@ A: RAGAS for retrieval, F1 for extraction against labelled synthetic data, LLM-a
 for action quality, and a red-team suite for safety — all as **CI gates** with golden
 datasets so a model swap can't silently regress.
 
+**Q: Is this prompt engineering, or something more?**
+A: **Harness engineering.** I treat the model as an unreliable component and engineer
+reliability around it — constrained/structured output, retrieval and context assembly,
+tool orchestration, guardrails, verification/retry loops, and an **eval harness that gates
+every change**. The prompt is the smallest part; the harness is what makes it production-
+grade, versionable, and observable. It's also what lets me run on a **free 40 RPM tier**
+without falling over — queueing, caching, and batching are harness concerns, not prompt
+concerns.
+
 **Q: What would you do differently at real-hospital scale?**
 A: Move vectors from pgvector to **Milvus**, run NIMs on a **GPU cluster with autoscaling
-profiles**, add a shared cache/queue, and formalise the intended-use/clinical-safety case
-for regulatory review.
+profiles** (off the 40 RPM hosted tier), add a shared cache/queue, and formalise the
+intended-use/clinical-safety case for regulatory review.
 
 ---
 
