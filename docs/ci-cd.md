@@ -2,6 +2,14 @@
 
 [← Back to README](../README.md)
 
+> **CI/CD is deferred at this stage.** WardBeat removed the GitHub Actions
+> pipelines for now, so the workflows and `../.github/workflows/*.yml` links
+> below describe the **target design** for when CI is re-introduced — **not the
+> current wiring** (there is no `.github/workflows/` directory today). Right now,
+> quality gates run **locally** (`pnpm lint && pnpm typecheck && pnpm test && pnpm build`,
+> plus the [`eval:*` harnesses](evals.md) and the `ai/` pytest suite), and deploys
+> are manual (`make deploy`). See [Feature → Production](workflow.md).
+
 This documentation covers the CI/CD pipeline and testing workflow for the Next.js Fullstack Boilerplate. Deployment is covered separately in [deployment.md](deployment.md). For the full path from a feature branch to a deploy on your box, see [Feature → Production](workflow.md).
 
 ### Pipeline Overview
@@ -176,8 +184,8 @@ pnpm docker:db && pnpm docker:minio && pnpm docker:mail && \
 
 ### GitHub Actions Configuration
 
-The full source of truth is [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
-and [`.github/workflows/codeql.yml`](../.github/workflows/codeql.yml). The
+The full source of truth is `.github/workflows/ci.yml`
+and `.github/workflows/codeql.yml`. The
 summary below describes what each job actually does — consult the workflow
 files for the authoritative YAML.
 
@@ -403,7 +411,7 @@ box running the new code:
 
 ### How to add a new CI check
 
-1. Add the command to the relevant job in [`ci.yml`](../.github/workflows/ci.yml)
+1. Add the command to the relevant job in `ci.yml`
    — most checks belong in `quality` (fast, blocking) alongside
    `format:check`/`lint`/`typecheck`/`test:coverage`.
 2. If it's exploratory or has a high false-positive rate (like `pnpm audit`

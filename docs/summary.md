@@ -1,14 +1,19 @@
-# Next.js Fullstack Boilerplate
+# Platform summary (WardBeat's inherited foundation)
 
 [← Back to README](../README.md)
 
+> This page summarises the **inherited full-stack platform** WardBeat is built on
+> (auth, database, PWA, storage, deployment). For the WardBeat product itself —
+> the ward board, AI barrier extraction, copilot, recommendations, and
+> forecasting — see the [platform guide](guide.html) and [Features](features.md).
+
 ## Summary
 
-A production-grade starting point for full-stack web apps — authentication, database, PWA, Docker, and CI wired up and tested, so you can start building features on day one.
+A production-grade foundation for full-stack web apps — authentication, database, PWA, and Docker deployment, tested and ready to build on. WardBeat adds its clinical AI product on top of this base.
 
 ### Quick Stats
 
-- **Version:** 0.19.0
+- **Version:** WardBeat 0.7.0 (platform baseline v0.19.0)
 - **License:** MIT
 - **Type:** Full-stack Next.js 16 boilerplate
 - **Target:** Single-box production (Docker + Cloudflare Tunnel)
@@ -83,4 +88,7 @@ A production-grade starting point for full-stack web apps — authentication, da
 - Continuous deployment via GHCR image pull (`make deploy`)
 - macOS boot persistence for always-on Mac minis (`make autostart`)
 - Automated Postgres + MinIO backups
-- GitHub Actions CI/CD
+
+> **Note:** CI is deferred — quality gates run locally
+> (`pnpm lint && typecheck && test && build`, plus the `eval:*` harnesses). See
+> [CI/CD](ci-cd.md) for the target pipeline design.

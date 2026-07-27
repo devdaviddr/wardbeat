@@ -1,4 +1,4 @@
-# WardBeat demo runbook (v0.2.0)
+# WardBeat demo runbook (v0.7.0)
 
 [← Back to README](../README.md) · [PRD](prd.md) ·
 [release spec](../specs/releases/v0.2.0-barrier-intelligence-ward-board/spec.md)
@@ -54,10 +54,21 @@ everything lives on one screen:
   refused.
 - Toggle **Show fit-but-delayed** for the beds you could free today.
 
-The **Actions** queue (nav) remains as a focused triage view over all
-recommendations. The `/copilot` and `/briefing` routes still exist as standalone
-pages. Prove quality any time: `pnpm eval:copilot`, `pnpm eval:actions`,
-`pnpm eval:forecast`, `pnpm eval:extraction` (all gated).
+The **action queue now lives on the board** (v0.7.0) — the "Actions (N)"
+slide-over — so `/actions` redirects to the board and is no longer a nav entry.
+The `/copilot` and `/briefing` routes still exist directly but aren't in the nav
+either. Prove quality any time: `pnpm eval:copilot`, `pnpm eval:actions`,
+`pnpm eval:forecast`, `pnpm eval:extraction` (all gated — see [Evals](evals.md)).
+
+### Also worth showing
+
+- **Settings → System → AI configuration** (admin) shows how the AI plane is
+  wired _live_ — mock vs live, the three model ids, the endpoint host, and the
+  operational limits (no secrets, only whether a key/token is set). The fastest
+  way to prove "this is really running on NVIDIA NIM". See [Monitoring](monitoring.md).
+- **About** (sidebar, or `/about`) opens the in-app **product guide** — the
+  problem, patient flow, architecture (with diagrams), AI tooling & models, and
+  the evaluation story — plus dedicated Architecture and Azure-deployment pages.
 
 ## 4. Go live on NVIDIA NIM (optional)
 

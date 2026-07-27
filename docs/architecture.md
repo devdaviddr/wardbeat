@@ -2,17 +2,37 @@
 
 [← Back to README](../README.md)
 
-A single Next.js 16 application (App Router) backed by PostgreSQL. Rendering is server-first (React Server Components + Server Actions); the client bundle is only what interactivity requires.
+Two cooperating services. A **Next.js 16 application** (App Router) is the BFF, UI, and auth layer — it is the **sole writer to PostgreSQL** and the **only orchestrator of AI**. Behind it sits a stateless, internal **FastAPI AI plane** (`ai/`) that wraps NVIDIA NIM models; it is server-side only (never browser-facing) and gated by a shared service token. Rendering is server-first (React Server Components + Server Actions); the client bundle is only what interactivity requires.
 
 ### Core Stack
 
-| Component | Technology                  | Purpose                                  |
-| --------- | --------------------------- | ---------------------------------------- |
-| Framework | Next.js 16                  | App Router, RSC, Server Actions          |
-| Auth      | Auth.js v5                  | Credentials + OAuth, JWT, Argon2id, RBAC |
-| Database  | PostgreSQL 17 + Drizzle ORM | Type-safe schema, migrations             |
-| Storage   | MinIO (S3-compatible)       | File uploads, object storage             |
-| PWA       | Custom service worker       | Offline resilience, push notifications   |
+| Component | Technology                         | Purpose                                                                   |
+| --------- | ---------------------------------- | ------------------------------------------------------------------------- |
+| Framework | Next.js 16                         | App Router, RSC, Server Actions; BFF + sole DB writer                     |
+| AI plane  | FastAPI (`ai/`) + NVIDIA NIM       | Internal, stateless AI service (extract, embed, copilot, agent, forecast) |
+| Auth      | Auth.js v5                         | Credentials + OAuth, JWT, Argon2id, RBAC                                  |
+| Database  | PostgreSQL 17 + pgvector + Drizzle | Type-safe schema, migrations, vector search                               |
+| Storage   | MinIO (S3-compatible)              | File uploads, object storage                                              |
+| PWA       | Custom service worker              | Offline resilience, push notifications                                    |
+
+### AI plane
+
+The AI plane (`ai/`, FastAPI) is an internal, stateless microservice that holds no
+database and no user session — Next.js is the only thing that calls it, always
+server-side, and passes an `x-service-token` (`WARDBEAT_AI_SERVICE_TOKEN`) on every
+request. Next.js reaches it at `WARDBEAT_AI_URL` (`http://ai:8000` inside the compose
+network). It wraps three **NVIDIA NIM** models — `nvidia/nvidia-nemotron-nano-9b-v2`
+(extraction / chat / narration), `nvidia/nv-embedqa-e5-v5` (1024-dim embeddings), and
+`nvidia/llama-3.2-nv-rerankqa-1b-v2` (rerank) — and can run fully offline with
+deterministic stubs when `NIM_MOCK=true`.
+
+Endpoints: `GET /healthz`, `GET /config` (token-gated), `POST /extract`, `POST /embed`,
+`POST /copilot/route`, `POST /copilot/query-intent`, `POST /copilot/rerank`,
+`POST /copilot/answer`, `POST /agent/recommend`, `POST /forecast/discharge`,
+`POST /forecast/demand`, `POST /forecast/narrate`.
+
+See [AI plane README](../ai/README.md), the in-app [platform guide](guide.html), the
+[eval harnesses](evals.md), and [monitoring](monitoring.md).
 
 ### Request Flow
 
@@ -24,11 +44,18 @@ A single Next.js 16 application (App Router) backed by PostgreSQL. Rendering is 
 
 2. **App Router** renders pages as Server Components:
    - Protected layouts/pages re-read session server-side (`getCurrentSession`) as defense in depth
-   - Server Actions handle mutations (register, login, sign-out)
+   - Server Actions handle mutations (register, login, sign-out, ward actions)
    - No separate API layer for forms
 
-3. **Drizzle ORM** executes type-safe queries:
-   - Against Postgres via pooled `postgres-js` client
+3. **AI calls** are made server-side only:
+   - Server Actions / scripts call the FastAPI **AI plane** at `WARDBEAT_AI_URL`
+     with an `x-service-token`; the browser never talks to it directly
+   - Next.js persists every AI output back to Postgres (extractions, barriers,
+     recommendations, audit) — the AI plane itself is stateless
+
+4. **Drizzle ORM** executes type-safe queries:
+   - Against Postgres (17 + pgvector) via pooled `postgres-js` client
+   - Next.js is the single writer; the AI plane never touches the database
 
 ### Container Topology
 
@@ -41,10 +68,16 @@ Internet (HTTPS)
    │
    ▼ app:3000 (Next.js service)
    │
-   ├─ SQL → db:5432 (Postgres)
+   ├─ SQL   → db:5432   (Postgres 17 + pgvector)
    │
-   └─ S3 → minio:9000 (objects)
+   ├─ HTTP  → ai:8000   (FastAPI AI plane — INTERNAL only, off the tunnel,
+   │                     x-service-token, wraps NVIDIA NIM)
+   │
+   └─ S3    → minio:9000 (objects)
 ```
+
+Only `app:3000` is reachable from the public gateway. `ai:8000` has no ingress of its
+own — it is called exclusively from the Next.js server over the internal network.
 
 ### Authentication Design
 

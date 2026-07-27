@@ -11,18 +11,20 @@
 ![Auth.js](https://img.shields.io/badge/Auth.js-v5-000000?logo=auth0&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8?logo=tailwindcss&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-ready-5a0fc8?logo=pwa&logoColor=white)
-![Status](https://img.shields.io/badge/status-scaffolding-orange.svg)
+![Status](https://img.shields.io/badge/status-v0.7.0%20shipped-15803d.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 </div>
 
 ---
 
-> **Status: scaffolding.** This repository was just stood up from a proven
-> full-stack platform (see [Foundations](#foundations)). No WardBeat feature
-> logic has been written yet — the immediate work is process, structure, and a
-> clean base. Product features are tracked as specs in [`specs/`](specs/README.md),
-> starting with [0025 — WardBeat foundation](specs/0025-wardbeat-foundation.md).
+> **Status: shipping (v0.7.0).** The flow cockpit is live: a ward board that
+> extracts discharge barriers from notes, a grounded copilot, human-approved
+> action recommendations, and deterministic forecasting with AI narration — all
+> on a stateless FastAPI AI plane over NVIDIA NIM. Work is spec-driven in
+> [`specs/`](specs/README.md); see the [platform guide](docs/guide.html) (in-app
+> at `/about`) for the product tour and the [roadmap](docs/roadmap.md) for
+> what's next. CI is deferred — quality gates run locally (see below).
 
 ## What it is
 
@@ -125,24 +127,27 @@ For the installable PWA (service worker is production-only): `pnpm build && pnpm
 
 ## Documentation
 
-| Doc                                             | What's inside                                                                                                 |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| 📖 **[Platform guide](docs/guide.html)**        | The complete guide — overview, hospital use, how it works, stack & why, metrics & roadmap (open in a browser) |
-| 🩺 **[PRD](docs/prd.md)**                       | Product vision, GenAI reference architecture (NVIDIA NIM), roadmap                                            |
-| 📐 **[Specs](specs/README.md)**                 | Spec-driven development — WardBeat features + inherited platform specs                                        |
-| 📋 **[Features](docs/features.md)**             | Complete inherited feature list and what's included                                                           |
-| 🏛️ **[Architecture](docs/architecture.md)**     | Request flow, auth design, security model, project structure                                                  |
-| 🗄️ **[Database](docs/database.md)**             | ERD, schema, migrations, Drizzle workflow, seeding                                                            |
-| 🔑 **[OAuth](docs/oauth.md)**                   | GitHub + Google sign-in — setup, callback URLs, linking                                                       |
-| ✉️ **[Email](docs/email.md)**                   | SMTP setup, password reset, email verification, soft gate                                                     |
-| 📱 **[PWA & App Shell](docs/pwa.md)**           | Manifest, service worker strategy, icons, responsive shell                                                    |
-| 🔔 **[Web Push](docs/push.md)**                 | VAPID setup, subscribe/send, service-worker handlers                                                          |
-| 🛠️ **[Usage & Development](docs/usage.md)**     | Scripts, env vars, testing, Docker, extending the app                                                         |
-| 📦 **[Self-hosting](docs/self-hosting.md)**     | `make setup` clone-to-live + continuous deployment (`make deploy`)                                            |
-| 🚀 **[Deployment](docs/deployment.md)**         | Cloudflare Tunnel — quick, guided, and Terraform paths                                                        |
-| ⚙️ **[CI/CD](docs/ci-cd.md)**                   | Pipeline design (deferred — see the note above)                                                               |
-| 🔁 **[Feature → Production](docs/workflow.md)** | One playbook: branch → PR → release → deploy                                                                  |
-| 💾 **[Backups](docs/backups.md)**               | Nightly Postgres + MinIO backups, restore runbook, offsite                                                    |
+| Doc                                             | What's inside                                                                                                                                                                            |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 📖 **[Platform guide](docs/guide.html)**        | The product guide — problem, what it does, patient flow, architecture, AI tooling & models, evaluation, stack. Served in-app at `/about` (with `/about/architecture` and `/about/azure`) |
+| 🩺 **[PRD](docs/prd.md)**                       | Product vision, GenAI reference architecture (NVIDIA NIM), roadmap                                                                                                                       |
+| 🧪 **[Evals](docs/evals.md)**                   | Testing & evaluating the AI — the four eval harnesses, datasets, gates, and how to run them                                                                                              |
+| 📈 **[Monitoring](docs/monitoring.md)**         | Observing the AI at runtime — structured logs, health/config endpoints, and the signals to watch                                                                                         |
+| 🗺️ **[Roadmap](docs/roadmap.md)**               | How WardBeat could improve — product, AI & models, evaluation, and operability                                                                                                           |
+| 📐 **[Specs](specs/README.md)**                 | Spec-driven development — WardBeat features + inherited platform specs                                                                                                                   |
+| 📋 **[Features](docs/features.md)**             | Complete inherited feature list and what's included                                                                                                                                      |
+| 🏛️ **[Architecture](docs/architecture.md)**     | Request flow, auth design, security model, project structure                                                                                                                             |
+| 🗄️ **[Database](docs/database.md)**             | ERD, schema, migrations, Drizzle workflow, seeding                                                                                                                                       |
+| 🔑 **[OAuth](docs/oauth.md)**                   | GitHub + Google sign-in — setup, callback URLs, linking                                                                                                                                  |
+| ✉️ **[Email](docs/email.md)**                   | SMTP setup, password reset, email verification, soft gate                                                                                                                                |
+| 📱 **[PWA & App Shell](docs/pwa.md)**           | Manifest, service worker strategy, icons, responsive shell                                                                                                                               |
+| 🔔 **[Web Push](docs/push.md)**                 | VAPID setup, subscribe/send, service-worker handlers                                                                                                                                     |
+| 🛠️ **[Usage & Development](docs/usage.md)**     | Scripts, env vars, testing, Docker, extending the app                                                                                                                                    |
+| 📦 **[Self-hosting](docs/self-hosting.md)**     | `make setup` clone-to-live + continuous deployment (`make deploy`)                                                                                                                       |
+| 🚀 **[Deployment](docs/deployment.md)**         | Cloudflare Tunnel — quick, guided, and Terraform paths                                                                                                                                   |
+| ⚙️ **[CI/CD](docs/ci-cd.md)**                   | Pipeline design (deferred — see the note above)                                                                                                                                          |
+| 🔁 **[Feature → Production](docs/workflow.md)** | One playbook: branch → PR → release → deploy                                                                                                                                             |
+| 💾 **[Backups](docs/backups.md)**               | Nightly Postgres + MinIO backups, restore runbook, offsite                                                                                                                               |
 
 ## Development workflow
 

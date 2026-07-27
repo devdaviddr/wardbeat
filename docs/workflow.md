@@ -65,7 +65,7 @@ See [Usage & Development](usage.md).
 
 ## 3 — Open a PR into `main`
 
-CI ([`ci.yml`](../.github/workflows/ci.yml)) runs `quality` and `e2e` on the
+CI (`ci.yml`) runs `quality` and `e2e` on the
 PR, and builds (but never pushes) the Docker image on both architectures.
 Merge once it's green. There's no `develop` branch to target — PRs go
 straight into `main`.
@@ -138,7 +138,7 @@ A rollback is just re-pinning the tag, not reverting code on the box:
 
 ```bash
 # on the box, in .env:
-APP_TAG="0.18.0"      # the previous known-good release
+APP_TAG="0.7.0"      # the previous known-good release
 make deploy
 ```
 

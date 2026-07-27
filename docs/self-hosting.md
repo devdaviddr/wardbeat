@@ -159,13 +159,19 @@ and let the agent trigger it.
 
 ## Continuous deployment
 
+> **Deferred:** the CI half described here — GitHub Actions publishing images to
+> GHCR on every green run — is **not currently wired** (WardBeat removed the
+> pipelines; there is no `.github/workflows/`). The local paths (`make setup`,
+> `make deploy`) are real and work today; the auto-publish-on-merge is the target
+> design for when CI is re-introduced. See [CI/CD](ci-cd.md).
+
 `make setup` gets you live the first time; **continuous deployment** keeps a
-running box up to date as you push new code. CI already builds a production image
-on every green run — CD just ships it. Because the box is **outbound-only** (the
+running box up to date as you push new code. When CI is re-introduced it will
+build a production image on every green run; CD just ships it. Because the box is **outbound-only** (the
 tunnel opens no inbound ports), both paths below are **pull-based**: the box
 reaches out for the new image; nothing reaches in.
 
-On merge to `main`, [`ci.yml`](../.github/workflows/ci.yml) publishes two images to
+On merge to `main`, `ci.yml` publishes two images to
 the GitHub Container Registry, **only after `quality` + `e2e` pass**:
 
 - `ghcr.io/<owner>/<repo>` — the app (production `runner` image).
@@ -187,7 +193,7 @@ Point the box at the published image and update with one command. In the box's
 APP_IMAGE="ghcr.io/devdaviddr/wardbeat"
 APP_TAG="stable"        # newest RELEASE — moves when a v* tag is pushed (recommended)
 # APP_TAG="latest"      # every green main merge (trunk tracking, no release gate)
-# APP_TAG="0.18.0"      # pin an exact release — never moves; bump it to update
+# APP_TAG="0.7.0"      # pin an exact release — never moves; bump it to update
 ```
 
 `APP_TAG` is the whole deployment policy: it decides **what** lands on the box and
@@ -248,7 +254,7 @@ commit `sha` tag) and run `make deploy` again.
 
 For a **private/trusted** repo wanting true "tag a release → it deploys itself",
 register your box as a **GitHub self-hosted runner** and enable the shipped
-[`deploy.yml`](../.github/workflows/deploy.yml):
+`deploy.yml`:
 
 1. Add a self-hosted runner on the box (GitHub → Settings → Actions → Runners).
    The runner **dials out** to GitHub, so it works behind the tunnel.

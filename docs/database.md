@@ -2,7 +2,11 @@
 
 [← Back to README](../README.md)
 
-PostgreSQL 17 accessed through [Drizzle ORM](https://orm.drizzle.team) with a `postgres-js` driver.
+PostgreSQL 17 (with the **pgvector** extension) accessed through
+[Drizzle ORM](https://orm.drizzle.team) with a `postgres-js` driver. Next.js is the
+**single writer** — the FastAPI AI plane is stateless and never touches the database.
+Schema splits into the inherited **platform** tables (auth, files, push) and the
+**WardBeat** tables (ward domain, AI outputs, policy KB).
 
 ### Entity-Relationship Diagram
 
@@ -77,7 +81,106 @@ erDiagram
     }
 ```
 
+#### WardBeat domain
+
+```mermaid
+erDiagram
+    wards ||--o{ beds : "has"
+    patients ||--o{ encounters : "has"
+    beds ||--o| encounters : "assigned"
+    encounters ||--o{ notes : "documented by"
+    encounters ||--o{ barriers : "blocked by"
+    encounters ||--o{ recommendations : "suggested for"
+    notes ||--o{ ai_extractions : "extracted from"
+    notes ||--o{ barriers : "cited by (source_note_id)"
+    ai_extractions ||--o{ barriers : "grounds"
+    barriers ||--o{ recommendations : "resolves"
+    recommendations ||--o{ action_audit : "decided in"
+    policy_docs ||--o{ policy_chunks : "chunked into"
+
+    wards {
+        text id PK
+        text name
+    }
+    patients {
+        text id PK
+        text mrn "synthetic"
+        text name
+    }
+    beds {
+        text id PK
+        text ward_id FK
+        text label
+        text status "free|occupied|cleaning"
+    }
+    encounters {
+        text id PK
+        text patient_id FK
+        text bed_id FK
+        boolean mffd_flag
+        text edd "ISO date"
+        timestamp admitted_at
+        timestamp discharged_at
+    }
+    notes {
+        text id PK
+        text encounter_id FK
+        text author_role
+        text text "untrusted free text"
+        jsonb eval_labels "synthetic ground-truth"
+    }
+    ai_extractions {
+        text id PK
+        text note_id FK
+        text model
+        text edd
+        boolean mffd_flag
+        boolean grounded
+        text raw_json
+    }
+    barriers {
+        text id PK
+        text encounter_id FK
+        text source_note_id FK "citation"
+        text extraction_id FK
+        text type "tto|transport|social_care|review|other"
+        text status "pending|in_progress|cleared"
+        text source_quote
+        integer confidence
+    }
+    recommendations {
+        text id PK
+        text encounter_id FK
+        text barrier_id FK
+        text action_type
+        text status "proposed|approved|dismissed"
+        text rationale
+        jsonb policy_citation
+    }
+    action_audit {
+        text id PK
+        text recommendation_id FK
+        text decision "approved|dismissed"
+        text actor_user_id FK
+        text note
+    }
+    policy_docs {
+        text id PK
+        text title
+        text source
+    }
+    policy_chunks {
+        text id PK
+        text doc_id FK
+        integer ordinal
+        text text
+        vector embedding "vector(1024) hnsw cosine"
+    }
+```
+
 ### Schema Tables
+
+**Platform (inherited):**
 
 | Table                 | Purpose                                                   |
 | --------------------- | --------------------------------------------------------- |
@@ -90,6 +193,36 @@ erDiagram
 | `user_roles`          | Many-to-many users ↔ roles                                |
 | `files`               | Uploaded file metadata + S3 storage                       |
 | `push_subscriptions`  | Web Push subscriptions per device                         |
+
+**WardBeat — ward domain:**
+
+| Table        | Purpose                                                   |
+| ------------ | --------------------------------------------------------- |
+| `wards`      | A hospital ward                                           |
+| `patients`   | Synthetic patients (MRN + name — never real PHI)          |
+| `beds`       | Beds in a ward with a `free`/`occupied`/`cleaning` status |
+| `encounters` | A patient's stay: bed, `admitted_at`, `edd`, `mffd_flag`  |
+| `notes`      | Free-text clinical notes on an encounter (the AI input)   |
+
+**WardBeat — AI outputs:**
+
+| Table             | Purpose                                                                                                         |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| `ai_extractions`  | Per-note extraction result (EDD, MFFD, escalations, raw JSON)                                                   |
+| `barriers`        | Discharge blockers (`tto`/`transport`/`social_care`/`review`/`other`) with a **cited source note + quote/span** |
+| `recommendations` | Recommend-only next-best actions, each with a policy citation                                                   |
+| `action_audit`    | Human approve/dismiss decisions on recommendations (who + when)                                                 |
+
+**WardBeat — policy knowledge base (RAG):**
+
+| Table           | Purpose                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| `policy_docs`   | Discharge-policy source documents                                                        |
+| `policy_chunks` | Chunked text with a `vector(1024)` **pgvector** embedding + an **hnsw cosine** ANN index |
+
+> The **pgvector** extension backs `policy_chunks.embedding` (1024-dim, matching the
+> `nv-embedqa-e5-v5` embedding model), searched via an hnsw cosine-similarity index for
+> the copilot's policy retrieval. Next.js is the sole writer to every table above.
 
 ### Migration Workflow
 
@@ -129,12 +262,16 @@ pnpm db:studio      # visual DB browser
 
 ### Database Commands
 
-| Command             | Description                                          |
-| ------------------- | ---------------------------------------------------- |
-| `pnpm docker:db`    | Start local Postgres                                 |
-| `pnpm docker:minio` | Start local MinIO with bucket                        |
-| `pnpm db:migrate`   | Apply migrations                                     |
-| `pnpm db:seed`      | Seed demo user (`demo@example.com` / `Password123` ) |
+| Command               | Description                                                               |
+| --------------------- | ------------------------------------------------------------------------- |
+| `pnpm docker:db`      | Start local Postgres (pgvector/pg17 image)                                |
+| `pnpm docker:minio`   | Start local MinIO with bucket                                             |
+| `pnpm db:migrate`     | Apply migrations                                                          |
+| `pnpm db:seed`        | Seed demo user (`demo@example.com` / `Password123` )                      |
+| `pnpm db:seed:ward`   | Seed synthetic wards, beds, patients, encounters, and notes               |
+| `pnpm db:seed:policy` | Seed discharge-policy docs and embed their chunks (via the AI plane)      |
+| `pnpm db:extract`     | Run barrier extraction over seeded notes and persist extractions/barriers |
+| `pnpm db:recommend`   | Run the recommendation agent over open barriers and persist proposals     |
 
 ### Production Setup
 

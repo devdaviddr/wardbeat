@@ -6,7 +6,8 @@
 
 - Node.js ≥ 20.9 (22 recommended)
 - [pnpm](https://pnpm.io) — `corepack enable`
-- Docker (for local Postgres + MinIO)
+- Docker (for local Postgres, the internal `ai` service, and MinIO)
+- Python 3.11+ only if running the AI plane outside Docker (see [`ai/README.md`](../ai/README.md))
 
 ## Environment variables
 
@@ -44,6 +45,36 @@ Copy `.env.example` → `.env`. All variables are validated at boot in `src/lib/
 | `VAPID_PRIVATE_KEY`          |    –     | Web Push private key (server-only)                                                                                |
 | `VAPID_SUBJECT`              |    –     | Web Push contact URL, e.g. `mailto:you@example.com`                                                               |
 
+### AI plane
+
+Next.js reaches the internal FastAPI AI service with just two vars; the rest configure
+the AI plane itself (`ai/`, read by `ai/app/settings.py` / `.env.example`).
+
+**Next.js side** (`src/lib/env.ts`):
+
+| Variable                    | Required | Notes                                                                                          |
+| --------------------------- | :------: | ---------------------------------------------------------------------------------------------- |
+| `WARDBEAT_AI_URL`           |    –     | Base URL of the AI plane, e.g. `http://ai:8000` (compose) / `http://localhost:8000` (host dev) |
+| `WARDBEAT_AI_SERVICE_TOKEN` |    –     | Shared secret sent as `x-service-token` on every AI-plane call                                 |
+
+**AI-plane side** (consumed by `ai/`, not the Next.js app):
+
+| Variable                 | Required | Notes                                                                        |
+| ------------------------ | :------: | ---------------------------------------------------------------------------- |
+| `NIM_MOCK`               |    –     | `true` runs fully offline with deterministic stubs (no NVIDIA calls)         |
+| `NVIDIA_API_KEY`         |    ‡     | Hosted NIM API key — required when `NIM_MOCK=false`                          |
+| `NIM_BASE_URL`           |    –     | NIM endpoint base URL                                                        |
+| `NIM_EXTRACT_MODEL`      |    –     | Default `nvidia/nvidia-nemotron-nano-9b-v2` (extraction / chat / narration)  |
+| `NIM_EMBED_MODEL`        |    –     | Default `nvidia/nv-embedqa-e5-v5` (1024-dim embeddings)                      |
+| `NIM_RERANK_MODEL`       |    –     | Default `nvidia/llama-3.2-nv-rerankqa-1b-v2` (rerank)                        |
+| `EMBED_DIM`              |    –     | Embedding dimension; `1024` (must match `policy_chunks.embedding`)           |
+| `NIM_EXTRACT_MAX_TOKENS` |    –     | Completion token budget for extraction. Default `1024`                       |
+| `NIM_TIMEOUT`            |    –     | Per-request timeout in seconds. Default `30`                                 |
+| `NIM_RPM`                |    –     | Client-side rate limit (requests/min). Default `30`                          |
+| `AI_SERVICE_TOKEN`       |    –     | Expected `x-service-token`; must match Next.js's `WARDBEAT_AI_SERVICE_TOKEN` |
+
+‡ Required only when `NIM_MOCK=false`. See [`ai/README.md`](../ai/README.md).
+
 † Required only when `EMAIL_ENABLED=true`. Setting the toggle without a provider
 fails fast at boot. SMTP is provider-agnostic — Resend, SendGrid, Mailgun, SES,
 Postmark and Gmail all expose SMTP credentials. See [Email](email.md). S3 vars
@@ -55,20 +86,24 @@ are always required — see [Features → File uploads](features.md#file-uploads
 
 ## Scripts
 
-| Command                                                                 | Description                            |
-| ----------------------------------------------------------------------- | -------------------------------------- |
-| `pnpm dev`                                                              | Start the dev server (Turbopack)       |
-| `pnpm build` / `pnpm start`                                             | Production build / serve               |
-| `pnpm lint` · `pnpm lint:fix`                                           | ESLint                                 |
-| `pnpm typecheck`                                                        | `tsc --noEmit`                         |
-| `pnpm format` · `pnpm format:check`                                     | Prettier                               |
-| `pnpm test` · `pnpm test:watch` · `pnpm test:coverage`                  | Vitest units                           |
-| `pnpm test:e2e` · `pnpm test:e2e:ui`                                    | Playwright E2E                         |
-| `pnpm db:generate` · `db:migrate` · `db:push` · `db:studio` · `db:seed` | Database (see [Database](database.md)) |
-| `pnpm gen:icons` · `pnpm gen:og`                                        | Regenerate PWA icons · OG share image  |
-| `pnpm docker:db`                                                        | Start the local Postgres container     |
-| `pnpm docker:minio`                                                     | Start local MinIO + bucket init        |
-| `pnpm docker:mail`                                                      | Start local Mailpit (email catcher)    |
+| Command                                                                    | Description                                                                     |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `pnpm dev`                                                                 | Start the dev server (Turbopack)                                                |
+| `pnpm build` / `pnpm start`                                                | Production build / serve                                                        |
+| `pnpm lint` · `pnpm lint:fix`                                              | ESLint                                                                          |
+| `pnpm typecheck`                                                           | `tsc --noEmit`                                                                  |
+| `pnpm format` · `pnpm format:check`                                        | Prettier                                                                        |
+| `pnpm test` · `pnpm test:watch` · `pnpm test:coverage`                     | Vitest units                                                                    |
+| `pnpm test:e2e` · `pnpm test:e2e:ui`                                       | Playwright E2E                                                                  |
+| `pnpm db:generate` · `db:migrate` · `db:push` · `db:studio` · `db:seed`    | Database (see [Database](database.md))                                          |
+| `pnpm db:seed:ward` · `db:seed:policy`                                     | Seed synthetic ward data · discharge-policy KB (embeds chunks via the AI plane) |
+| `pnpm db:extract` · `db:recommend`                                         | Run barrier extraction · the recommendation agent over seeded data              |
+| `pnpm eval:extraction` · `eval:copilot` · `eval:actions` · `eval:forecast` | AI eval harnesses (see [Evals](evals.md))                                       |
+| `pnpm sync:about`                                                          | Copy `docs/guide.html` → `public/about.html` (in-app guide)                     |
+| `pnpm gen:icons` · `pnpm gen:og`                                           | Regenerate PWA icons · OG share image                                           |
+| `pnpm docker:db`                                                           | Start the local Postgres container                                              |
+| `pnpm docker:minio`                                                        | Start local MinIO + bucket init                                                 |
+| `pnpm docker:mail`                                                         | Start local Mailpit (email catcher)                                             |
 
 ## Testing
 
@@ -104,9 +139,14 @@ pnpm docker:db && pnpm docker:minio && pnpm docker:mail && \
 ```bash
 pnpm docker:db          # docker compose up -d db
 pnpm docker:minio       # docker compose up -d minio minio-init
+docker compose up -d ai # internal FastAPI AI plane on :8000 (or db + ai together)
 ```
 
-**Full production-like stack (app + db + MinIO + one-shot migrator/bucket-init):**
+The `ai` service is **internal** — it exposes `:8000` for host-dev convenience but has
+no public ingress; keep it off the Cloudflare Tunnel in production. It runs offline with
+`NIM_MOCK=true`, or against hosted NVIDIA NIM with a real `NVIDIA_API_KEY`.
+
+**Full production-like stack (app + db + `ai` + MinIO + one-shot migrator/bucket-init + backup sidecars):**
 
 ```bash
 AUTH_SECRET=$(openssl rand -base64 33) \
@@ -119,14 +159,19 @@ The app image is a multi-stage build using Next.js `standalone` output, runs as 
 
 Husky installs a `pre-commit` hook that runs **lint-staged** (ESLint + Prettier on staged files). It's wired via the `prepare` script on `pnpm install`. To bypass in an emergency: `git commit --no-verify`.
 
-## Continuous integration
+## Quality gates (CI deferred)
 
-`.github/workflows/ci.yml` runs on push/PR to `main`:
+There is no `.github/workflows/` at this stage — **CI is deferred**. Gates run
+**locally** before pushing:
 
-1. **Quality** — install, format check, lint, typecheck, unit tests (coverage).
-2. **E2E** — starts Postgres, MinIO, and Mailpit; migrates, seeds, builds, and
-   runs Playwright.
-3. **Docker** — builds the production image with layer caching.
+```bash
+pnpm lint && pnpm typecheck && pnpm test && pnpm build
+```
+
+Plus, for the AI surface: the `eval:*` harnesses (`pnpm eval:extraction` /
+`eval:copilot` / `eval:actions` / `eval:forecast`, see [Evals](evals.md)) and the
+`ai/` `pytest` suite. See the CI note in the README / workflow docs for the pipeline
+that will be reintroduced later.
 
 ## Extending
 

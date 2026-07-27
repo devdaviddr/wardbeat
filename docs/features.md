@@ -2,7 +2,38 @@
 
 [← Back to README](../README.md)
 
-A complete inventory of what ships in this boilerplate.
+A complete inventory of what ships in WardBeat — the ward-flow product features
+first, then the inherited platform (auth, RBAC, uploads, PWA, email) they're built on.
+
+## WardBeat product features
+
+- **Ward cockpit board** — the live ward view: beds, encounters, EDD / MFFD, and
+  each patient's open discharge barriers at a glance (`src/components/ward/`).
+- **AI barrier extraction** — the AI plane reads each clinical note and extracts
+  discharge blockers typed as **`tto`** (to-take-out meds), **`transport`**,
+  **`social_care`**, or **`review`** (plus `other`), along with the **expected
+  discharge date (EDD)** and a **medically-fit-for-discharge (MFFD)** flag. Every
+  barrier carries a **grounded source citation** — the source note plus the exact
+  quote/span it came from — so nothing is asserted without provenance.
+- **Flow copilot** — a ward-flow assistant that first **validates the query
+  against live ward state** (a filter, not a hallucination) and then answers over
+  discharge policy with **RAG** — retrieve `policy_chunks` by pgvector similarity,
+  rerank, and answer with citations (AI-plane `copilot/*` endpoints).
+- **Recommendation agent** — turns barriers into next-best actions. It is
+  **recommend-only**: every action is a proposal a human **approves or dismisses**,
+  and each decision is **audited** (`recommendations` + `action_audit`). No external
+  side effects.
+- **Forecasting** — **deterministic** discharge- and demand-forecasts with an
+  **LLM narration** layer for the human-readable summary
+  (AI-plane `forecast/discharge`, `forecast/demand`, `forecast/narrate`).
+- **AI configuration in Settings** — an admin view surfaces the AI plane's
+  non-sensitive `/config` (models, mock mode, whether an API key is set); secrets
+  never leave the server.
+- **In-app About guide** — the platform guide ships in-app (`sync:about` copies
+  [`guide.html`](guide.html) to `public/about.html`).
+
+See [Architecture → AI plane](architecture.md#ai-plane), the [eval harnesses](evals.md),
+[monitoring](monitoring.md), and the [roadmap](roadmap.md).
 
 ## Authentication
 
@@ -118,13 +149,21 @@ See [PWA & App Shell](pwa.md).
 
 - **Vitest** + Testing Library for units (password hashing, validation schemas).
 - **Playwright** for E2E (full auth flow, protected-route redirects, PWA manifest/SW/offline).
-- Runs locally and in CI against a real Postgres.
+- **AI eval harnesses** — `eval:extraction` (barrier F1), `eval:copilot`,
+  `eval:actions`, and `eval:forecast` score the AI plane against synthetic
+  ground-truth (see [Evals](evals.md)); the `ai/` service has its own `pytest` suite.
+- Quality gates run **locally** — `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
+  against a real Postgres. **CI is deferred** at this stage (no `.github/workflows/`).
 
 ## Delivery
 
 - **Multi-stage Dockerfile** — Next.js `standalone` output, non-root user, healthcheck.
-- **docker-compose** for local Postgres and a full production-like stack (app + db + one-shot migrator + MinIO).
+- **docker-compose** for local dependencies (Postgres + the internal `ai` service +
+  MinIO) and a full production-like stack (app + db + one-shot migrator + `ai` + MinIO
+  - backup sidecars).
 - **Automated backups** — nightly Postgres dumps + MinIO mirror with retention, a `backup-verify.sh` doctor, and a tested restore runbook. See [Backups](backups.md).
-- **GitHub Actions** CI: lint · typecheck · unit · E2E (with Postgres service) · Docker build.
+- **CI is deferred** — quality gates run locally (lint · typecheck · unit · build,
+  plus the `eval:*` harnesses and `ai/` pytest). See the CI note in the README /
+  workflow docs.
 
 See [Usage & Development](usage.md) and [Deployment](deployment.md).
