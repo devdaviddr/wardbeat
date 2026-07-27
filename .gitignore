@@ -56,3 +56,7 @@ graphify-out/
 # Local backups — contain full user data (emails, password hashes, files).
 # Never commit; keep host directory permissions tight (see docs/backups.md).
 backups/
+
+# Python virtualenv (AI plane local testing)
+ai/.venv/
+.venv/

@@ -13,13 +13,23 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **AI configuration in Settings.** Admins get a read-only AI configuration card
+  showing whether the AI plane is running live on NVIDIA NIM or the deterministic
+  mock, the extraction/embedding/rerank model ids, the model endpoint host, and
+  the operational limits (rate-limit budget, timeout, extraction token budget,
+  embedding dimensions). Values come from a new token-gated `GET /config` on the
+  AI service, so they can never drift from what the service actually uses; secret
+  values are never exposed, only whether a key or token is configured. Settings
+  is now grouped into sections (Account, Files & notifications, System,
+  Administration). See `specs/releases/v0.8.0-ai-configuration-settings/`.
 
 ## [0.7.0] - 2026-07-27
 
 ### Changed
 
-- **The action queue is now on the ward board** — an "Actions (N)" panel
+- **The action queue is now on the ward board** ï¿½ an "Actions (N)" panel
   (slide-over) with Generate + approve/dismiss, plus the existing per-bed drawer.
   The standalone /actions page is retired (the route redirects to the board) and
   dropped from the nav. Extracted a shared RecommendationCard used by both the
@@ -30,7 +40,7 @@ _Nothing yet._
 ### Changed
 
 - The flow briefing is now **generated manually** (a Generate/Regenerate
-  button) instead of auto-running on every board load — it is the one NIM call
+  button) instead of auto-running on every board load ï¿½ it is the one NIM call
   on the board and takes a few seconds, so the board now loads instantly and the
   briefing is produced on demand.
 
@@ -39,7 +49,7 @@ _Nothing yet._
 ### Changed
 
 - Consistent view width: the copilot, briefing, and action-queue views no longer
-  self-constrain to a narrow column (removed `max-w-3xl`) — every view now fills
+  self-constrain to a narrow column (removed `max-w-3xl`) ï¿½ every view now fills
   the same wide shell container as the ward board / dashboard.
 
 ## [0.6.2] - 2026-07-27
