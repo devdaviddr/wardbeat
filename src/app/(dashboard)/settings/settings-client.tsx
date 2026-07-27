@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+
 import { CurrentUserCard } from '@/components/auth/current-user-card'
 import { AdminPanel } from '@/components/auth/admin-panel'
 import { ConnectedAccounts } from '@/components/auth/connected-accounts'
@@ -10,6 +12,7 @@ import { BuildInfoCard } from '@/components/settings/build-info-card'
 import type { AiConfiguration } from '@/lib/ai/config'
 import type { LinkedAccountsState } from '@/lib/auth/account-actions'
 import type { FileSummary } from '@/lib/storage/actions'
+import { cn } from '@/lib/utils'
 
 interface SettingsClientProps {
   session: {
@@ -39,27 +42,11 @@ interface SettingsClientProps {
   buildSha?: string
 }
 
-/** A labelled group of setting cards. */
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string
+interface Tab {
+  id: string
+  label: string
   description?: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-lg font-semibold">{title}</h2>
-        {description && (
-          <p className="text-muted-foreground text-sm">{description}</p>
-        )}
-      </div>
-      {children}
-    </section>
-  )
+  content: React.ReactNode
 }
 
 export function SettingsClient({
@@ -76,50 +63,100 @@ export function SettingsClient({
 }: SettingsClientProps) {
   const formattedRoles = roles.map((r) => ({ id: r.id, name: r.name }))
 
+  // Tabs are assembled conditionally so non-admins never see admin-only areas.
+  const tabs: Tab[] = [
+    {
+      id: 'account',
+      label: 'Account',
+      description: 'Your profile and how you sign in.',
+      content: (
+        <>
+          <CurrentUserCard user={session.user} allRoles={formattedRoles} />
+          <ConnectedAccounts state={linkedAccounts} />
+        </>
+      ),
+    },
+    {
+      id: 'files',
+      label: 'Files & notifications',
+      description: 'Your uploads and push notifications on this device.',
+      content: (
+        <>
+          <FilesPanel initialFiles={files} />
+          {pushPublicKey && <NotificationsPanel publicKey={pushPublicKey} />}
+        </>
+      ),
+    },
+    {
+      id: 'system',
+      label: 'System',
+      description: 'How this instance is configured and what it is running.',
+      content: (
+        <>
+          {/* Server-authoritative gate — the config fetch is admin-only too. */}
+          {isAdmin && aiConfig && <AiConfigCard config={aiConfig} />}
+          <BuildInfoCard version={buildVersion} sha={buildSha} />
+        </>
+      ),
+    },
+  ]
+
+  if (isAdmin) {
+    tabs.push({
+      id: 'administration',
+      label: 'Administration',
+      description: 'Manage users and their roles.',
+      content: (
+        <AdminPanel
+          initialUsers={users}
+          allRoles={formattedRoles}
+          currentUserId={session.user.id}
+        />
+      ),
+    })
+  }
+
+  // `tabs` always has at least the Account tab, so index 0 is safe.
+  const [activeId, setActiveId] = useState(tabs[0]!.id)
+  const active = tabs.find((t) => t.id === activeId) ?? tabs[0]!
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Settings</h1>
 
-      <Section title="Account" description="Your profile and how you sign in.">
-        <CurrentUserCard user={session.user} allRoles={formattedRoles} />
-        <ConnectedAccounts state={linkedAccounts} />
-      </Section>
-
-      <Section
-        title="Files & notifications"
-        description="Your uploads and push notifications on this device."
+      <div
+        role="tablist"
+        aria-label="Settings sections"
+        className="flex flex-wrap gap-1 overflow-x-auto border-b"
       >
-        <FilesPanel initialFiles={files} />
-        {pushPublicKey && <NotificationsPanel publicKey={pushPublicKey} />}
-      </Section>
+        {tabs.map((tab) => {
+          const isActive = tab.id === active.id
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveId(tab.id)}
+              className={cn(
+                '-mb-px rounded-t-md border-b-2 px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+                isActive
+                  ? 'border-primary text-foreground'
+                  : 'text-muted-foreground hover:text-foreground border-transparent',
+              )}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
 
-      {/* Server-authoritative gate — the admin server actions also enforce it. */}
-      {isAdmin ? (
-        <Section
-          title="System"
-          description="How this instance is configured and what it is running."
-        >
-          {aiConfig && <AiConfigCard config={aiConfig} />}
-          <BuildInfoCard version={buildVersion} sha={buildSha} />
-        </Section>
-      ) : (
-        <Section title="System">
-          <BuildInfoCard version={buildVersion} sha={buildSha} />
-        </Section>
-      )}
-
-      {isAdmin && (
-        <Section
-          title="Administration"
-          description="Manage users and their roles."
-        >
-          <AdminPanel
-            initialUsers={users}
-            allRoles={formattedRoles}
-            currentUserId={session.user.id}
-          />
-        </Section>
-      )}
+      <div role="tabpanel" className="space-y-6">
+        {active.description && (
+          <p className="text-muted-foreground text-sm">{active.description}</p>
+        )}
+        {active.content}
+      </div>
     </div>
   )
 }
