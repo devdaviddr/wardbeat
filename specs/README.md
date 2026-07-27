@@ -44,35 +44,35 @@ other — one isn't a substitute for the other.
 
 ## Index
 
-| Spec                                              | Title                                           | Status   | Release         |
-| ------------------------------------------------- | ----------------------------------------------- | -------- | --------------- |
-| [0001](0001-project-foundation.md)                | Project foundation                              | Shipped  | v0.1.0          |
-| [0002](0002-pwa-and-app-shell.md)                 | PWA & responsive app shell                      | Shipped  | v0.2.0          |
-| [0003](0003-security-hardening.md)                | Production security hardening                   | Shipped  | v0.3.0          |
-| [0004](0004-graphify-claude-integration.md)       | graphify & CLAUDE.md integration                | Shipped  | v0.3.1          |
-| [0005](0005-cloudflare-tunnel-deployment.md)      | Cloudflare Tunnel deployment                    | Shipped  | v0.4.0          |
-| [0006](0006-rbac.md)                              | Role-based access control (RBAC)                | Shipped  | v0.5.0          |
-| [0007](0007-file-uploads.md)                      | File uploads & object storage (MinIO)           | Shipped  | v0.6.0          |
-| [0009](0009-automated-backups.md)                 | Automated backups (Postgres + MinIO)            | Shipped  | v0.13.0         |
-| [0010](0010-oauth-providers.md)                   | OAuth providers (GitHub, Google)                | Shipped  | v0.10.0         |
-| [0011](0011-email-verification-password-reset.md) | Email verification & password reset             | Shipped  | v0.11.0         |
-| [0013](0013-dark-mode-theming.md)                 | Dark-mode toggle & theming                      | Shipped  | v0.8.0          |
-| [0015](0015-web-push-notifications.md)            | Web Push notifications                          | Shipped  | v0.12.0         |
-| [0017](0017-shared-store-rate-limiting.md)        | Shared-store rate limiting (Upstash)            | Proposed | — (conditional) |
-| [0018](0018-profile-photo-upload.md)              | Profile photo upload                            | Shipped  | v0.7.0          |
-| [0019](0019-seo-opengraph-metadata.md)            | SEO & OpenGraph metadata                        | Shipped  | v0.9.0          |
-| [0020](0020-one-click-self-hosting-setup.md)      | One-click self-hosting setup                    | Shipped  | v0.14.0         |
-| [0021](0021-continuous-deployment-self-hosted.md) | Continuous deployment (self-hosted)             | Shipped  | v0.14.0         |
-| [0022](0022-always-on-hardening-mac-mini.md)      | Always-on hardening (Mac mini)                  | Shipped  | v0.15.0         |
-| [0023](0023-tier-b-default-and-build-version.md)  | Pull-deploy default + build version             | Shipped  | v0.16.0         |
-| [0024](0024-faster-time-to-deploy.md)             | Faster time-to-deploy                           | Shipped  | v0.17.0         |
-| [0025](0025-wardbeat-foundation.md)               | WardBeat foundation — scaffold & process        | Accepted | v0.1.0          |
-| [0026](0026-barrier-intelligence-ward-board.md)   | Barrier intelligence & ward board (Phase 1 MVP) | Proposed | —               |
+| Spec                                              | Title                                    | Status   | Release         |
+| ------------------------------------------------- | ---------------------------------------- | -------- | --------------- |
+| [0001](0001-project-foundation.md)                | Project foundation                       | Shipped  | v0.1.0          |
+| [0002](0002-pwa-and-app-shell.md)                 | PWA & responsive app shell               | Shipped  | v0.2.0          |
+| [0003](0003-security-hardening.md)                | Production security hardening            | Shipped  | v0.3.0          |
+| [0004](0004-graphify-claude-integration.md)       | graphify & CLAUDE.md integration         | Shipped  | v0.3.1          |
+| [0005](0005-cloudflare-tunnel-deployment.md)      | Cloudflare Tunnel deployment             | Shipped  | v0.4.0          |
+| [0006](0006-rbac.md)                              | Role-based access control (RBAC)         | Shipped  | v0.5.0          |
+| [0007](0007-file-uploads.md)                      | File uploads & object storage (MinIO)    | Shipped  | v0.6.0          |
+| [0009](0009-automated-backups.md)                 | Automated backups (Postgres + MinIO)     | Shipped  | v0.13.0         |
+| [0010](0010-oauth-providers.md)                   | OAuth providers (GitHub, Google)         | Shipped  | v0.10.0         |
+| [0011](0011-email-verification-password-reset.md) | Email verification & password reset      | Shipped  | v0.11.0         |
+| [0013](0013-dark-mode-theming.md)                 | Dark-mode toggle & theming               | Shipped  | v0.8.0          |
+| [0015](0015-web-push-notifications.md)            | Web Push notifications                   | Shipped  | v0.12.0         |
+| [0017](0017-shared-store-rate-limiting.md)        | Shared-store rate limiting (Upstash)     | Proposed | — (conditional) |
+| [0018](0018-profile-photo-upload.md)              | Profile photo upload                     | Shipped  | v0.7.0          |
+| [0019](0019-seo-opengraph-metadata.md)            | SEO & OpenGraph metadata                 | Shipped  | v0.9.0          |
+| [0020](0020-one-click-self-hosting-setup.md)      | One-click self-hosting setup             | Shipped  | v0.14.0         |
+| [0021](0021-continuous-deployment-self-hosted.md) | Continuous deployment (self-hosted)      | Shipped  | v0.14.0         |
+| [0022](0022-always-on-hardening-mac-mini.md)      | Always-on hardening (Mac mini)           | Shipped  | v0.15.0         |
+| [0023](0023-tier-b-default-and-build-version.md)  | Pull-deploy default + build version      | Shipped  | v0.16.0         |
+| [0024](0024-faster-time-to-deploy.md)             | Faster time-to-deploy                    | Shipped  | v0.17.0         |
+| [0025](0025-wardbeat-foundation.md)               | WardBeat foundation — scaffold & process | Accepted | v0.1.0          |
 
 > **Platform vs product.** Specs `0001`–`0024` are inherited from the
 > `nextjs-fullstack-boilerplate` platform WardBeat is built on, and are kept as
 > the historical record of that foundation. **WardBeat's own product specs start
-> at [0025](0025-wardbeat-foundation.md)** and continue the numbering.
+> at [0025](0025-wardbeat-foundation.md)**; from **v0.2.0** onward they move to
+> per-release folders (see [Release specs](#release-specs-v020) below).
 >
 > Specs 0001–0004 were written retroactively to document the decisions behind
 > the existing releases; SDD is the going-forward process (0005 onward).
@@ -84,3 +84,15 @@ other — one isn't a substitute for the other.
 > was re-scoped for the portfolio use case as [0019](0019-seo-opengraph-metadata.md).
 > The old numbers aren't reused. 0017 is written but intentionally not
 > scheduled — see its "Non-goals".
+
+## Release specs (v0.2.0+)
+
+From **v0.2.0**, WardBeat plans each release as a folder under
+[`releases/`](releases/README.md), each with a **`spec.md`** (what & why) and a
+**`spec-imp.md`** (implementation plan). See the
+[release-spec process](releases/README.md). The numbered specs above (`0001`–`0025`) remain
+as history; `0026` was migrated here as `v0.2.0`.
+
+| Release    | Title                                           | `spec.md`                                                                  | `spec-imp.md`                                                               |
+| ---------- | ----------------------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **v0.2.0** | Barrier intelligence & ward board (Phase 1 MVP) | [spec](releases/v0.2.0-barrier-intelligence-ward-board/spec.md) — Proposed | [plan](releases/v0.2.0-barrier-intelligence-ward-board/spec-imp.md) — Draft |

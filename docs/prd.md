@@ -2,13 +2,13 @@
 
 [← Back to README](../README.md)
 
-|                    |                                                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| **Status**         | Draft (v0.1)                                                                                                  |
-| **Owner**          | Daniel                                                                                                        |
-| **Last updated**   | 2026-07-27                                                                                                    |
-| **Type**           | Portfolio project — showcase of generative-AI solution architecture                                           |
-| **Companion spec** | [`specs/0026-barrier-intelligence-ward-board.md`](../specs/0026-barrier-intelligence-ward-board.md) (Phase 1) |
+|                    |                                                                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**         | Draft (v0.1)                                                                                                                           |
+| **Owner**          | Daniel                                                                                                                                 |
+| **Last updated**   | 2026-07-27                                                                                                                             |
+| **Type**           | Portfolio project — showcase of generative-AI solution architecture                                                                    |
+| **Companion spec** | [`specs/releases/v0.2.0-barrier-intelligence-ward-board/`](../specs/releases/v0.2.0-barrier-intelligence-ward-board/spec.md) (Phase 1) |
 
 ---
 
@@ -495,7 +495,9 @@ work; the experience tier, data plumbing, and container stack are inherited.
 | **P4 — Forecast & narrate**   | Deterministic LOS/demand services + narration                    | GenAI/ML separation             |
 | **P5 — Guardrails & LLMOps**  | NeMo Guardrails, RAGAS/eval dashboard, tracing                   | Trust, evaluation, ops          |
 
-Each phase ships as its own spec (`0026`+), continuing the spec-driven, trunk-based flow.
+Each phase ships as its own **release spec** under
+[`specs/releases/vX.Y.Z-*/`](../specs/releases/README.md) — a `spec.md` (what/why) plus a
+`spec-imp.md` (implementation plan) — continuing the spec-driven, trunk-based flow.
 
 ---
 

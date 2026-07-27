@@ -81,9 +81,11 @@ Before pushing: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
 
 ## Git & workflow
 
-- **Spec-driven.** Non-trivial features start with a spec in [`specs/`](specs/)
-  (copy `specs/TEMPLATE.md`, status `Proposed` → `Accepted` → `Shipped`). See
-  [`specs/README.md`](specs/README.md).
+- **Spec-driven.** Non-trivial features start with a spec. **WardBeat releases** use
+  per-release folders in [`specs/releases/`](specs/releases/) — `vX.Y.Z-slug/spec.md`
+  (what/why) + `spec-imp.md` (implementation plan); copy from
+  `specs/releases/_templates/`. One-off changes may use the flat `specs/TEMPLATE.md`.
+  Numbered specs `0001`–`0025` are history. See [`specs/releases/README.md`](specs/releases/README.md).
 - **Trunk-based.** `main` is the only long-lived branch (no `develop`).
   Feature work branches off `main` as `feature/<slug>` and PRs back into
   `main`. A **release is a `vX.Y.Z` tag on a `main` commit** — bump the version,
