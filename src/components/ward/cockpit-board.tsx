@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { runWardExtractionAction } from '@/lib/ward/actions'
 import type { Cockpit, CockpitBed } from '@/lib/ward/cockpit'
 
+import { ActionsDrawer } from './actions-drawer'
 import { BedDrawer } from './bed-drawer'
 import { BriefingStrip } from './briefing-strip'
 import { CopilotDock } from './copilot-dock'
@@ -19,7 +20,10 @@ export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
   const [mffdOnly, setMffdOnly] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [dockOpen, setDockOpen] = useState(false)
+  const [actionsOpen, setActionsOpen] = useState(false)
   const [highlighted, setHighlighted] = useState<Set<string>>(new Set())
+
+  const totalActions = cockpit.beds.reduce((n, b) => n + b.actionCount, 0)
 
   // Derived: if the selected bed disappears after a refresh, this becomes null
   // and the drawer closes on its own — no effect needed.
@@ -74,6 +78,13 @@ export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
             {mffdOnly ? 'Showing fit-but-delayed' : 'Show fit-but-delayed'}
           </Button>
           <Button
+            variant={actionsOpen ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActionsOpen((v) => !v)}
+          >
+            Actions{totalActions > 0 ? ` (${totalActions})` : ''}
+          </Button>
+          <Button
             variant={dockOpen ? 'default' : 'outline'}
             size="sm"
             onClick={() => setDockOpen((v) => !v)}
@@ -109,6 +120,13 @@ export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
         key={selectedId ?? 'none'}
         bed={selected}
         onClose={() => setSelectedId(null)}
+        onChanged={() => router.refresh()}
+      />
+
+      <ActionsDrawer
+        cockpit={cockpit}
+        open={actionsOpen}
+        onClose={() => setActionsOpen(false)}
         onChanged={() => router.refresh()}
       />
 
