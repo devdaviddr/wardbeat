@@ -33,6 +33,11 @@ export default async function HomePage() {
             </Button>
           </>
         )}
+        <Button asChild size="lg" variant="ghost">
+          {/* Standalone product guide (public/about.html) served at /about. A
+              plain anchor so the browser fully navigates to the static doc. */}
+          <a href="/about">How it works</a>
+        </Button>
       </div>
     </main>
   )
