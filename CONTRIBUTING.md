@@ -29,12 +29,14 @@ pnpm dev
    pnpm lint && pnpm typecheck && pnpm test && pnpm build
    ```
 
-5. Open a pull request into `main`. CI (lint · typecheck · unit · E2E ·
-   Docker) must pass. To cut a release, bump the version, set the spec to
-   `Shipped`, update `CHANGELOG.md`, and push a `vX.Y.Z` tag on `main` — the
-   tag defines the release (there's no required `Release vX.Y.Z` merge commit;
-   v0.14.0+ tag a plain commit directly), and pushing the tag is what triggers
-   deploy.
+5. Open a pull request into `main`. **CI is deferred at this stage** — the
+   GitHub Actions pipelines have been removed, so the local gate in step 4
+   (lint · typecheck · unit · build; add `pnpm test:e2e` for the full suite) is
+   the gate that matters. Run it before every push. To cut a release, bump the
+   version, set the spec to `Shipped`, update `CHANGELOG.md`, and push a
+   `vX.Y.Z` tag on `main` — the tag defines the release (there's no required
+   `Release vX.Y.Z` merge commit; tag a plain commit directly). Automated
+   deploy-on-tag returns when CI is re-introduced.
 
 ## Commit messages
 

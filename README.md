@@ -1,8 +1,8 @@
 <div align="center">
 
-# Next.js Full-Stack Boilerplate
+# WardBeat
 
-A production-grade starting point for full-stack web apps — authentication, database, PWA, Docker, and CI wired up and tested, so you can start building features on day one.
+**A full-stack, AI-enabled application that helps keep a hospital ward flowing and beds utilised.**
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-20232a?logo=react&logoColor=61dafb)
@@ -11,15 +11,33 @@ A production-grade starting point for full-stack web apps — authentication, da
 ![Auth.js](https://img.shields.io/badge/Auth.js-v5-000000?logo=auth0&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8?logo=tailwindcss&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-ready-5a0fc8?logo=pwa&logoColor=white)
+![Status](https://img.shields.io/badge/status-scaffolding-orange.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 </div>
 
 ---
 
+> **Status: scaffolding.** This repository was just stood up from a proven
+> full-stack platform (see [Foundations](#foundations)). No WardBeat feature
+> logic has been written yet — the immediate work is process, structure, and a
+> clean base. Product features are tracked as specs in [`specs/`](specs/README.md),
+> starting with [0025 — WardBeat foundation](specs/0025-wardbeat-foundation.md).
+
 ## What it is
 
-An opinionated, batteries-included template built on **Next.js 16** (App Router, RSC, Server Actions) with:
+**WardBeat** is a clinical operations tool for hospital ward flow — helping
+charge nurses and bed managers keep patients moving and beds utilised, with AI
+assistance to surface bottlenecks and next-best actions. The problem space,
+scope, and first slice of functionality are defined in
+[spec 0025](specs/0025-wardbeat-foundation.md); this README documents the
+platform WardBeat is built on and how to run and contribute to it.
+
+## Foundations
+
+WardBeat is built on an opinionated, batteries-included platform on **Next.js 16**
+(App Router, RSC, Server Actions). Everything below is inherited, wired up, and
+verified end to end — so product work starts from a proven base, not a blank page:
 
 - 🔐 **Auth** via Auth.js v5 — email + password (Argon2id, JWT), plus opt-in **[GitHub & Google OAuth](docs/oauth.md)**; edge-protected routes
 - ✉️ **[Password reset & email verification](docs/email.md)** — single-use hashed tokens, anti-enumeration, optional verify soft gate (opt-in with SMTP)
@@ -29,15 +47,21 @@ An opinionated, batteries-included template built on **Next.js 16** (App Router,
 - 📱 **PWA + responsive app shell** — installable, offline-resilient, **[Web Push](docs/push.md)**, light/dark theming, mobile-to-desktop layout
 - 🔎 **SEO** — OpenGraph/Twitter cards, `robots.txt` + `sitemap.xml`
 - 💾 **[Automated backups](docs/backups.md)** — nightly Postgres + MinIO, doctor script, tested restore runbook
-- 🧪 **Tested** — Vitest units + Playwright E2E, green in CI
-- 🐳 **Docker + CI** — multi-stage image, GitHub Actions pipeline
+- 🧪 **Tested** — Vitest units + Playwright E2E
+- 🐳 **Docker** — multi-stage, non-root production image
 - 🛡️ **Strict TypeScript**, ESLint, Prettier, and pre-commit hooks
 
-Everything is verified end to end — auth flow, container, and PWA all proven working, not just scaffolded. See **[Features](docs/features.md)** for the full list.
+See **[Features](docs/features.md)** for the full inherited list.
+
+> **CI/CD is intentionally deferred.** The GitHub Actions pipelines were removed
+> for this stage — quality gates run **locally** (see [Contributing](#contributing)).
+> The [CI/CD doc](docs/ci-cd.md) and [Feature → Production](docs/workflow.md)
+> playbook describe the pipeline as it will be re-introduced later; they are
+> reference, not the current wiring.
 
 ## Quick start
 
-**Prerequisites:** Node ≥ 20.9 (22 recommended) · [pnpm](https://pnpm.io) (`corepack enable`) · Docker
+**Prerequisites:** Node 22 (see `.nvmrc`) · [pnpm](https://pnpm.io) (`corepack enable`) · Docker
 
 ```bash
 # 1. Install
@@ -60,30 +84,41 @@ pnpm dev                    # http://localhost:3000
 Sign in with the demo account, or register a new one at `/register`.
 For the installable PWA (service worker is production-only): `pnpm build && pnpm start`.
 
-**Deploy it to your own domain** — one guided command takes a fresh clone to a
-live app behind a Cloudflare Tunnel (HTTPS, no open ports): `make setup`. Or let
-your AI agent do it: a **`self-host` skill** ships for both Claude Code and
-opencode (`/self-host`). See **[Self-hosting](docs/self-hosting.md)**.
-
 ## Documentation
 
-| Doc                                             | What's inside                                                      |
-| ----------------------------------------------- | ------------------------------------------------------------------ |
-| 📋 **[Features](docs/features.md)**             | Complete feature list and what's included                          |
-| 🏛️ **[Architecture](docs/architecture.md)**     | Request flow, auth design, security model, project structure       |
-| 🗄️ **[Database](docs/database.md)**             | ERD, schema, migrations, Drizzle workflow, seeding                 |
-| 🔑 **[OAuth](docs/oauth.md)**                   | GitHub + Google sign-in — setup, callback URLs, linking            |
-| ✉️ **[Email](docs/email.md)**                   | SMTP setup, password reset, email verification, soft gate          |
-| 📱 **[PWA & App Shell](docs/pwa.md)**           | Manifest, service worker strategy, icons, responsive shell         |
-| 🔔 **[Web Push](docs/push.md)**                 | VAPID setup, subscribe/send, service-worker handlers               |
-| 🛠️ **[Usage & Development](docs/usage.md)**     | Scripts, env vars, testing, Docker, extending the app              |
-| 📦 **[Self-hosting](docs/self-hosting.md)**     | `make setup` clone-to-live + continuous deployment (`make deploy`) |
-| 🚀 **[Deployment](docs/deployment.md)**         | Cloudflare Tunnel — quick, guided, and Terraform paths             |
-| ⚙️ **[CI/CD](docs/ci-cd.md)**                   | GitHub Actions pipeline, quality gates, E2E + Docker jobs          |
-| 🔁 **[Feature → Production](docs/workflow.md)** | One playbook: branch → PR → CI → release → Mac mini deploy         |
-| 💾 **[Backups](docs/backups.md)**               | Nightly Postgres + MinIO backups, restore runbook, offsite         |
-| 📄 **[Summary](docs/summary.md)**               | One-page project overview — stats, stack, what ships               |
-| 📐 **[Specs](specs/README.md)**                 | Spec-driven development — one spec per feature/release             |
+| Doc                                             | What's inside                                                          |
+| ----------------------------------------------- | ---------------------------------------------------------------------- |
+| 📐 **[Specs](specs/README.md)**                 | Spec-driven development — WardBeat features + inherited platform specs |
+| 📋 **[Features](docs/features.md)**             | Complete inherited feature list and what's included                    |
+| 🏛️ **[Architecture](docs/architecture.md)**     | Request flow, auth design, security model, project structure           |
+| 🗄️ **[Database](docs/database.md)**             | ERD, schema, migrations, Drizzle workflow, seeding                     |
+| 🔑 **[OAuth](docs/oauth.md)**                   | GitHub + Google sign-in — setup, callback URLs, linking                |
+| ✉️ **[Email](docs/email.md)**                   | SMTP setup, password reset, email verification, soft gate              |
+| 📱 **[PWA & App Shell](docs/pwa.md)**           | Manifest, service worker strategy, icons, responsive shell             |
+| 🔔 **[Web Push](docs/push.md)**                 | VAPID setup, subscribe/send, service-worker handlers                   |
+| 🛠️ **[Usage & Development](docs/usage.md)**     | Scripts, env vars, testing, Docker, extending the app                  |
+| 📦 **[Self-hosting](docs/self-hosting.md)**     | `make setup` clone-to-live + continuous deployment (`make deploy`)     |
+| 🚀 **[Deployment](docs/deployment.md)**         | Cloudflare Tunnel — quick, guided, and Terraform paths                 |
+| ⚙️ **[CI/CD](docs/ci-cd.md)**                   | Pipeline design (deferred — see the note above)                        |
+| 🔁 **[Feature → Production](docs/workflow.md)** | One playbook: branch → PR → release → deploy                           |
+| 💾 **[Backups](docs/backups.md)**               | Nightly Postgres + MinIO backups, restore runbook, offsite             |
+
+## Development workflow
+
+WardBeat follows **spec-driven, trunk-based development**:
+
+1. **Spec first.** Non-trivial work starts with a spec — copy
+   [`specs/TEMPLATE.md`](specs/TEMPLATE.md) to the next free `NNNN-slug.md`,
+   open it as `Proposed`, and get to `Accepted` before building. See
+   [`specs/README.md`](specs/README.md).
+2. **Branch off `main`** as `feature/<slug>`. `main` is the only long-lived
+   branch; a release is a `vX.Y.Z` tag on `main`.
+3. **Conventional Commits**, enforced by a commitlint `commit-msg` hook; a
+   `pre-commit` hook runs ESLint + Prettier on staged files.
+4. **Open a PR into `main`** and run the local gate first (below).
+
+Full detail: [CONTRIBUTING.md](CONTRIBUTING.md) and
+[Feature → Production](docs/workflow.md).
 
 ## Scripts
 
@@ -97,21 +132,15 @@ Full reference — see **[Usage & Development](docs/usage.md)** for details.
 | `pnpm typecheck`                     | Type-check with `tsc --noEmit`                          |
 | `pnpm format` · `pnpm format:check`  | Prettier (write · check)                                |
 | `pnpm test` · `pnpm test:watch`      | Unit tests (Vitest) — run once · watch                  |
-| `pnpm test:coverage`                 | Unit tests with a coverage report                       |
 | `pnpm test:e2e` · `pnpm test:e2e:ui` | End-to-end tests (Playwright) — headless · UI runner    |
 | `pnpm db:generate`                   | Generate a SQL migration from the Drizzle schema        |
 | `pnpm db:migrate`                    | Apply pending migrations                                |
-| `pnpm db:push`                       | Push the schema without a migration file (prototyping)  |
 | `pnpm db:studio`                     | Open Drizzle Studio (visual DB browser)                 |
 | `pnpm db:seed`                       | Seed the demo admin + base roles (idempotent)           |
 | `pnpm docker:db`                     | Start local Postgres                                    |
 | `pnpm docker:minio`                  | Start local MinIO + one-shot bucket init                |
 | `pnpm docker:mail`                   | Start local Mailpit (email catcher for the email E2E)   |
 | `pnpm gen:icons` · `pnpm gen:og`     | Regenerate the PWA icon set · the OpenGraph share image |
-
-**Before pushing:** `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
-(add `pnpm test:e2e` for the full suite — it needs Postgres, MinIO, and, for the
-email round-trips, Mailpit).
 
 ## Tech stack
 
@@ -126,7 +155,7 @@ email round-trips, Mailpit).
 | Validation | Zod (shared client/server schemas)                                             |
 | Testing    | Vitest + Testing Library · Playwright (Mailpit for email)                      |
 | Tooling    | ESLint (flat) · Prettier · Husky · lint-staged                                 |
-| Delivery   | Multi-stage Docker (standalone, non-root) · GitHub Actions                     |
+| Delivery   | Multi-stage Docker (standalone, non-root) · Cloudflare Tunnel                  |
 
 ## Project structure
 
@@ -144,7 +173,7 @@ Full tree and rationale in **[Architecture](docs/architecture.md)**.
 
 ## Deployment
 
-Serve the Docker stack on a Cloudflare domain via **Cloudflare Tunnel** — no
+WardBeat runs as a self-hosted Docker stack behind a **Cloudflare Tunnel** — no
 open ports, no reverse proxy, no certs. Three on-ramps, all converging on the
 same runtime:
 
@@ -158,34 +187,32 @@ reference: **[Deployment](docs/deployment.md)**.
 
 ## Roadmap
 
-Forked per project and self-hosted on one box (Docker + Cloudflare Tunnel) —
-not scaled across a cluster. Specs live in [`specs/`](specs/README.md).
+**Inherited platform** (proven and in place):
 
-- [x] Credentials auth · Drizzle/Postgres · Docker · CI · PWA · responsive app shell
+- [x] Credentials auth · Drizzle/Postgres · Docker · PWA · responsive app shell
 - [x] Auth rate limiting · nonce CSP + HSTS · structured-logging shim
 - [x] RBAC · invite-based account claim · optional email delivery
-- [x] Cloudflare Tunnel deployment
-- [x] File uploads & object storage — self-hosted MinIO, per-user quota
-- [x] Dark-mode toggle & theming
-- [x] SEO & OpenGraph metadata — shareable link-preview cards
-- [x] OAuth providers (GitHub, Google)
-- [x] Email verification & password reset
-- [x] Web Push notifications
-- [x] Automated backups — nightly Postgres + MinIO, documented restore path
+- [x] File uploads & object storage · dark mode · SEO/OpenGraph · OAuth · Web Push
+- [x] Cloudflare Tunnel deployment · automated backups
 
-**Explicit non-goals** (not planned for the single-box portfolio model):
-internationalisation (i18n), third-party error tracking, and shared-store
-rate limiting.
+**WardBeat product** (planned — see [`specs/`](specs/README.md)):
+
+- [x] Repository scaffold & development process ([0025](specs/0025-wardbeat-foundation.md))
+- [ ] Ward, bed, and patient-flow domain model
+- [ ] Live ward board — occupancy, admissions, discharges
+- [ ] AI-assisted flow insights (bottlenecks, next-best actions)
 
 ## Contributing
 
-Commits run ESLint + Prettier via a Husky `pre-commit` hook. Before opening a PR:
+Commits run ESLint + Prettier via a Husky `pre-commit` hook. Before opening a PR,
+run the full local gate (CI is deferred, so this is the gate that matters):
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
-See **[Usage & Development](docs/usage.md)** for the full workflow.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** and **[Usage & Development](docs/usage.md)**
+for the full workflow.
 
 ## License
 

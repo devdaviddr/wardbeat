@@ -4,10 +4,10 @@ import type { MetadataRoute } from 'next'
 // and re-run `pnpm gen:icons` after swapping in real branding.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Next.js Full-Stack Boilerplate',
-    short_name: 'Boilerplate',
+    name: 'WardBeat',
+    short_name: 'WardBeat',
     description:
-      'Production-grade Next.js boilerplate with Auth.js, Drizzle, and Postgres.',
+      'Keep a hospital ward flowing and beds utilised — AI-enabled ward operations.',
     id: '/',
     start_url: '/',
     scope: '/',

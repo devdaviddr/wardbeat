@@ -10,11 +10,11 @@ export default async function HomePage() {
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-8 text-center">
       <div className="space-y-3">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Next.js Full-Stack Boilerplate
+          WardBeat
         </h1>
         <p className="text-muted-foreground mx-auto max-w-xl text-lg">
-          Next.js 16 · Auth.js v5 · Drizzle ORM · Postgres · TypeScript ·
-          Tailwind · Docker. Production-ready, batteries included.
+          Keep a hospital ward flowing and beds utilised — AI-enabled ward
+          operations.
         </p>
       </div>
 
