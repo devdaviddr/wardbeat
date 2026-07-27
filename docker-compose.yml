@@ -6,7 +6,9 @@
 #
 services:
   db:
-    image: postgres:17-alpine
+    # pgvector image (superset of postgres:17) — enables the `vector` extension
+    # used by the policy RAG knowledge base (spec v0.3.0).
+    image: pgvector/pgvector:pg17
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -66,6 +68,8 @@ services:
       NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
       NIM_BASE_URL: ${NIM_BASE_URL:-https://integrate.api.nvidia.com/v1}
       NIM_EXTRACT_MODEL: ${NIM_EXTRACT_MODEL:-nvidia/nvidia-nemotron-nano-9b-v2}
+      NIM_EMBED_MODEL: ${NIM_EMBED_MODEL:-nvidia/nv-embedqa-e5-v5}
+      NIM_RERANK_MODEL: ${NIM_RERANK_MODEL:-nvidia/llama-3.2-nv-rerankqa-1b-v2}
       AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-}
     ports:
       - '8000:8000' # dev convenience; keep internal-only (off the tunnel) in prod

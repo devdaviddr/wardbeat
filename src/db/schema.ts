@@ -11,6 +11,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  vector,
 } from 'drizzle-orm/pg-core'
 import type { AdapterAccountType } from 'next-auth/adapters'
 
@@ -443,3 +444,63 @@ export type NewNote = typeof notes.$inferInsert
 export type AiExtraction = typeof aiExtractions.$inferSelect
 export type Barrier = typeof barriers.$inferSelect
 export type NewBarrier = typeof barriers.$inferInsert
+
+/* -------------------------------------------------------------------------- */
+/* WardBeat — policy knowledge base for the flow copilot (spec v0.3.0)        */
+/*                                                                            */
+/* Unstructured discharge-policy/criteria docs, chunked and embedded into     */
+/* pgvector for the RAG path of the copilot. Synthetic content only. The      */
+/* `vector` extension is enabled by this release's first migration.           */
+/* Embedding dim 1024 matches nvidia/nv-embedqa-e5-v5 (≤2000 so pgvector's    */
+/* hnsw ANN index is supported).                                             */
+/* -------------------------------------------------------------------------- */
+
+export const POLICY_EMBED_DIM = 1024
+
+export const policyDocs = pgTable('policy_docs', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  title: text('title').notNull(),
+  source: text('source').notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+})
+
+export const policyChunks = pgTable(
+  'policy_chunks',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    docId: text('doc_id')
+      .notNull()
+      .references(() => policyDocs.id, { onDelete: 'cascade' }),
+    ordinal: integer('ordinal').notNull(),
+    text: text('text').notNull(),
+    embedding: vector('embedding', { dimensions: POLICY_EMBED_DIM }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('policy_chunks_doc_idx').on(table.docId),
+    // Approximate-nearest-neighbour index for cosine similarity search.
+    index('policy_chunks_embedding_idx').using(
+      'hnsw',
+      table.embedding.op('vector_cosine_ops'),
+    ),
+  ],
+)
+
+export const policyDocsRelations = relations(policyDocs, ({ many }) => ({
+  chunks: many(policyChunks),
+}))
+
+export const policyChunksRelations = relations(policyChunks, ({ one }) => ({
+  doc: one(policyDocs, {
+    fields: [policyChunks.docId],
+    references: [policyDocs.id],
+  }),
+}))
+
+export type PolicyDoc = typeof policyDocs.$inferSelect
+export type PolicyChunk = typeof policyChunks.$inferSelect
+export type NewPolicyChunk = typeof policyChunks.$inferInsert

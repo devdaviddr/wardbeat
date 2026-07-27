@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     nvidia_api_key: str = ""
     nim_base_url: str = "https://integrate.api.nvidia.com/v1"
     nim_extract_model: str = "nvidia/nvidia-nemotron-nano-9b-v2"
+    nim_embed_model: str = "nvidia/nv-embedqa-e5-v5"
+    nim_rerank_model: str = "nvidia/llama-3.2-nv-rerankqa-1b-v2"
+    embed_dim: int = 1024
 
     # Service auth ----------------------------------------------------------
     # Shared secret; Next.js sends it as X-Service-Token. Empty = auth disabled
