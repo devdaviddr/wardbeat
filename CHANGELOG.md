@@ -15,6 +15,12 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 ### Added
 
+- **Open the referenced policy.** A policy citation on an action recommendation
+  or a copilot answer is now clickable — it opens the full referenced discharge
+  policy document in a dialog, with the cited passage highlighted (resolved
+  server-side from the citation; degrades to the passage when the document can't
+  be found). No migration or re-seed. See
+  `specs/releases/v0.9.0-open-referenced-sources/`.
 - **AI configuration in Settings.** Admins get a read-only AI configuration card
   showing whether the AI plane is running live on NVIDIA NIM or the deterministic
   mock, the extraction/embedding/rerank model ids, the model endpoint host, and

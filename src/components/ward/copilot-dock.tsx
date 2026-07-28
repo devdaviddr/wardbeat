@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { askCopilotAction, type CopilotResponse } from '@/lib/copilot/actions'
+import { PolicyDialog } from './policy-dialog'
 
 const SUGGESTIONS = [
   'Which patients are fit but waiting on transport?',
@@ -111,11 +112,27 @@ export function CopilotDock({
             </p>
             {res.citations.length > 0 && (
               <div className="flex flex-wrap gap-1">
-                {res.citations.map((c, i) => (
-                  <Badge key={i} variant="outline" className="text-[10px]">
-                    {c.label}
-                  </Badge>
-                ))}
+                {res.citations.map((c, i) =>
+                  c.kind === 'policy' ? (
+                    <PolicyDialog
+                      key={i}
+                      citation={{ text: c.detail, source: c.label }}
+                    >
+                      <button type="button">
+                        <Badge
+                          variant="outline"
+                          className="hover:bg-muted cursor-pointer text-[10px]"
+                        >
+                          {c.label}
+                        </Badge>
+                      </button>
+                    </PolicyDialog>
+                  ) : (
+                    <Badge key={i} variant="outline" className="text-[10px]">
+                      {c.label}
+                    </Badge>
+                  ),
+                )}
               </div>
             )}
             {res.path === 'ward_state' && res.citations.length > 0 && (
