@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WardBeat — The complete guide</title>
+    <style>
+      :root {
+        --paper: #f6f8f9; --surface: #ffffff; --ink: #0e2028; --muted: #566a72; --faint: #7f9298;
+        --line: #d9e2e5; --accent: #0f766e; --accent-soft: #d6ece9; --fit: #15803d; --barrier: #b45309;
+        --nim: #5f9400; --python: #1f5f8b; --data: #6b46a8;
+        --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+      body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+      .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+      a { color: var(--accent); }
+      h1, h2, h3 { text-wrap: balance; line-height: 1.15; }
+      .eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0; }
+
+      /* sticky nav */
+      .topbar { position: sticky; top: 0; z-index: 20; background: rgba(246,248,249,0.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+      .topbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 10px 0; }
+      .brand { display: flex; align-items: baseline; gap: 8px; font-size: 18px; font-weight: 800; letter-spacing: -0.03em; margin-right: auto; }
+      .brand .beat { color: var(--accent); }
+      .topbar a.jump { font-family: var(--mono); font-size: 12px; text-decoration: none; color: var(--muted); padding: 3px 4px; }
+      .topbar a.jump:hover { color: var(--accent); }
+
+      /* hero */
+      header.hero { border-bottom: 1px solid var(--line); background: radial-gradient(120% 140% at 88% -20%, rgba(15,118,110,0.08), transparent 60%), var(--surface); }
+      .hero-inner { padding: 48px 0 40px; }
+      h1.title { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; margin: 12px 0 8px; }
+      .lede { font-size: 18px; color: var(--muted); max-width: 66ch; margin: 0; }
+      .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+      .pill { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; color: var(--muted); background: var(--surface); }
+      .pill.live { color: var(--fit); border-color: #b7e3c4; background: #dcfce7; }
+      .pill.learn { color: var(--accent); border-color: #a9d5cf; background: var(--accent-soft); }
+      .ecg { display: block; width: 100%; height: 30px; margin-top: 24px; color: var(--accent); opacity: 0.8; }
+
+      section { padding: 40px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 60px; }
+      .sec-num { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: 0.1em; }
+      h2 { font-size: 26px; font-weight: 780; letter-spacing: -0.02em; margin: 4px 0 12px; }
+      h3 { font-size: 17px; margin: 0 0 4px; }
+      p { max-width: 74ch; }
+      .subhead { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin: 28px 0 12px; }
+      code { font-family: var(--mono); font-size: 0.86em; background: #eef3f4; padding: 1px 5px; border-radius: 4px; }
+
+      .thesis { background: var(--ink); color: #dfeaed; border-radius: 12px; padding: 22px 26px; margin-top: 8px; }
+      .thesis b { color: #fff; }
+      .safety-callout { background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 14px 18px; margin-top: 14px; font-size: 14px; }
+      .safety-callout b { color: var(--ink); }
+
+      .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      .card { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 16px; }
+      .card h3 { font-size: 15px; }
+      .card p { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; }
+
+      .planes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .plane { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 16px; }
+      .plane .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .plane ul { margin: 8px 0 0; padding-left: 16px; color: var(--muted); font-size: 13.5px; }
+      .plane.next { border-top: 3px solid var(--ink); } .plane.next .cap { color: var(--ink); }
+      .plane.py { border-top: 3px solid var(--python); } .plane.py .cap { color: var(--python); }
+      .plane.nim { border-top: 3px solid var(--nim); } .plane.nim .cap { color: var(--nim); }
+      .plane.data { border-top: 3px solid var(--data); } .plane.data .cap { color: var(--data); }
+
+      .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 4px; }
+      .step { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 6px 9px; }
+      .step.nim { border-color: #cfe39a; background: #f2f8e4; color: var(--nim); }
+      .step.py { border-color: #cfe0ee; background: #eef4fa; color: var(--python); }
+      .step.next { border-color: #d7dee1; background: #eef2f3; color: var(--ink); }
+      .step.data { border-color: #e2d8ef; background: #f2ecfa; color: var(--data); }
+      .arrow { color: var(--faint); }
+      .capability { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px 18px; margin-top: 12px; }
+      .capability p { font-size: 14px; color: var(--muted); margin: 6px 0 0; }
+
+      /* educational primer */
+      .primer-intro { background: var(--ink); color: #dfeaed; border-radius: 12px; padding: 20px 24px; margin: 8px 0 6px; }
+      .primer-intro p { margin: 0; font-size: 15px; max-width: none; }
+      .primer-intro b { color: #fff; }
+      .concept { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 15px 18px; margin-top: 10px; }
+      .concept .cnum { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.08em; }
+      .concept h3 { font-size: 16px; margin: 2px 0 6px; }
+      .concept .plain { font-size: 14px; margin: 0; }
+      .concept .plain b { color: var(--ink); }
+      .concept .analogy { font-size: 13px; color: var(--muted); font-style: italic; margin: 8px 0 0; padding-left: 12px; border-left: 2px solid var(--accent-soft); max-width: none; }
+      .concept .inapp { font-size: 13px; color: var(--muted); margin: 10px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; max-width: none; }
+      .concept .inapp b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--nim); display: inline-block; margin-right: 4px; }
+
+      /* step walkthrough */
+      .walk { margin-top: 12px; }
+      .wstep { display: grid; grid-template-columns: 26px 1fr; gap: 0 14px; padding-bottom: 12px; }
+      .wstep .n { font-family: var(--mono); font-weight: 700; font-size: 12.5px; color: #fff; background: var(--accent); border-radius: 7px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+      .wstep h4 { margin: 3px 0 2px; font-size: 14px; }
+      .wstep p { margin: 0; font-size: 13.5px; color: var(--muted); max-width: none; }
+      .wstep p b { color: var(--ink); font-weight: 600; }
+      .point { font-size: 13px; color: var(--muted); margin: 4px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; max-width: none; }
+      .point b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
+
+      .personas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .timeline { border-left: 2px solid var(--line); margin: 8px 0 0; padding-left: 20px; }
+      .tstep { position: relative; padding-bottom: 18px; }
+      .tstep::before { content: ""; position: absolute; left: -26px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+      .tstep .surface { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+      .tstep h3 { font-size: 15.5px; margin: 2px 0 3px; }
+      .tstep p { font-size: 14px; color: var(--muted); margin: 0; }
+
+      .tech { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px 18px; margin-top: 12px; }
+      .tech-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+      .tech-head h3 { font-size: 17px; margin: 0; }
+      .tag { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+      .tech .what { font-size: 13.5px; color: var(--muted); margin: 8px 0 8px; }
+      .tech .why { margin: 0; padding-left: 18px; font-size: 13.5px; } .tech .why li { margin-bottom: 4px; }
+      .tech .instead { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; }
+      .tech .instead b { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
+
+      .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .metric { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 14px 16px; }
+      .metric .v { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; }
+      .metric .l { font-size: 12px; color: var(--muted); margin-top: 6px; }
+      .rel { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin-top: 8px; font-size: 14px; }
+      .rel .v { font-family: var(--mono); color: var(--accent); }
+      .rel .d { color: var(--muted); }
+
+      footer { padding: 30px 0 56px; font-family: var(--mono); font-size: 12px; color: var(--faint); }
+      @media (max-width: 720px) { .grid2, .planes, .personas, .metrics { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="wrap topbar-inner">
+        <span class="brand">Ward<span class="beat">Beat</span></span>
+        <a class="jump" href="/about.html">Overview</a>
+        <a class="jump" href="/about-architecture.html">Architecture</a>
+        <a class="jump" href="/about-ai.html">AI</a>
+        <a class="jump" href="/about-evals.html">Evals</a>
+        <a class="jump" href="/about-monitoring.html">Monitoring</a>
+        <a class="jump" href="/about-azure.html">Azure</a>
+        <a class="jump" href="/about-demo.html">Demo</a>
+        <a class="jump" href="/about-workflow.html">Workflow</a>
+        <a class="jump" href="/about-roadmap.html">Roadmap</a>
+        <a class="jump" href="/about-glossary.html">Glossary</a>
+        <a class="jump" href="#spec">Specs</a>
+        <a class="jump" href="#git">Git</a>
+        <a class="jump" href="#gate">Gate</a>
+        <a class="jump" href="#loop">Loop</a>
+        <a class="jump" href="#why">Why</a>
+      </div>
+    </div>
+
+    <header class="hero">
+      <div class="wrap hero-inner">
+        <p class="eyebrow">Product guide · Workflow</p>
+        <h1 class="title">How it is built</h1>
+        <p class="lede">WardBeat is built spec-first on a trunk-based git workflow, with a hard local quality gate — lint, types, tests, build, and the AI evals — standing between every change and a release tag.</p>
+        <div class="pills">
+          <span class="pill">Spec-driven development</span>
+          <span class="pill">Trunk-based git · Conventional Commits</span>
+          <span class="pill">Evals as release gates</span>
+        </div>
+        <svg class="ecg" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,20 380,20 400,20 412,8 424,32 436,20 470,20 482,20 492,4 502,36 512,20 1000,20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+        </svg>
+      </div>
+    </header>
+
+    <!-- 1. SPEC-DRIVEN DEVELOPMENT -->
+    <section id="spec">
+      <div class="wrap">
+        <span class="sec-num">01</span>
+        <h2>Spec-driven development</h2>
+        <p>Non-trivial work on WardBeat starts with a short written spec that captures the <b>what</b> and <b>why</b> before anyone writes the <b>how</b>. The rule is simple: a new capability, a security-posture change, an infrastructure move, or a notable trade-off gets a spec; a trivial fix, a dependency bump, or a copy edit does not — a good commit message is enough there. The point is to make intent reviewable, keep scope honest, and leave the codebase a durable record of the decision behind each release.</p>
+        <p>Writing the contract before the code is the whole discipline. It reduces rework, because disagreements about scope surface on a page you can edit in minutes rather than in code you have to unpick over a day. It forces the <i>why</i> to be stated out loud, so a reviewer can push back on the goal, not just the diff. And it turns review into a conversation about intent — is this the right thing to build? — instead of a line-by-line hunt through an implementation that may already be pointed at the wrong target.</p>
+
+        <p class="subhead">Two files for a release, one for a one-off</p>
+        <p>A WardBeat release is planned as a folder under <code>specs/releases/vX.Y.Z-slug/</code> holding two files that do deliberately different jobs. Splitting them keeps the frozen agreement apart from the plan that keeps moving.</p>
+        <div class="grid2">
+          <div class="card"><h3>spec.md — the contract</h3><p>The <b>what &amp; why</b>: summary, problem, goals, non-goals, scope, requirements, acceptance criteria, security. Frozen once it reaches <code>Accepted</code> — the agreed target the work is measured against.</p></div>
+          <div class="card"><h3>spec-imp.md — the plan</h3><p>The <b>how</b>: approach, architecture deltas, milestones, data model, interfaces, the test &amp; eval plan, and a Definition of Done. A living document, updated as the work proceeds.</p></div>
+        </div>
+        <p class="point"><b>Why the split</b> A contract you keep editing is not a contract. Freezing <code>spec.md</code> at <code>Accepted</code> means the acceptance criteria cannot quietly drift to match whatever got built — the finished work is held to what was actually agreed. Meanwhile <code>spec-imp.md</code> is expected to change as reality intrudes: it is where a discovered constraint or a better approach gets recorded without touching the agreement.</p>
+
+        <p class="subhead">One-off changes and the numbered history</p>
+        <p>A one-off change that still deserves a written intent — but is not a whole release — uses the flat <code>specs/TEMPLATE.md</code>, copied to <code>NNNN-slug.md</code> and opened as <code>Proposed</code>. The numbered specs <code>0001</code>–<code>0025</code> are history: <code>0001</code>–<code>0024</code> document the platform foundation WardBeat inherited, and <code>0025</code> is WardBeat’s own foundation spec. From <b>v0.2.0</b> onward, every WardBeat release lives in its own <code>specs/releases/vX.Y.Z-slug/</code> folder as the two-file pair.</p>
+        <div class="safety-callout"><b>Spec is intent-before; changelog is record-after.</b> The spec says why and what, written before the work. The <code>CHANGELOG.md</code> entry says what shipped, written for users after. They complement each other — neither is a substitute for the other, and a release fills in both.</div>
+      </div>
+    </section>
+
+    <!-- 2. TRUNK-BASED GIT -->
+    <section id="git">
+      <div class="wrap">
+        <span class="sec-num">02</span>
+        <h2>Trunk-based git</h2>
+        <p>WardBeat is deliberately trunk-based, not GitFlow. <code>main</code> is the only long-lived branch — there is no <code>develop</code>, <code>release</code>, or <code>hotfix</code>. Feature work branches off <code>main</code> as <code>feature/&lt;slug&gt;</code>, and opens a pull request straight back into <code>main</code>. A release is nothing more than a <code>vX.Y.Z</code> tag on a <code>main</code> commit; the tag is what defines the release. There is no required <code>Release vX.Y.Z</code> merge commit — a plain commit on <code>main</code> can be tagged directly.</p>
+        <p>The reason to work this way is that integration stays cheap and <code>main</code> stays releasable. Long-lived branches drift apart and turn merges into archaeology; a single trunk that everyone rejoins quickly keeps that drift small and the history honest. Because a release is just a tag on a good commit, cutting one is a labelling act, not a branch-management ceremony.</p>
+
+        <p class="subhead">Commits, hooks, and the changelog</p>
+        <div class="grid2">
+          <div class="card"><h3>Conventional Commits</h3><p>Every commit follows <code>feat:</code>, <code>fix:</code>, <code>docs:</code>, <code>chore:</code>… enforced by a commitlint <code>commit-msg</code> hook. Body lines stay ≤ 100 characters, so the history reads cleanly and can be parsed by tooling.</p></div>
+          <div class="card"><h3>pre-commit runs lint-staged</h3><p>A Husky <code>pre-commit</code> hook runs ESLint + Prettier on staged files before the commit lands, so formatting and lint drift never enters the trunk in the first place.</p></div>
+          <div class="card"><h3>Keep a Changelog</h3><p><code>CHANGELOG.md</code> follows the Keep a Changelog format and is updated for every user-facing change — the after-the-fact record that pairs with the before-the-fact spec.</p></div>
+          <div class="card"><h3>No AI credit in git</h3><p>No <code>Co-Authored-By: Claude</code>, no “Generated with…”, no assistant trailer of any kind on commits or PR descriptions. The history reads as human-authored work.</p></div>
+        </div>
+
+        <p class="subhead">Cutting a release</p>
+        <p>Bump the version, set the spec to <code>Shipped</code>, update <code>CHANGELOG.md</code>, then tag a <code>main</code> commit <code>vX.Y.Z</code> and push it. Pushing a <code>v*</code> tag is what triggers deploy when CI is wired; the pre-1.0 stream today is a series of such tags on <code>main</code>.</p>
+        <pre style="overflow-x:auto;background:#eef3f4;border:1px solid #d9e2e5;border-radius:8px;padding:12px 14px;font-size:12.5px">git checkout main &amp;&amp; git pull
+git checkout -b feature/&lt;slug&gt;
+# ...write the spec, implement, run the gate...
+git commit -m “feat: add flow copilot”      # Conventional Commits, body lines &le; 100
+# open a PR into main, merge once the gate is green
+# then, on main, cut the release:
+git tag -a vX.Y.Z -m “short title”
+git push origin main --tags                 # the v* tag defines the release</pre>
+        <p class="point"><b>Why trunk-based</b> A trunk that is always releasable means there is never a “stabilise the release branch” phase — the last green commit is shippable by definition. That is only safe because the quality gate below is hard, which is what section 03 is about.</p>
+      </div>
+    </section>
+
+    <!-- 3. THE QUALITY GATE -->
+    <section id="gate">
+      <div class="wrap">
+        <span class="sec-num">03</span>
+        <h2>The quality gate</h2>
+        <p>Before pushing, one command has to pass end to end. It is the contract that keeps <code>main</code> releasable, and — because CI is deferred at this stage — it is the gate that actually matters today. It runs locally, on the developer’s machine, and nothing goes onto the trunk that has not cleared it.</p>
+        <pre style="overflow-x:auto;background:#eef3f4;border:1px solid #d9e2e5;border-radius:8px;padding:12px 14px;font-size:12.5px">pnpm lint &amp;&amp; pnpm typecheck &amp;&amp; pnpm test &amp;&amp; pnpm build</pre>
+        <p>Each stage catches a different class of mistake, and chaining them with <code>&amp;&amp;</code> means the first failure stops the line — you never ship having only run half the checks.</p>
+        <div class="grid2">
+          <div class="card"><h3>lint</h3><p><code>eslint .</code> — catches the class of bug a linter sees and enforces the house style, so review is about behaviour, not formatting.</p></div>
+          <div class="card"><h3>typecheck</h3><p><code>tsc --noEmit</code> in strict mode — the type system rejects whole categories of runtime error before the code ever runs.</p></div>
+          <div class="card"><h3>test</h3><p><code>vitest run</code> over <code>tests/unit</code> — the behavioural safety net; <code>pnpm test:e2e</code> (Playwright) adds the full-stack pass.</p></div>
+          <div class="card"><h3>build</h3><p><code>next build</code> — proves the production build actually compiles, catching failures that only surface outside <code>next dev</code>.</p></div>
+        </div>
+
+        <p class="subhead">The AI-specific gates</p>
+        <p>WardBeat has AI capabilities, and a passing type-check says nothing about whether a model still reads a note correctly. So two more gates sit alongside the standard four: the four eval harnesses and the FastAPI service’s own test suite. Because AI quality is measured, not assumed, these are gates, not dashboards — each harness exits non-zero when its gate is missed.</p>
+        <div class="grid2">
+          <div class="card"><h3>Four <code>eval:*</code> harnesses</h3><p><code>eval:extraction</code>, <code>eval:copilot</code>, <code>eval:actions</code>, and <code>eval:forecast</code> each run a labelled synthetic dataset through the live NVIDIA NIM models, score a metric that fits the task, and fail if the gate is missed — F1 ≥ 0.85 for extraction, ≥ 0.90 for RAG and actions, Spearman ρ ≥ 0.70 for the forecast.</p></div>
+          <div class="card"><h3>The <code>ai/</code> pytest suite</h3><p>The FastAPI AI service has its own Python tests — <code>ai/tests/test_extract.py</code>, <code>test_forecast.py</code>, <code>test_config.py</code> — covering the service boundary and the deterministic forecast maths that must never be left to the model.</p></div>
+        </div>
+        <div class="safety-callout"><b>A hard gate is what makes trunk-based safe.</b> With CI deferred, there is no server-side net to catch a bad push — so the local gate has to be non-negotiable. Because every commit on <code>main</code> has cleared lint, types, tests, build, and the evals, the last green commit is always a candidate release. That is the whole bargain: a hard gate buys an always-releasable trunk.</div>
+      </div>
+    </section>
+
+    <!-- 4. THE LOOP, END TO END -->
+    <section id="loop">
+      <div class="wrap">
+        <span class="sec-num">04</span>
+        <h2>The loop, end to end</h2>
+        <p>Put together, the practices form one repeatable loop from a written intent to a live release. The diagram traces a single change through it; each stage exists to make the next one safe.</p>
+
+        <svg viewBox="0 0 760 300" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="wfLoopTitle">
+          <title id="wfLoopTitle">The WardBeat development loop from spec to deploy</title>
+          <defs>
+            <marker id="arrowWf1" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#7f9298"></path>
+            </marker>
+          </defs>
+
+          <!-- row 1: spec -> branch -> implement -->
+          <rect x="20" y="30" width="220" height="60" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="130" y="55" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">Spec</text>
+          <text x="130" y="72" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#566a72">spec.md — what &amp; why, frozen</text>
+
+          <rect x="272" y="30" width="200" height="60" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="372" y="55" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">Branch</text>
+          <text x="372" y="72" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#566a72">feature/&lt;slug&gt; off main</text>
+
+          <rect x="504" y="30" width="236" height="60" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="622" y="55" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">Implement</text>
+          <text x="622" y="72" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#566a72">spec-imp.md — the living plan</text>
+
+          <line x1="240" y1="60" x2="270" y2="60" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowWf1)"></line>
+          <line x1="472" y1="60" x2="502" y2="60" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowWf1)"></line>
+
+          <!-- down into gate -->
+          <line x1="622" y1="90" x2="622" y2="118" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowWf1)"></line>
+
+          <!-- row 2: local gate (full width) -->
+          <rect x="20" y="120" width="720" height="58" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"></rect>
+          <text x="380" y="145" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">Local gate</text>
+          <text x="380" y="162" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#0f766e">lint · typecheck · test · build · four evals + ai/ pytest</text>
+
+          <!-- down + left into changelog -->
+          <line x1="130" y1="178" x2="130" y2="208" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowWf1)"></line>
+
+          <!-- row 3: changelog -> PR -> merge -->
+          <rect x="20" y="210" width="220" height="60" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="130" y="235" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">CHANGELOG</text>
+          <text x="130" y="252" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#566a72">record the user-facing change</text>
+
+          <rect x="272" y="210" width="200" height="60" rx="8" fill="#ffffff" stroke="#d9e2e5" stroke-width="1"></rect>
+          <text x="372" y="235" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">PR → main</text>
+          <text x="372" y="252" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#566a72">review the intent, merge</text>
+
+          <rect x="504" y="210" width="236" height="60" rx="8" fill="#d6ece9" stroke="#0f766e" stroke-width="1.5"></rect>
+          <text x="622" y="235" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#0e2028" font-weight="600">Tag vX.Y.Z → deploy</text>
+          <text x="622" y="252" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#0f766e">the v* tag defines the release</text>
+
+          <line x1="240" y1="240" x2="270" y2="240" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowWf1)"></line>
+          <line x1="472" y1="240" x2="502" y2="240" stroke="#7f9298" stroke-width="1.4" marker-end="url(#arrowWf1)"></line>
+        </svg>
+
+        <div class="walk">
+          <div class="wstep"><span class="n">1</span><div><h4>Spec — the what &amp; why</h4><p>A non-trivial change opens with <b>spec.md</b>, agreed and frozen at <code>Accepted</code>. It exists so the target is settled before effort is spent — review argues about the goal while it is still cheap to change.</p></div></div>
+          <div class="wstep"><span class="n">2</span><div><h4>Branch off main</h4><p>Work happens on <b>feature/&lt;slug&gt;</b>, cut from <code>main</code>. There is no long-lived branch to integrate against, so the branch stays short and rejoins the trunk quickly.</p></div></div>
+          <div class="wstep"><span class="n">3</span><div><h4>Implement against spec-imp</h4><p>The code is written to the plan in <b>spec-imp.md</b>, which is updated as reality intrudes. The frozen contract stays the yardstick; the plan is free to move.</p></div></div>
+          <div class="wstep"><span class="n">4</span><div><h4>Run the local gate</h4><p><b>lint · typecheck · test · build</b>, plus the <b>four evals and the ai/ pytest suite</b>. This is the hard stop — nothing pushes that has not cleared it, which is what keeps the trunk releasable.</p></div></div>
+          <div class="wstep"><span class="n">5</span><div><h4>Update the CHANGELOG</h4><p>Every user-facing change gets a <b>Keep a Changelog</b> entry — the after-the-fact record that pairs with the before-the-fact spec, so users can see what shipped.</p></div></div>
+          <div class="wstep"><span class="n">6</span><div><h4>PR into main, then merge</h4><p>A pull request goes <b>straight into main</b> — no <code>develop</code> to target. Because the spec captured the intent, review is about whether this is the right thing, merged once green.</p></div></div>
+          <div class="wstep"><span class="n">7</span><div><h4>Tag vX.Y.Z, deploy</h4><p>On <code>main</code>, a <b>vX.Y.Z tag</b> is the release — bump the version, mark the spec <code>Shipped</code>, and push the tag. Pushing the <code>v*</code> tag is what triggers deploy when CI is wired.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. WHY THIS WAY -->
+    <section id="why">
+      <div class="wrap">
+        <span class="sec-num">05</span>
+        <h2>Why this way</h2>
+        <p>Each practice earns its place by preventing a specific failure. Together they are what lets a small team ship a clinical-facing AI product with a straight face — intent is written down, the trunk is always releasable, and quality is a number the release is measured against.</p>
+        <div class="grid2">
+          <div class="tech">
+            <div class="tech-head"><h3>Spec-first</h3><span class="tag">Intent before code</span></div>
+            <p class="what">A written <code>spec.md</code> contract (what &amp; why) and a living <code>spec-imp.md</code> plan (how) for every non-trivial change.</p>
+            <ul class="why">
+              <li><b>Less rework.</b> Scope disagreements surface on an editable page, not in code you unpick later.</li>
+              <li><b>The why is explicit.</b> Reviewers can push back on the goal, not just the diff.</li>
+              <li><b>Frozen contract.</b> Acceptance criteria cannot drift to match whatever got built.</li>
+            </ul>
+          </div>
+          <div class="tech">
+            <div class="tech-head"><h3>Trunk-based git</h3><span class="tag">One long-lived branch</span></div>
+            <p class="what">Feature branches off <code>main</code>, PRs straight back, and a release is a <code>vX.Y.Z</code> tag on a <code>main</code> commit.</p>
+            <ul class="why">
+              <li><b>Cheap integration.</b> Short branches rejoin quickly, so merges stay small.</li>
+              <li><b>Always-releasable main.</b> No stabilise-the-release-branch phase — the last green commit ships.</li>
+              <li><b>Releasing is labelling.</b> A tag defines the release; no branch ceremony.</li>
+            </ul>
+          </div>
+          <div class="tech">
+            <div class="tech-head"><h3>Hard local gate</h3><span class="tag">lint · type · test · build</span></div>
+            <p class="what">One chained command that must pass before any push, standing in for CI while it is deferred.</p>
+            <ul class="why">
+              <li><b>Nothing bad on the trunk.</b> A failing stage stops the line before code lands.</li>
+              <li><b>Production build proven.</b> <code>next build</code> catches what <code>next dev</code> hides.</li>
+              <li><b>Trunk stays shippable.</b> The gate is what makes trunk-based safe.</li>
+            </ul>
+          </div>
+          <div class="tech">
+            <div class="tech-head"><h3>Evals as gates</h3><span class="tag">Four harnesses + pytest</span></div>
+            <p class="what">Each AI capability is pinned to a metric and a threshold; the harness exits non-zero when the gate is missed.</p>
+            <ul class="why">
+              <li><b>Quality is a number.</b> An unmeasurable AI feature is one you cannot defend.</li>
+              <li><b>Regressions caught.</b> A tuned prompt took extraction from 69% to 88% F1 — visible only because it was measured.</li>
+              <li><b>No silent drift.</b> A model change that lowers a score fails the gate.</li>
+            </ul>
+          </div>
+          <div class="tech">
+            <div class="tech-head"><h3>Conventional Commits + changelog</h3><span class="tag">Readable history</span></div>
+            <p class="what">Commitlint-enforced <code>feat:</code>/<code>fix:</code> messages (≤ 100-char bodies) and a Keep a Changelog record for every user-facing change.</p>
+            <ul class="why">
+              <li><b>Parseable history.</b> Consistent prefixes let tooling read the log.</li>
+              <li><b>Record after intent.</b> The changelog pairs with the spec — why before, what shipped after.</li>
+              <li><b>Human-authored.</b> No AI credit trailers; the history reads as real work.</li>
+            </ul>
+          </div>
+          <div class="tech">
+            <div class="tech-head"><h3>The payoff</h3><span class="tag">Defensible delivery</span></div>
+            <p class="what">The combined effect: a clinical-facing AI product that can be shipped with confidence and explained after the fact.</p>
+            <ul class="why">
+              <li><b>Every release is traceable.</b> Spec, gate, changelog, and tag form one chain.</li>
+              <li><b>Nothing ships unmeasured.</b> Both code and AI quality are gated.</li>
+              <li><b>Fast without being reckless.</b> A short loop that never skips the checks.</li>
+            </ul>
+          </div>
+        </div>
+        <p style="margin-top:16px">For where WardBeat is heading next, see the full <a href="/about-roadmap.html">Roadmap</a>; for the shape of the system this workflow builds, start at the <a href="/about.html">Overview</a>.</p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">WardBeat · product guide · spec-driven · trunk-based · evals as gates</div>
+    </footer>
+  </body>
+</html>

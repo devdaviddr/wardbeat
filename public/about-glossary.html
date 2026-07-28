@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WardBeat — The complete guide</title>
+    <style>
+      :root {
+        --paper: #f6f8f9; --surface: #ffffff; --ink: #0e2028; --muted: #566a72; --faint: #7f9298;
+        --line: #d9e2e5; --accent: #0f766e; --accent-soft: #d6ece9; --fit: #15803d; --barrier: #b45309;
+        --nim: #5f9400; --python: #1f5f8b; --data: #6b46a8;
+        --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+      body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+      .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+      a { color: var(--accent); }
+      h1, h2, h3 { text-wrap: balance; line-height: 1.15; }
+      .eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0; }
+
+      /* sticky nav */
+      .topbar { position: sticky; top: 0; z-index: 20; background: rgba(246,248,249,0.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+      .topbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 10px 0; }
+      .brand { display: flex; align-items: baseline; gap: 8px; font-size: 18px; font-weight: 800; letter-spacing: -0.03em; margin-right: auto; }
+      .brand .beat { color: var(--accent); }
+      .topbar a.jump { font-family: var(--mono); font-size: 12px; text-decoration: none; color: var(--muted); padding: 3px 4px; }
+      .topbar a.jump:hover { color: var(--accent); }
+
+      /* hero */
+      header.hero { border-bottom: 1px solid var(--line); background: radial-gradient(120% 140% at 88% -20%, rgba(15,118,110,0.08), transparent 60%), var(--surface); }
+      .hero-inner { padding: 48px 0 40px; }
+      h1.title { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; margin: 12px 0 8px; }
+      .lede { font-size: 18px; color: var(--muted); max-width: 66ch; margin: 0; }
+      .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+      .pill { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; color: var(--muted); background: var(--surface); }
+      .pill.live { color: var(--fit); border-color: #b7e3c4; background: #dcfce7; }
+      .pill.learn { color: var(--accent); border-color: #a9d5cf; background: var(--accent-soft); }
+      .ecg { display: block; width: 100%; height: 30px; margin-top: 24px; color: var(--accent); opacity: 0.8; }
+
+      section { padding: 40px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 60px; }
+      .sec-num { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: 0.1em; }
+      h2 { font-size: 26px; font-weight: 780; letter-spacing: -0.02em; margin: 4px 0 12px; }
+      h3 { font-size: 17px; margin: 0 0 4px; }
+      p { max-width: 74ch; }
+      .subhead { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin: 28px 0 12px; }
+      code { font-family: var(--mono); font-size: 0.86em; background: #eef3f4; padding: 1px 5px; border-radius: 4px; }
+
+      .thesis { background: var(--ink); color: #dfeaed; border-radius: 12px; padding: 22px 26px; margin-top: 8px; }
+      .thesis b { color: #fff; }
+      .safety-callout { background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 14px 18px; margin-top: 14px; font-size: 14px; }
+      .safety-callout b { color: var(--ink); }
+
+      .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      .card { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 16px; }
+      .card h3 { font-size: 15px; }
+      .card p { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; }
+
+      .planes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .plane { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 16px; }
+      .plane .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .plane ul { margin: 8px 0 0; padding-left: 16px; color: var(--muted); font-size: 13.5px; }
+      .plane.next { border-top: 3px solid var(--ink); } .plane.next .cap { color: var(--ink); }
+      .plane.py { border-top: 3px solid var(--python); } .plane.py .cap { color: var(--python); }
+      .plane.nim { border-top: 3px solid var(--nim); } .plane.nim .cap { color: var(--nim); }
+      .plane.data { border-top: 3px solid var(--data); } .plane.data .cap { color: var(--data); }
+
+      .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 4px; }
+      .step { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 6px 9px; }
+      .step.nim { border-color: #cfe39a; background: #f2f8e4; color: var(--nim); }
+      .step.py { border-color: #cfe0ee; background: #eef4fa; color: var(--python); }
+      .step.next { border-color: #d7dee1; background: #eef2f3; color: var(--ink); }
+      .step.data { border-color: #e2d8ef; background: #f2ecfa; color: var(--data); }
+      .arrow { color: var(--faint); }
+      .capability { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px 18px; margin-top: 12px; }
+      .capability p { font-size: 14px; color: var(--muted); margin: 6px 0 0; }
+
+      /* educational primer */
+      .primer-intro { background: var(--ink); color: #dfeaed; border-radius: 12px; padding: 20px 24px; margin: 8px 0 6px; }
+      .primer-intro p { margin: 0; font-size: 15px; max-width: none; }
+      .primer-intro b { color: #fff; }
+      .concept { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 15px 18px; margin-top: 10px; }
+      .concept .cnum { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.08em; }
+      .concept h3 { font-size: 16px; margin: 2px 0 6px; }
+      .concept .plain { font-size: 14px; margin: 0; }
+      .concept .plain b { color: var(--ink); }
+      .concept .analogy { font-size: 13px; color: var(--muted); font-style: italic; margin: 8px 0 0; padding-left: 12px; border-left: 2px solid var(--accent-soft); max-width: none; }
+      .concept .inapp { font-size: 13px; color: var(--muted); margin: 10px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; max-width: none; }
+      .concept .inapp b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--nim); display: inline-block; margin-right: 4px; }
+
+      /* step walkthrough */
+      .walk { margin-top: 12px; }
+      .wstep { display: grid; grid-template-columns: 26px 1fr; gap: 0 14px; padding-bottom: 12px; }
+      .wstep .n { font-family: var(--mono); font-weight: 700; font-size: 12.5px; color: #fff; background: var(--accent); border-radius: 7px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+      .wstep h4 { margin: 3px 0 2px; font-size: 14px; }
+      .wstep p { margin: 0; font-size: 13.5px; color: var(--muted); max-width: none; }
+      .wstep p b { color: var(--ink); font-weight: 600; }
+      .point { font-size: 13px; color: var(--muted); margin: 4px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; max-width: none; }
+      .point b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
+
+      .personas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .timeline { border-left: 2px solid var(--line); margin: 8px 0 0; padding-left: 20px; }
+      .tstep { position: relative; padding-bottom: 18px; }
+      .tstep::before { content: ""; position: absolute; left: -26px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+      .tstep .surface { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+      .tstep h3 { font-size: 15.5px; margin: 2px 0 3px; }
+      .tstep p { font-size: 14px; color: var(--muted); margin: 0; }
+
+      .tech { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px 18px; margin-top: 12px; }
+      .tech-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+      .tech-head h3 { font-size: 17px; margin: 0; }
+      .tag { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+      .tech .what { font-size: 13.5px; color: var(--muted); margin: 8px 0 8px; }
+      .tech .why { margin: 0; padding-left: 18px; font-size: 13.5px; } .tech .why li { margin-bottom: 4px; }
+      .tech .instead { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; border-top: 1px dashed var(--line); padding-top: 9px; }
+      .tech .instead b { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
+
+      .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .metric { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 14px 16px; }
+      .metric .v { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; }
+      .metric .l { font-size: 12px; color: var(--muted); margin-top: 6px; }
+      .rel { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin-top: 8px; font-size: 14px; }
+      .rel .v { font-family: var(--mono); color: var(--accent); }
+      .rel .d { color: var(--muted); }
+
+      footer { padding: 30px 0 56px; font-family: var(--mono); font-size: 12px; color: var(--faint); }
+      @media (max-width: 720px) { .grid2, .planes, .personas, .metrics { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="wrap topbar-inner">
+        <span class="brand">Ward<span class="beat">Beat</span></span>
+        <a class="jump" href="/about.html">Overview</a>
+        <a class="jump" href="/about-architecture.html">Architecture</a>
+        <a class="jump" href="/about-ai.html">AI</a>
+        <a class="jump" href="/about-evals.html">Evals</a>
+        <a class="jump" href="/about-monitoring.html">Monitoring</a>
+        <a class="jump" href="/about-azure.html">Azure</a>
+        <a class="jump" href="/about-demo.html">Demo</a>
+        <a class="jump" href="/about-workflow.html">Workflow</a>
+        <a class="jump" href="/about-roadmap.html">Roadmap</a>
+        <a class="jump" href="/about-glossary.html">Glossary</a>
+        <a class="jump" href="#ward">Ward</a>
+        <a class="jump" href="#ai">AI</a>
+        <a class="jump" href="#models">Models</a>
+        <a class="jump" href="#platform">Platform</a>
+        <a class="jump" href="#eval">Eval</a>
+        <a class="jump" href="#product">Product</a>
+      </div>
+    </div>
+
+    <header class="hero">
+      <div class="wrap hero-inner">
+        <p class="eyebrow">Product guide · Glossary</p>
+        <h1 class="title">Glossary</h1>
+        <p class="lede">Every term used across this guide, each defined the way WardBeat actually uses it — from ward flow and the AI stack to the models, the platform, and the evals that gate them.</p>
+        <div class="pills">
+          <span class="pill live">● live on NVIDIA NIM</span>
+          <span class="pill">Next.js 16 · FastAPI · Postgres/pgvector</span>
+        </div>
+        <svg class="ecg" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,20 380,20 400,20 412,8 424,32 436,20 470,20 482,20 492,4 502,36 512,20 1000,20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+        </svg>
+      </div>
+    </header>
+
+    <!-- 1. WARD & DISCHARGE -->
+    <section id="ward">
+      <div class="wrap">
+        <span class="sec-num">01</span>
+        <h2>Ward &amp; discharge</h2>
+        <p>The clinical vocabulary of hospital flow. These are the real-world things WardBeat reads out of ward notes and puts on the board — the status that decides whether a bed frees up this morning or this afternoon.</p>
+        <p class="subhead">Flow &amp; discharge terms</p>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px"><tbody>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Ward flow</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The movement of patients through a ward — admitted, treated, then discharged so the bed can be reused. WardBeat exists to keep this flowing, by making the reasons a discharge stalls visible early enough to act on.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Bed utilisation</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">How effectively the ward’s beds are being used over time. A bed occupied by a patient who is fit to leave but delayed is wasted capacity; WardBeat’s whole aim is to recover those bed-days by surfacing the delay sooner.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Discharge</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A patient leaving the ward, freeing the bed. WardBeat never performs the discharge itself — that stays with clinicians and the systems of record — but it works to make each one happen earlier in the day.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">MFFD <code style="font-size:11px">(medically fit for discharge)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A patient whose medical treatment is complete — clinically, they could go home today. WardBeat extracts this fit-to-leave flag from the notes; a patient who is MFFD but still on the ward is exactly the case the board is built to highlight.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">EDD <code style="font-size:11px">(estimated discharge date)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The date the team expects a patient to leave. WardBeat reads the EDD out of each note during extraction and grounds it in the sentence it came from, so the planned leaving date is a first-class, visible field rather than something buried in prose.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Barrier</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Anything holding up an otherwise-ready discharge — pending medications, transport, social care, or a review. Barriers are the core unit WardBeat extracts: each bed shows its barriers, and each barrier gets a suggested next step.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">TTO <code style="font-size:11px">(to-take-out meds)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The medications a patient must take home before they can be discharged, dispensed by pharmacy. A common barrier type; “chase the TTOs” is one of the concrete actions WardBeat recommends against it.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Transport</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Arranged travel to get a patient home, needed when they cannot make their own way. A barrier type on the board; the matching recommended action is to book it.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Social care / package of care</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Community support — carers, equipment, a care home place — that must be in place before a patient can safely leave. A frequent, slow-to-clear barrier; WardBeat’s matching action is a referral to social care.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Review</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A pending assessment — by a doctor, therapist, or specialist — that has to happen before discharge is signed off. A barrier type; the recommended action is to request the review.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Fit-but-delayed</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A patient who is medically fit for discharge but still on the ward because a non-medical barrier remains. These are the bed-days WardBeat is designed to recover — they are made to stand out at a glance on the board.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Transfer of care</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Handing responsibility for a patient to another team or service — a community team, another ward, or social care — as part of leaving. Often the thing a barrier such as social care is waiting on.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Board round</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The regular team meeting where the ward reviews each patient’s discharge status and plan. Traditionally assembled by hand and often late in the day; WardBeat’s ward board is meant to make that review instant and always current.</td></tr>
+        </tbody></table></div>
+      </div>
+    </section>
+
+    <!-- 2. AI & MACHINE LEARNING -->
+    <section id="ai">
+      <div class="wrap">
+        <span class="sec-num">02</span>
+        <h2>AI &amp; machine learning</h2>
+        <p>The general AI concepts the guide leans on, defined in the context of how WardBeat uses them. The through-line: language models do the language, everything numeric or safety-critical stays in plain code, and every AI output is grounded and cited or it is dropped.</p>
+        <p class="subhead">AI &amp; ML terms</p>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px"><tbody>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">LLM <code style="font-size:11px">(large language model)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A model trained to read and write natural language. In WardBeat the LLM (Nemotron) reads notes into structured data, routes and answers copilot questions, reasons about actions, and narrates the briefing — and nothing else. It is treated as a fallible component, never an oracle.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Token</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The unit a language model reads and writes in — a word or word-piece. Prompts and outputs are measured in tokens, which is what the AI plane’s rate limiter budgets and what keeps a small model like Nemotron cheap enough to run on every note.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Temperature</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A setting that controls how random a model’s output is. WardBeat runs extraction at temperature 0 so the same note yields the same structured result — repeatable output matters more than variety when reading a note into JSON.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Hallucination</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">When a model states something plausible but unsupported — the failure mode a ward cannot tolerate. WardBeat defends against it by grounding: extracted claims are matched back to the note and answers must cite a retrieved passage, so unverifiable output is dropped.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Structured output / JSON mode</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Asking the model to return strict JSON rather than free prose. WardBeat uses JSON mode for extraction and routing, then re-validates the result in code against allow-lists — the model’s field names and values are never trusted as-is.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Grounding</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Tying every AI output back to a real source — the exact note sentence for an extracted barrier, or the retrieved policy passage for an answer. Grounding is WardBeat’s core safety principle: output that cannot be traced to a source is not shown.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Citation</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The clickable reference WardBeat attaches to an answer or extracted fact, pointing at the note or policy passage it came from. Every copilot answer cites its source, so a clinician can verify it rather than take it on trust.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Embedding</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A numeric representation of a piece of text that captures its meaning. WardBeat embeds policy passages and copilot questions with the NV-EmbedQA model so text can be compared by meaning rather than by matching words.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Vector</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The list of numbers an embedding produces — a point in high-dimensional space (1024 dimensions here). Similar meanings sit close together. WardBeat stores these vectors in Postgres via pgvector, alongside the ward data.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Vector search <code style="font-size:11px">(ANN)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Finding the stored passages whose vectors are nearest to a question’s vector — approximate nearest-neighbour search. WardBeat runs this inside Postgres (that is where the database lives) to fetch a cheap shortlist of candidate policy passages before reranking.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Cosine similarity</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A way to score how alike two vectors are by the angle between them. It is the distance measure WardBeat’s vector search uses — the pgvector index is an hnsw cosine index.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">RAG <code style="font-size:11px">(retrieval-augmented generation)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Retrieving relevant source passages first, then having the model answer from them. WardBeat’s policy copilot is a RAG pipeline: embed the question, vector-search, rerank, then compose a cited answer — or refuse if nothing grounds it.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Rerank / reranker</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A second, more precise pass that reorders the vector-search shortlist by true relevance. WardBeat uses a small cross-encoder (Llama-3.2 NV-RerankQA) so the answer step sees the most relevant policy passages first.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Agent / tool use</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A model that reasons over inputs to produce a decision or action. WardBeat’s actions agent reasons over a patient’s barriers and retrieved policy to propose one grounded next step per barrier — but it only recommends; a person approves before anything happens.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Prompt injection</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">An attack where text fed to a model tries to hijack its instructions. WardBeat’s defences against it are structural: models return validated JSON re-checked against allow-lists, outputs must be grounded, and no model can take a clinical action on its own.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Deterministic model</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A plain, non-AI statistical model whose output is fixed for a given input and whose weights are readable. WardBeat’s discharge and demand forecasts are deterministic — numbers have to be calibrated and testable, so no LLM produces them.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Narration</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Having the LLM write prose around figures it was handed, without inventing or changing any of them. The flow briefing is narrated: the deterministic model does the maths, the model does the language, and an eval checks it states only numbers it was given.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Mock vs live</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Every AI capability has a deterministic offline “mock” stand-in as well as its real “live” model call. With no API key or one flag flipped, WardBeat runs entirely on mocks — and a failed live call falls back to the mock rather than breaking the app.</td></tr>
+        </tbody></table></div>
+      </div>
+    </section>
+
+    <!-- 3. MODELS & NVIDIA NIM -->
+    <section id="models">
+      <div class="wrap">
+        <span class="sec-num">03</span>
+        <h2>Models &amp; NVIDIA NIM</h2>
+        <p>The specific models WardBeat runs and the platform that serves them. Each model is the smallest one that does its job well, and all of them are self-hostable — so clinical data can stay inside the trust.</p>
+        <p class="subhead">Models &amp; serving</p>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px"><tbody>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">NVIDIA NIM</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">NVIDIA Inference Microservices — self-hostable model containers behind an OpenAI-compatible API. WardBeat’s model plane is NIM: one vendor supplies the language, embedding, and rerank models, hosted for the demo and on the hospital’s own GPUs in production.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Nemotron <code style="font-size:11px">(Nano 9B)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The language model WardBeat uses for every text task — <code style="font-size:11px">nvidia-nemotron-nano-9b-v2</code>. A small reasoning model, right-sized for reading a note into JSON or drafting a grounded sentence, and cheap and fast enough to run on every note. Used with JSON mode and temperature 0.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">nv-embedqa-e5-v5</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The embedding model behind policy retrieval, producing 1024-dimension vectors. It is tuned for retrieval and asymmetric — questions and passages are encoded differently — which lifts recall when a short question must match a longer passage.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">llama-3.2-nv-rerankqa</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The reranker — <code style="font-size:11px">llama-3.2-nv-rerankqa-1b-v2</code>, a precise 1B cross-encoder. It reorders the cheap vector-search shortlist so the copilot’s answer step sees the most relevant policy passages first. Small and fast.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">OpenAI-compatible API</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A model API that speaks the same request format as OpenAI’s. Because NIM is OpenAI-compatible, WardBeat’s client code is standard and moving from the hosted demo to on-prem NIM is a config change — swap a base URL and key — not a rewrite.</td></tr>
+        </tbody></table></div>
+      </div>
+    </section>
+
+    <!-- 4. ARCHITECTURE & PLATFORM -->
+    <section id="platform">
+      <div class="wrap">
+        <span class="sec-num">04</span>
+        <h2>Architecture &amp; platform</h2>
+        <p>The engineering foundation — the front door, the data layer, the security model, and the cloud it deploys to. The recurring theme is that the shape is a safety argument: one front door, one database writer, a stateless AI plane, and clinical data that can stay inside the trust.</p>
+        <p class="subhead">Application &amp; data platform</p>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px"><tbody>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">BFF <code style="font-size:11px">(backend-for-frontend)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A backend that exists to serve one frontend. In WardBeat, Next.js is the BFF: the only surface the browser reaches, the orchestrator of the AI work, and the sole writer to the database.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">RSC <code style="font-size:11px">(React Server Components)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">React components that render on the server and send finished markup, not client JavaScript. WardBeat uses them so pages like the ward board can read from the database directly on the server without shipping data logic to the browser.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Server Actions</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Server-side functions a component can call directly to perform a mutation, instead of a hand-written API route. WardBeat’s mutations — running extraction, approving an action — are Server Actions; “run extraction” starts as one.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">AI plane</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">WardBeat’s small internal FastAPI service that houses the AI capabilities — extraction, retrieval, the action agent, forecasting. It is stateless and never touches the database, so it is easy to scale, test, and move on-prem. Only Next.js calls it, over the private network.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Service token</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A shared secret (the <code style="font-size:11px">x-service-token</code> header) that Next.js sends on every call to the AI plane, so the AI service only answers its trusted caller. The browser never holds it and never reaches the AI plane directly.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">pgvector</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The Postgres extension that lets the database store and search embedding vectors. It means WardBeat keeps ward data and policy vectors in one database — no separate vector store to run and keep in sync.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">hnsw cosine index</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The index pgvector uses to make vector search fast — a hierarchical navigable small-world graph scored by cosine similarity. It is what lets WardBeat retrieve the nearest policy passages quickly at query time.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Drizzle</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The type-safe TypeScript ORM WardBeat uses to define its schema and run migrations against Postgres, so database changes are checked at compile time and versioned in code.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">RBAC <code style="font-size:11px">(role-based access control)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Deciding what a user can see or do based on their role. In WardBeat it is enforced at the front door — the Next.js edge proxy — so there is one place to control access before any request reaches the data.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">CSP / nonce</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A Content Security Policy restricts what a page is allowed to load; a nonce is a per-request token that marks the scripts allowed to run. WardBeat sets both at the edge proxy to harden the app against injected scripts.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Argon2id</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A modern, memory-hard password-hashing algorithm. WardBeat hashes credentials with Argon2id so stored passwords are expensive to crack even if the database were exposed.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Auth.js</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The authentication library (v5) WardBeat uses for credentials login and JWT sessions. It is deliberately split so the edge-safe config protects routes at the proxy while the password and database work stays in the Node runtime.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">PWA <code style="font-size:11px">(progressive web app)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A web app with an installable, app-like shell and a service worker. WardBeat ships as a PWA with a responsive app shell; the hand-rolled service worker never caches authenticated or API responses.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Docker Compose</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The tool that runs the whole stack — Next.js, the AI plane, Postgres — as a set of containers with one command. It is why the hosted demo and an on-prem install use the same containers, making the move into a hospital a config change.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Managed identity</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">An Azure feature that gives a running app an identity the platform manages, so it can reach other services without passwords or long-lived keys. In WardBeat’s cloud deployment the app authenticates to the database and registry this way — no secrets in code or env.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Private endpoint</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A private network address for an Azure service so it is reached inside the virtual network, never over the public internet. WardBeat’s database, storage, model endpoints, secrets, and registry are all reached over Private Endpoints.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Container Apps</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The Azure service that runs WardBeat’s containers in the cloud deployment, with scaling and revisions handled for you. It runs the same Docker images used locally and on-prem.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Azure AI Foundry</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The Azure service that hosts the NVIDIA NIM model endpoints in the cloud deployment. It is the managed home for the model plane in Azure, reached over a Private Endpoint like everything else.</td></tr>
+        </tbody></table></div>
+      </div>
+    </section>
+
+    <!-- 5. EVALUATION -->
+    <section id="eval">
+      <div class="wrap">
+        <span class="sec-num">05</span>
+        <h2>Evaluation</h2>
+        <p>How WardBeat turns “we tried to be careful” into a number. Each AI capability has its own harness with a labelled synthetic dataset, a metric that fits the task, and a hard gate — and nothing ships if a gate is missed.</p>
+        <p class="subhead">Eval terms &amp; metrics</p>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px"><tbody>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Eval harness</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The test rig for one AI capability: a labelled dataset, a fitting metric, and a gate. WardBeat has four — extraction, copilot, actions, and forecast &amp; narration — run against the live NIM models, exiting non-zero when a gate is missed so they can act as a release gate.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Gate</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The minimum score a harness must clear to pass — for example F1 ≥ 0.85 for extraction. Miss it and the harness exits non-zero, blocking the release. It is the line that stops an unmeasured regression from shipping.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">F1 <code style="font-size:11px">(precision / recall)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A single score that balances precision (not inventing barriers) against recall (not missing real ones). WardBeat scores extraction on F1 because it can fail both ways, and neither should be hidden — the gate is 0.85, and it currently reads 88%.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Hit-rate</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Whether the retrieval step actually returns the expected policy document for a question. It checks the RAG pipeline’s recall — an answer can only be right if the right passage came back.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Groundedness</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Whether the copilot’s answer is actually supported by the passages it retrieved, rather than made up. Together with hit-rate it is what makes a RAG answer safe; both are gated at 0.90.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Query-intent accuracy</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Whether a ward-state question is turned into the right structured filter over the real data. WardBeat measures this because copilot ward questions become a validated filter — never raw SQL — and it has to be the correct one.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Spearman rank correlation</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A measure of how well two orderings agree. WardBeat scores the discharge forecast on Spearman ρ against a truth score because the forecast is used to rank patients by dischargeability — getting the order right matters more than hitting an exact probability. Gate 0.70; currently 0.92.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Numeric-consistency</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A check that the narrated briefing states only numbers it was given, never invented ones. It is the one failure that matters for a narrator, so WardBeat gates it at 0.90 to prove the model reports figures rather than fabricating them.</td></tr>
+        </tbody></table></div>
+      </div>
+    </section>
+
+    <!-- 6. WARDBEAT SURFACES & CONCEPTS -->
+    <section id="product">
+      <div class="wrap">
+        <span class="sec-num">06</span>
+        <h2>WardBeat surfaces &amp; concepts</h2>
+        <p>The things you actually see and touch in the product, plus the principles that govern how it behaves. The common thread is decision-support, not autonomy: WardBeat recommends and drafts, and a clinician stays in the loop on every decision.</p>
+        <p class="subhead">Surfaces &amp; principles</p>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px"><tbody>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Ward board / flow cockpit</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">WardBeat’s main view — one row per bed showing its barriers, a discharge probability, and an action badge. It is read-derived: a projection of what the notes already say, not a second data-entry screen, so it is always current and never another chore to keep in sync.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Copilot</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The plain-language Q&amp;A surface. Ward questions become a validated filter over real data; policy questions retrieve the actual passages and answer with citations. If it cannot ground an answer, it says it does not know rather than guessing.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Actions / recommendations</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">For each barrier on the board, one concrete next step drawn from policy — chase the TTOs, book transport, refer to social care, request a review. Each comes with its policy rationale, and the agent never fires the step itself.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Flow briefing</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A short shift summary with the net bed position — likely discharges, expected admissions, where the ward nets out. The numbers come from the deterministic forecast model; the LLM only narrates them.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Extraction</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">The step that turns a free-text note into structured data — barriers, an estimated discharge date, and a medically-fit flag — each grounded in the exact sentence it came from. It is what makes the board possible. Runs the Nemotron model in JSON mode at temperature 0.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Recommend-only</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">WardBeat’s guiding constraint that it suggests next steps but never takes them. A wrong suggestion is one a person declines; a wrong automated action on a patient would be a clinical incident. This line keeps WardBeat firmly in decision-support territory.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Human-in-the-loop</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A person approves before anything happens. The coordinator sees each suggestion and its rationale, then approves the ones worth chasing — keeping the clinical decision with a human, just made hours sooner and with the barrier already spelled out.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Audit trail <code style="font-size:11px">(action_audit)</code></td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">A permanent record of who approved which recommended action and when, stored in the <code style="font-size:11px">action_audit</code> table. Every approval is audited, so the human decision behind each chased action is always accountable.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">Synthetic data</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">Made-up ward data with no real patient information. The whole demo — notes, barriers, beds — runs on synthetic data, and the eval datasets are labelled synthetic notes with planted ground truth, so quality can be measured with zero patient risk.</td></tr>
+          <tr><td style="width:210px;padding:9px 12px;border-bottom:1px solid #d9e2e5;font-weight:600;vertical-align:top">The harness</td><td style="padding:9px 12px;border-bottom:1px solid #d9e2e5;color:#566a72;vertical-align:top">In the AI context, the code wrapped around each model call that provides most of the reliability — the mock fallback, rate limiting and timeouts, strict JSON with re-validation, and the grounded-or-nothing rule. A prompt is the smallest part; the harness is what makes the model safe to depend on.</td></tr>
+        </tbody></table></div>
+        <div class="safety-callout"><b>One principle across every surface.</b> Every AI output is grounded and cited, no model takes a clinical action on its own, and the whole system runs on synthetic data with zero patient information. WardBeat recommends and drafts; clinicians decide.</div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">WardBeat · product guide · Next.js 16 · FastAPI · NVIDIA NIM · PostgreSQL/pgvector</div>
+    </footer>
+  </body>
+</html>
