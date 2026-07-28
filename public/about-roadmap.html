@@ -154,7 +154,7 @@
       <div class="wrap hero-inner">
         <p class="eyebrow">Product guide · Roadmap</p>
         <h1 class="title">Roadmap &amp; next steps</h1>
-        <p class="lede">The honest gap list — what today’s slice deliberately leaves out, and what would take WardBeat from a working demo to production-grade inside a real trust.</p>
+        <p class="lede">The honest gap list — what today’s slice leaves out on purpose, and what it would take to move WardBeat from a working demo to production-grade inside a real trust.</p>
         <div class="pills">
           <span class="pill">Product &amp; clinical</span>
           <span class="pill">AI &amp; models</span>
@@ -170,11 +170,11 @@
     <!-- INTRO -->
     <section>
       <div class="wrap">
-        <p>Today’s WardBeat makes ward flow <em>visible</em> and barriers <em>actionable</em>, on synthetic data, behind a human gate. That is deliberate: everything shippable is grounded, cited, and recommend-only. This page is the other side of that discipline — the things left out on purpose, grouped by what they unlock. Each item says <b>what</b> it is, <b>why</b> it matters, and <b>what it unlocks</b>, so the roadmap reads as a set of reasoned decisions rather than a wishlist.</p>
+        <p>Today’s WardBeat makes ward flow <em>visible</em> and barriers <em>actionable</em> — on synthetic data, behind a human gate. That is deliberate: everything shippable is grounded, cited, and recommend-only. This page is the other side of that discipline: the things left out on purpose, grouped by what they unlock. Each item states <b>what</b> it is, <b>why</b> it matters, and <b>what it unlocks</b> — so the roadmap reads as a set of reasoned decisions, not a wishlist.</p>
         <div class="timeline">
           <div class="tstep"><div class="surface">Phase 1 · today</div><h3>Visible &amp; actionable</h3><p>The live slice: read notes into a board, surface barriers, recommend next steps behind a human gate. Synthetic data, gated evals, single-instance.</p></div>
           <div class="tstep"><div class="surface">Phase 2 · next</div><h3>Close the loop &amp; harden AI</h3><p>Admit/discharge so beds turn over, guardrails and editable config, streaming answers — the product and AI items below.</p></div>
-          <div class="tstep"><div class="surface">Phase 3 · production</div><h3>Real data &amp; real operations</h3><p>FHIR/EHR reads under IG review, eval gates in CI, tracing and cost metrics, a shared rate-limit store, and the Azure deploy shipped.</p></div>
+          <div class="tstep"><div class="surface">Phase 3 · production</div><h3>Real data &amp; real operations</h3><p>FHIR/EHR reads under information-governance review, eval gates in CI, tracing and cost metrics, a shared rate-limit store, and the Azure deploy shipped.</p></div>
         </div>
       </div>
     </section>
@@ -184,11 +184,11 @@
       <div class="wrap">
         <span class="sec-num">01</span>
         <h2>Product &amp; clinical</h2>
-        <p>The clinical surface WardBeat covers today stops at the edge of action: it reads, structures, and recommends, but a human still admits, discharges, and picks up the phone. Closing that loop — safely — is the product frontier.</p>
+        <p>Today WardBeat stops at the edge of action: it reads, structures, and recommends, but a human still admits, discharges, and picks up the phone. Closing that loop — safely — is the product frontier.</p>
 
         <div class="tech">
           <div class="tech-head"><h3>Close the bed-lifecycle loop</h3><span class="tag">Next product slice</span></div>
-          <p class="what"><b>What.</b> Add <code>admit</code> and <code>discharge</code> so a bed actually turns over inside the system, not just on the board. Today an encounter opens and collects notes, but the closing move — the freed bed — happens outside WardBeat.</p>
+          <p class="what"><b>What.</b> Add <code>admit</code> and <code>discharge</code> so a bed turns over inside the system, not just on the board. Today an encounter opens and collects notes, but the closing move — the freed bed — happens outside WardBeat.</p>
           <ul class="why">
             <li><b>Why it matters.</b> A freed bed is the whole point. Until the lifecycle closes in-system, WardBeat can show that a patient is fit and cleared but cannot reflect the turnover, so the net bed position stays a partial picture.</li>
             <li><b>What it unlocks.</b> Real occupancy in real time, an accurate net-bed number, and the foundation every downstream flow feature needs — you cannot forecast demand honestly without truthful discharges.</li>
@@ -198,17 +198,17 @@
 
         <div class="tech">
           <div class="tech-head"><h3>Write-back to real systems</h3><span class="tag">Behind a human gate</span></div>
-          <p class="what"><b>What.</b> The action agent is deliberately <b>recommend-only</b> — approving a suggestion writes an <code>action_audit</code> row and nothing leaves the system. A future integration could dispatch to pharmacy (TTOs), transport, and social care via their systems of record, each behind an explicit human approval.</p>
+          <p class="what"><b>What.</b> The action agent is deliberately <b>recommend-only</b>: approving a suggestion writes an <code>action_audit</code> row and nothing leaves the system. A future integration could dispatch to pharmacy (for TTOs, the to-take-out medications a patient leaves with), transport, and social care via their systems of record — each behind an explicit human approval.</p>
           <ul class="why">
             <li><b>Why it matters.</b> Chasing barriers by hand is exactly the coordination cost WardBeat exists to remove. But an AI that silently sends orders is unsafe; the gate is the safety property, not a limitation to design away.</li>
-            <li><b>What it unlocks.</b> A worklist that doesn’t just surface the next step but completes it — with a person approving every dispatch and a full audit trail — turning the board from a viewer into a coordination tool.</li>
+            <li><b>What it unlocks.</b> A worklist that doesn’t just surface the next step but completes it — a person approving every dispatch, a full audit trail — turning the board from a viewer into a coordination tool.</li>
           </ul>
           <p class="instead"><b>Today</b> approval is an audited recommendation only; no message reaches pharmacy or transport.</p>
         </div>
 
         <div class="tech">
           <div class="tech-head"><h3>Real data via FHIR / an EHR</h3><span class="tag">Production prerequisite</span></div>
-          <p class="what"><b>What.</b> The whole system runs on <b>synthetic data</b> today. A production path needs a read integration with the trust’s EHR over HL7 <b>FHIR</b>, plus an information-governance review — keeping the private, in-tenant posture from the Azure design.</p>
+          <p class="what"><b>What.</b> The whole system runs on <b>synthetic data</b> today. A production path needs a read integration with the trust’s EHR (electronic health record) over HL7 <b>FHIR</b> (Fast Healthcare Interoperability Resources), plus an information-governance review — keeping the private, in-tenant posture from the Azure design.</p>
           <ul class="why">
             <li><b>Why it matters.</b> Synthetic notes prove the pipeline; they cannot prove clinical value. Real notes are messier, and the numbers only mean something once they run against them — under the right governance.</li>
             <li><b>What it unlocks.</b> A live board on a real ward, and the de-identified real notes that harden every eval set and enable fine-tuning downstream. This is the gate between demo and pilot.</li>
@@ -218,9 +218,9 @@
 
         <div class="tech">
           <div class="tech-head"><h3>House-wide flow</h3><span class="tag">Scope expansion</span></div>
-          <p class="what"><b>What.</b> Extend from a single ward to a whole-site view, with a site/ops persona and cross-ward transfers.</p>
+          <p class="what"><b>What.</b> Extend from a single ward to a whole-site view, with a site/operations persona and cross-ward transfers.</p>
           <ul class="why">
-            <li><b>Why it matters.</b> Real bed pressure is a site problem — a bed freed on one ward relieves a queue on another. A single-ward view can’t see that trade.</li>
+            <li><b>Why it matters.</b> Real bed pressure is a site problem: a bed freed on one ward relieves a queue on another. A single-ward view can’t see that trade.</li>
             <li><b>What it unlocks.</b> Site-level coordination, transfer decisions with the full picture, and the ops persona that manages flow across wards rather than within one.</li>
           </ul>
           <p class="instead"><b>Today</b> WardBeat is scoped to one ward at a time.</p>
@@ -233,32 +233,32 @@
       <div class="wrap">
         <span class="sec-num">02</span>
         <h2>AI &amp; models</h2>
-        <p>The AI plane is intentionally conservative: grounding and allow-lists as the safety net, a single small model per capability, read-only config. Each item below either formalises a safety property that is currently implicit, or extends quality once real labelled data exists.</p>
+        <p>The AI plane is intentionally conservative: grounding and allow-lists as the safety net, one small model per capability, read-only config. Each item below either formalises a safety property that is currently implicit, or improves quality once real labelled data exists.</p>
 
         <div class="grid2">
           <div class="card">
             <h3>NeMo Guardrails as an explicit safety rail</h3>
-            <p><b>What.</b> Grounding plus allow-lists are the current defences. A dedicated NeMo Guardrails layer would formalise input/output policy in one place.<br><br><b>Why.</b> The safety behaviour exists but is spread across prompt design and validation code — a guardrails layer makes it a declared, testable policy.<br><br><b>Unlocks.</b> A single auditable boundary for what the models may accept and emit, easier to review with a clinical-safety lens.</p>
+            <p><b>What.</b> Grounding plus allow-lists are the current defences. A dedicated NeMo Guardrails layer would gather input/output policy in one place.<br><br><b>Why.</b> The safety behaviour exists, but it is spread across prompt design and validation code. A guardrails layer makes it a declared, testable policy.<br><br><b>Unlocks.</b> A single auditable boundary for what the models may accept and emit — easier to review with a clinical-safety lens.</p>
           </div>
           <div class="card">
             <h3>Editable AI configuration</h3>
-            <p><b>What.</b> <code>GET /config</code> is read-only today. Editing model ids and limits from the UI needs a config store and a security review — the Settings card is the read-only first step.<br><br><b>Why.</b> Operators will want to tune models without a redeploy, but a writable config surface is an attack surface.<br><br><b>Unlocks.</b> Per-deployment tuning through the UI, once the store and review land.</p>
+            <p><b>What.</b> <code>GET /config</code> is read-only today. Editing model ids and limits from the UI needs a config store and a security review; the Settings card is the read-only first step.<br><br><b>Why.</b> Operators will want to tune models without a redeploy, but a writable config endpoint is also an attack surface.<br><br><b>Unlocks.</b> Per-deployment tuning through the UI, once the store and review land.</p>
           </div>
           <div class="card">
             <h3>Surface the extraction token budget</h3>
-            <p><b>What.</b> <code>NIM_EXTRACT_MAX_TOKENS</code> exists in the AI-plane settings but is not yet in <code>GET /config</code>; add it once the field is wired end to end so the Settings card can show it.<br><br><b>Why.</b> The budget shapes extraction cost and truncation behaviour — operators should see it.<br><br><b>Unlocks.</b> A complete, honest Settings view with no hidden knobs.</p>
+            <p><b>What.</b> <code>NIM_EXTRACT_MAX_TOKENS</code> exists in the AI-plane settings but not yet in <code>GET /config</code>. Add it once the field is wired end to end, so the Settings card can show it.<br><br><b>Why.</b> The budget shapes extraction cost and truncation behaviour, so operators should see it.<br><br><b>Unlocks.</b> A complete, honest Settings view with no hidden knobs.</p>
           </div>
           <div class="card">
             <h3>Streaming answers</h3>
-            <p><b>What.</b> The copilot answers in one shot; SSE streaming would deliver tokens as they’re generated.<br><br><b>Why.</b> Longer policy answers feel slow when they arrive all at once, even when total latency is fine.<br><br><b>Unlocks.</b> Better perceived latency and a more responsive copilot for open-ended questions.</p>
+            <p><b>What.</b> The copilot answers in one shot. SSE (server-sent events) streaming would deliver tokens as they’re generated.<br><br><b>Why.</b> Longer policy answers feel slow when they arrive all at once, even when total latency is fine.<br><br><b>Unlocks.</b> Better perceived latency and a more responsive copilot for open-ended questions.</p>
           </div>
           <div class="card">
             <h3>Per-capability model choice &amp; fine-tuning</h3>
-            <p><b>What.</b> Allow a different model per task, and fine-tune extraction and recommendation on real labelled data once it’s available.<br><br><b>Why.</b> One model sized for everything is a sensible default, not an optimum; tasks differ.<br><br><b>Unlocks.</b> Higher quality and lower cost per capability, and a path to models tuned on the trust’s own notes.</p>
+            <p><b>What.</b> Allow a different model per task, and fine-tune extraction and recommendation on real labelled data once it exists.<br><br><b>Why.</b> One model sized for everything is a sensible default, not an optimum. Tasks differ.<br><br><b>Unlocks.</b> Higher quality and lower cost per capability, and a path to models tuned on the trust’s own notes.</p>
           </div>
           <div class="card">
             <h3>Active-learning loop &amp; confidence calibration</h3>
-            <p><b>What.</b> The <code>action_audit</code> trail — what humans approve or dismiss — is a labelled signal. Feed it back to improve extraction and recommendation over time, and calibrate confidence alongside.<br><br><b>Why.</b> Every human decision is free ground truth; discarding it wastes the best signal the system has.<br><br><b>Unlocks.</b> Quality that compounds with use, and confidence scores that mean what they say.</p>
+            <p><b>What.</b> The <code>action_audit</code> trail — what humans approve or dismiss — is a labelled signal. Feed it back to improve extraction and recommendation over time, and calibrate confidence scores alongside it.<br><br><b>Why.</b> Every human decision is free ground truth. Discarding it wastes the best signal the system has.<br><br><b>Unlocks.</b> Quality that compounds with use, and confidence scores that mean what they say.</p>
           </div>
         </div>
       </div>
@@ -269,21 +269,21 @@
       <div class="wrap">
         <span class="sec-num">03</span>
         <h2>Evaluation &amp; quality</h2>
-        <p>AI quality here is already a number, not a feeling: four harnesses exit non-zero below gate. The gap is turning those gates into an automatic, always-on guarantee, and enriching the metrics with methods that catch subtler failures.</p>
+        <p>AI quality here is already a number, not a feeling: four harnesses exit non-zero when they fall below their gate. The gap is turning those gates into an automatic, always-on guarantee, and enriching the metrics with methods that catch subtler failures.</p>
 
         <div class="tech">
           <div class="tech-head"><h3>Run the eval gates in CI</h3><span class="tag">Automation</span></div>
-          <p class="what"><b>What.</b> The four eval harnesses already exit non-zero below their gate. Wire them into CI (once CI is re-introduced) so a regression fails the build, not a demo.</p>
+          <p class="what"><b>What.</b> The four eval harnesses already exit non-zero below their gate. Wire them into CI (continuous integration), once it is re-introduced, so a regression fails the build rather than a demo.</p>
           <ul class="why">
             <li><b>Why it matters.</b> A gate only protects you if it runs every time. Run by hand, it catches problems late — or not at all.</li>
-            <li><b>What it unlocks.</b> A model or prompt change that drops quality is blocked at the PR, not discovered in front of a clinician. This is why re-introducing CI is a prerequisite for several roadmap items.</li>
+            <li><b>What it unlocks.</b> A model or prompt change that drops quality is blocked at the pull request, not discovered in front of a clinician. This is why re-introducing CI is a prerequisite for several roadmap items.</li>
           </ul>
           <p class="instead"><b>Today</b> the gates run locally, on demand.</p>
         </div>
 
         <div class="tech">
           <div class="tech-head"><h3>Richer metrics</h3><span class="tag">Quality depth</span></div>
-          <p class="what"><b>What.</b> Add RAGAS faithfulness for retrieval, LLM-as-judge rubrics for open-ended answers, and <b>regression tracking</b> of eval scores over time.</p>
+          <p class="what"><b>What.</b> Add RAGAS faithfulness scoring for retrieval, LLM-as-judge rubrics for open-ended answers, and <b>regression tracking</b> of eval scores over time.</p>
           <ul class="why">
             <li><b>Why it matters.</b> Hit-rate and groundedness catch the obvious retrieval failures; faithfulness and judged rubrics catch the subtle ones — a plausible answer that quietly drifts from its source.</li>
             <li><b>What it unlocks.</b> Confidence in open-ended answers, and a trend line that shows quality moving over releases instead of a single pass/fail per run.</li>
@@ -296,7 +296,7 @@
           <p class="what"><b>What.</b> Today’s labels are synthetic. Grow the eval sets from de-identified real notes to harden the numbers.</p>
           <ul class="why">
             <li><b>Why it matters.</b> Synthetic notes are cleaner than reality; a score against them is an optimistic estimate. Real notes stress the extractor where it actually breaks.</li>
-            <li><b>What it unlocks.</b> Eval numbers you can trust for a go/no-go on a real ward — depends on the FHIR/EHR read and IG review from Product &amp; clinical.</li>
+            <li><b>What it unlocks.</b> Eval numbers you can trust for a go/no-go decision on a real ward. This depends on the FHIR/EHR read and information-governance review from Product &amp; clinical.</li>
           </ul>
           <p class="instead"><b>Today</b> every labelled example is synthetic.</p>
         </div>
@@ -308,14 +308,14 @@
       <div class="wrap">
         <span class="sec-num">04</span>
         <h2>Operability &amp; platform</h2>
-        <p>WardBeat runs today from Docker, single-instance, with logs, health/config endpoints, and evals for observability. Production operations need to see cost and latency per call, scale horizontally, and deploy through a repeatable pipeline.</p>
+        <p>WardBeat runs today from Docker, single-instance, with logs, health and config endpoints, and evals for observability. Production operations need to see cost and latency per call, scale horizontally, and deploy through a repeatable pipeline.</p>
 
         <div class="planes">
           <div class="plane next">
             <div class="cap">Observability</div>
             <h3>Tracing, cost &amp; latency metrics</h3>
             <ul>
-              <li><b>What.</b> OpenTelemetry spans across Next.js → AI plane → NIM, plus per-call token / cost / latency metrics, dashboards, and alerts.</li>
+              <li><b>What.</b> OpenTelemetry spans across Next.js → AI plane → NIM, plus per-call token, cost, and latency metrics, dashboards, and alerts.</li>
               <li><b>Why.</b> Logs tell you what happened, not what it cost or where the time went across three hops.</li>
               <li><b>Unlocks.</b> Cost you can attribute per capability, latency you can trace to a plane, and alerts before users notice.</li>
             </ul>
@@ -325,7 +325,7 @@
             <h3>Shared rate-limit store</h3>
             <ul>
               <li><b>What.</b> Replace the in-memory token-bucket limiter with a shared store (Redis).</li>
-              <li><b>Why.</b> The current limiter is per-instance, so a second app or AI-plane replica would each keep their own budget and blow past the tier limit.</li>
+              <li><b>Why.</b> The current limiter is per-instance, so each extra app or AI-plane replica would keep its own budget and blow past the tier limit.</li>
               <li><b>Unlocks.</b> Horizontal scaling of the app and AI plane without breaking the model request budget.</li>
             </ul>
           </div>
@@ -333,9 +333,9 @@
             <div class="cap">Deployment</div>
             <h3>Ship the Azure design</h3>
             <ul>
-              <li><b>What.</b> The Azure reference architecture is a design; implement it as Bicep IaC plus GitHub Actions (OIDC), with the private, managed-identity posture described.</li>
-              <li><b>Why.</b> A drawing isn’t a deployment. Repeatable infra is what makes an in-trust install real.</li>
-              <li><b>Unlocks.</b> A one-command, reviewable path into a hospital tenant, keeping clinical data inside it.</li>
+              <li><b>What.</b> The Azure reference architecture is a design. Implement it as Bicep infrastructure-as-code plus GitHub Actions (via OIDC), with the private, managed-identity posture described.</li>
+              <li><b>Why.</b> A drawing isn’t a deployment. Repeatable infrastructure is what makes an in-trust install real.</li>
+              <li><b>Unlocks.</b> A one-command, reviewable path into a hospital tenant that keeps clinical data inside it.</li>
             </ul>
           </div>
           <div class="plane data">
@@ -343,7 +343,7 @@
             <h3>Re-introduce CI</h3>
             <ul>
               <li><b>What.</b> CI is currently deferred (gates run locally). Bring back GitHub Actions — lint · typecheck · test · build · <b>eval gates</b>.</li>
-              <li><b>Why.</b> Several roadmap items — the eval gates, the Azure pipeline — depend on a CI backbone.</li>
+              <li><b>Why.</b> Several roadmap items — the eval gates and the Azure pipeline — depend on a CI backbone.</li>
               <li><b>Unlocks.</b> Every quality gate enforced automatically, on every change.</li>
             </ul>
           </div>
@@ -351,16 +351,16 @@
 
         <div class="tech">
           <div class="tech-head"><h3>Consolidate the About-guide source</h3><span class="tag">Docs hygiene</span></div>
-          <p class="what"><b>What.</b> <code>public/about-architecture.html</code> and <code>public/about-azure.html</code> are hand-maintained — only <code>about.html</code> mirrors <code>docs/guide.html</code> via <code>pnpm sync:about</code>. Consolidate their source to a single origin.</p>
+          <p class="what"><b>What.</b> <code>public/about-architecture.html</code> and <code>public/about-azure.html</code> are hand-maintained; only <code>about.html</code> mirrors <code>docs/guide.html</code> via <code>pnpm sync:about</code>. Consolidate their source to a single origin.</p>
           <ul class="why">
-            <li><b>Why it matters.</b> Two hand-kept copies drift; a reader can’t tell which page is current, and the guide is how the product explains itself.</li>
+            <li><b>Why it matters.</b> Two hand-kept copies drift, and a reader can’t tell which page is current — yet the guide is how the product explains itself.</li>
             <li><b>What it unlocks.</b> One source of truth for the in-app guide, so every About page stays honest without manual sync.</li>
           </ul>
           <p class="instead"><b>Today</b> only <code>about.html</code> is generated; the architecture and Azure pages are maintained by hand.</p>
         </div>
 
         <div class="thesis">
-          <p style="margin:0"><b>The through-line.</b> Everything above follows one rule that also governs what shipped: WardBeat earns each new capability rather than assuming it. It recommends before it acts, measures before it claims, and stays inside the trust before it touches real data. The gaps on this page aren’t missing features — they’re the next capabilities to earn, each behind a human gate, a measured number, or a governance review. <b>Decision-support first; autonomy only where it’s proven safe.</b></p>
+          <p style="margin:0"><b>The through-line.</b> Everything above follows the one rule that also governs what shipped: WardBeat earns each new capability rather than assuming it. It recommends before it acts, measures before it claims, and stays inside the trust before it touches real data. The gaps on this page aren’t missing features — they’re the next capabilities to earn, each behind a human gate, a measured number, or a governance review. <b>Decision-support first; autonomy only where it’s proven safe.</b></p>
         </div>
       </div>
     </section>

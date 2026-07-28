@@ -156,7 +156,7 @@
       <div class="wrap hero-inner">
         <p class="eyebrow">Product guide · Architecture</p>
         <h1 class="title">Architecture</h1>
-        <p class="lede">Four cooperating planes behind a single front door, a stateless AI toolbox that never touches the database, and a fixed harness of guards wrapped around every model call.</p>
+        <p class="lede">Four cooperating planes behind a single front door. A stateless AI toolbox that never touches the database. A fixed harness of guards around every model call.</p>
         <div class="pills">
           <span class="pill live">● live on NVIDIA NIM</span>
           <span class="pill">Next.js 16 · FastAPI · Postgres/pgvector</span>
@@ -172,9 +172,9 @@
       <div class="wrap">
         <span class="sec-num">01</span>
         <h2>System topology</h2>
-        <p>WardBeat is built as four cooperating planes behind a single front door. The browser only ever talks to one of them — the Next.js experience layer — which is at once the front-end, the orchestrator of every AI workflow, and the single writer to the database. Behind it sit a stateless AI toolbox, the NVIDIA NIM inference models, and PostgreSQL. The design goal is simple: keep clinical data and control in one place, and make the AI plane something you can scale, test, and swap between hosted and on-prem models without touching the rest of the system.</p>
+        <p>WardBeat is four cooperating planes behind a single front door. The browser talks to only one of them — the Next.js experience layer, which is the front end, the orchestrator of every AI workflow, and the single writer to the database. Behind it sit a stateless AI toolbox, the NVIDIA NIM inference models, and PostgreSQL. The goal is simple: keep clinical data and control in one place, and make the AI plane something you can scale, test, and swap between hosted and on-prem models without touching the rest of the system.</p>
 
-        <p>Read this section as a set of decisions rather than a list of boxes. Each plane exists because giving it exactly one job — and denying it the others — is what makes the whole system easy to reason about, test, and deploy inside a hospital trust. The recurring move is the same one every time: concentrate authority (data, orchestration, control) in one plane, and keep the plane that talks to a language model as small, stateless, and replaceable as possible.</p>
+        <p>Read this as a set of decisions, not a list of boxes. Each plane exists because giving it exactly one job — and denying it the others — is what makes the system easy to reason about, test, and deploy inside a hospital trust. The move repeats: concentrate authority — data, orchestration, control — in one plane, and keep the plane that talks to a language model as small, stateless, and replaceable as possible.</p>
 
         <p class="subhead">The four planes</p>
 
@@ -270,28 +270,28 @@
           </div>
         </div>
 
-        <p class="point"><b>Why it matters</b> — the two coloured borders that carry authority are the black Next.js plane (orchestration + the only write path) and the purple data plane (the one source of truth). The blue AI plane and the green model plane are deliberately powerless: they compute, they never decide and never persist. If you remember one thing about the topology, remember which boxes are allowed to change the world and which are not.</p>
+        <p class="point"><b>Why it matters</b> — two coloured borders carry authority: the black Next.js plane (orchestration and the only write path) and the purple data plane (the one source of truth). The blue AI plane and the green model plane are deliberately powerless — they compute, they never decide and never persist. If you remember one thing about the topology, remember which boxes can change the world and which cannot.</p>
 
         <p class="subhead">The AI plane is a stateless toolbox</p>
         <p>Here is the key idea. The AI plane holds no state and never reaches the database — Next.js is the orchestrator and the only thing that touches Postgres. That single rule is the load-bearing decision of the whole architecture, so it is worth being precise about what it buys you.</p>
 
-        <p><b>Testability.</b> Because every AI-plane endpoint is a pure function of its request — text in, structured JSON out, no hidden database read, no session, no prior turn remembered — you can test it the way you test any pure function. Give it a note, assert on the barriers; give it passages, assert on the answer. There is no fixture database to stand up, no state to reset between tests, and no “it passed yesterday” flakiness that comes from a service quietly accumulating state. A stateful AI service, by contrast, would force every test to reason about what happened before it.</p>
+        <p><b>Testability.</b> Every AI-plane endpoint is a pure function of its request: text in, structured JSON out, with no hidden database read, no session, and no prior turn remembered. So you test it like any pure function — give it a note, assert on the barriers; give it passages, assert on the answer. There is no fixture database to stand up, no state to reset between tests, and no “it passed yesterday” flakiness from a service quietly accumulating state. A stateful AI service would force every test to reason about what came before it.</p>
 
-        <p><b>Horizontal scale.</b> Statelessness is also what lets you run ten copies of the AI plane behind a load balancer and route any request to any instance — none of them holds anything the next request depends on. The moment a service holds session or cache state that matters for correctness, you have to make requests sticky or share that state across instances, and scaling stops being free. Here it stays free: the only shared state in the system lives in one place, Postgres, and only Next.js talks to it.</p>
+        <p><b>Horizontal scale.</b> Statelessness also lets you run ten copies of the AI plane behind a load balancer and route any request to any instance — none of them holds anything the next request depends on. Once a service holds session or cache state that matters for correctness, you have to make requests sticky or share that state across instances, and scaling stops being free. Here it stays free: the only shared state in the system lives in one place, Postgres, and only Next.js talks to it.</p>
 
-        <p><b>Swapability.</b> And because the plane is just a thin, uniform wrapper over model primitives — with no database schema of its own to keep in sync — you can replace the whole thing, or the models behind it, without the rest of the system noticing. The contract it exposes is a handful of HTTP endpoints, not a shared database, so there is no coupling to unpick.</p>
+        <p><b>Swappability.</b> Because the plane is a thin, uniform wrapper over model primitives — with no database schema of its own to keep in sync — you can replace the whole thing, or the models behind it, without the rest of the system noticing. Its contract is a handful of HTTP endpoints, not a shared database, so there is no coupling to unpick.</p>
 
-        <p>So a Retrieval-Augmented-Generation query is not one big call to a black box; it is a short sequence that Next.js drives. Next.js calls <code>/embed</code> to turn the question into a vector, runs the pgvector nearest-neighbour search <em>itself</em> (that is where the database lives), calls <code>/copilot/rerank</code> to reorder the candidates, then calls <code>/copilot/answer</code> to compose a grounded, cited answer. The agent follows the same shape — Next.js retrieves the relevant policy from pgvector, then calls <code>/agent/recommend</code> — and so does forecasting, where Next.js gathers the features and calls the <code>/forecast/*</code> endpoints. Because the AI plane never holds state and never sees the database, it is easy to scale horizontally, easy to test in isolation, and trivial to swap between hosted and on-prem models.</p>
+        <p>A Retrieval-Augmented Generation (RAG) query is therefore not one big call to a black box; it is a short sequence Next.js drives. Next.js calls <code>/embed</code> to turn the question into a vector, runs the pgvector nearest-neighbour search <em>itself</em> (that is where the database lives), calls <code>/copilot/rerank</code> to reorder the candidates, then calls <code>/copilot/answer</code> to compose a grounded, cited answer. The agent follows the same shape — Next.js retrieves the relevant policy from pgvector, then calls <code>/agent/recommend</code> — and so does forecasting, where Next.js gathers the features and calls the <code>/forecast/*</code> endpoints. Because the AI plane never holds state and never sees the database, it is easy to scale, easy to test in isolation, and trivial to swap between hosted and on-prem models.</p>
 
-        <div class="safety-callout"><b>Why retrieval lives in Next.js, not the AI plane.</b> The obvious-looking design would be to send the question to the AI plane and let it do the whole RAG loop — embed, search, rerank, answer — in one call. WardBeat deliberately does not. The vector search runs in Next.js because that is where the database is, and the database is the one thing the AI plane is not allowed to touch. The AI plane only ever provides model primitives: turn this text into a vector, reorder these passages, compose an answer from those passages. Next.js keeps the retrieval — the step that reads clinical and policy data — on the same plane as every other data access, under the same single writer and the same access control. The common mistake this avoids is a second, shadow data path: an AI service that grows its own database connection, its own copy of the schema, and its own idea of who is allowed to read what.</div>
+        <div class="safety-callout"><b>Why retrieval lives in Next.js, not the AI plane.</b> The obvious design would send the question to the AI plane and let it run the whole RAG loop — embed, search, rerank, answer — in one call. WardBeat deliberately does not. The vector search runs in Next.js because that is where the database is, and the database is the one thing the AI plane may not touch. The AI plane only ever provides model primitives: turn this text into a vector, reorder these passages, compose an answer from those passages. Next.js keeps retrieval — the step that reads clinical and policy data — on the same plane as every other data access, under the same single writer and the same access control. This avoids a second, shadow data path: an AI service that grows its own database connection, its own copy of the schema, and its own idea of who may read what.</div>
 
         <p class="subhead">Next.js is the single writer and the orchestrator</p>
-        <p>The mirror image of the stateless AI plane is that Next.js is the <em>only</em> plane that writes to Postgres, and the only plane that orchestrates a workflow end to end. This is a deliberate choice, not an accident of where the code happened to live. When exactly one process owns every write, there is one source of truth for what is on the board, one place where a transaction either fully happens or fully does not, and one place to reason about ordering and consistency. If the AI plane could also write — say, persist an extraction directly — you would have split-brain writes: two processes racing to update the same encounter, each with its own view of “latest wins”, and no single transaction boundary around the pair. That is the class of bug that produces a board showing barriers from a note that was already superseded. Concentrating writes in the orchestrator removes the race by construction. The AI plane returns a result; Next.js decides whether, when, and how to persist it.</p>
+        <p>The mirror image of the stateless AI plane: Next.js is the <em>only</em> plane that writes to Postgres, and the only plane that orchestrates a workflow end to end. This is deliberate, not an accident of where the code happened to live. When one process owns every write, there is one source of truth for what is on the board, one place where a transaction either fully happens or fully does not, and one place to reason about ordering and consistency. If the AI plane could also write — say, persist an extraction directly — you would have split-brain writes: two processes racing to update the same encounter, each with its own view of “latest wins”, and no single transaction boundary around the pair. That is the class of bug that shows barriers from a note that was already superseded. Concentrating writes in the orchestrator removes the race by construction. The AI plane returns a result; Next.js decides whether, when, and how to persist it.</p>
 
-        <p class="point"><b>Why it matters</b> — “single writer” is not about performance, it is about not having to trust two processes to agree. The AI plane can be restarted, scaled, or swapped mid-workflow without any risk to data integrity, precisely because it never held the pen.</p>
+        <p class="point"><b>Why it matters</b> — “single writer” is not about performance; it is about not having to trust two processes to agree. The AI plane can be restarted, scaled, or swapped mid-workflow with no risk to data integrity, precisely because it never held the pen.</p>
 
         <p class="subhead">The AI plane’s API</p>
-        <p>Every capability is one internal HTTP call. The browser never sees these; only Next.js calls them, over the private network, with a shared service token. The shape of this table is itself the argument: each row is a self-contained model primitive with no memory of the last row, which is exactly what makes the plane stateless and swappable. Note, too, where the LLM is used and where it is deliberately not — the <code>/forecast/*</code> rows that compute numbers use no language model at all.</p>
+        <p>Every capability is one internal HTTP call. The browser never sees these — only Next.js calls them, over the private network, with a shared service token. The table itself makes the argument: each row is a self-contained model primitive with no memory of the last, which is exactly what makes the plane stateless and swappable. Note where the language model is used and where it is deliberately not — the <code>/forecast/*</code> rows that compute numbers use no language model at all.</p>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px">
             <thead>
@@ -323,11 +323,11 @@
       <div class="wrap">
         <span class="sec-num">02</span>
         <h2>The AI flow</h2>
-        <p>The guiding rule runs through every capability below: generative AI does only the language and the reasoning, and deterministic code does the forecasting and holds the data. A language model reads a note into structured data, decides how to route a question, drafts a grounded action, and narrates a briefing — but it never computes a probability, queries the database, or takes an action on its own. The four pipelines that follow are the whole of WardBeat’s AI, each one a short sequence Next.js drives, each one ending in something a clinician can verify or a gate a human controls.</p>
+        <p>One rule runs through every capability below: generative AI does only the language and the reasoning; deterministic code does the forecasting and holds the data. A language model reads a note into structured data, routes a question, drafts a grounded action, and narrates a briefing — but it never computes a probability, queries the database, or takes an action on its own. The four pipelines that follow are the whole of WardBeat’s AI. Each is a short sequence Next.js drives, and each ends in something a clinician can verify or a gate a human controls.</p>
 
         <div class="capability">
           <h3>1 · Barrier extraction — reading notes into data</h3>
-          <p>The job: turn free-text ward notes into structured, board-ready barriers — without letting the model invent any of them. A creative read is welcome; an unverified claim is not. <span style="color:var(--faint)">Uses temperature 0, structured output / JSON mode, grounding, and a deterministic fallback.</span></p>
+          <p>The job: turn free-text ward notes into structured, board-ready barriers — without letting the model invent any. A creative read is welcome; an unverified claim is not. <span style="color:var(--faint)">Uses temperature 0, structured output / JSON mode, grounding, and a deterministic fallback.</span></p>
 
           <svg viewBox="0 0 740 250" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="extractTitle">
             <title id="extractTitle">Barrier extraction pipeline: note to Nemotron JSON, sanitise, then a grounding gate that snaps quotes to real offsets and drops any barrier it cannot locate before persisting to the board.</title>
@@ -381,18 +381,18 @@
           </svg>
 
           <div class="walk">
-            <div class="wstep"><span class="n">1</span><div><h4>Model reads, code constrains</h4><p>The note text goes to Nemotron at temperature 0 in JSON mode, bounded by a configurable <code>max_tokens</code>, and the model returns strict JSON. Determinism here means the same note yields the same read.</p></div></div>
-            <div class="wstep"><span class="n">2</span><div><h4>Sanitise the raw output</h4><p>Code enforces a five-barrier-type allow-list, drops empty verbatim quotes, and defaults missing confidence to 80. Anything the model returns that is off-schema simply does not survive this step.</p></div></div>
-            <div class="wstep"><span class="n">3</span><div><h4>The grounding gate</h4><p>For every barrier, its verbatim quote is searched back in the source note — an exact case-insensitive match first, then a fuzzy sliding-window match at ≥0.75 similarity — and snapped to real character offsets. A quote that cannot be located means the barrier is <b>deleted</b> and the result is flagged ungrounded.</p></div></div>
-            <div class="wstep"><span class="n">4</span><div><h4>Only grounded barriers persist</h4><p>What reaches the board is exactly the set that survived the gate, each linked to its source sentence so a clinician can click through to the evidence. If the model is off or fails outright, a deterministic keyword extractor takes over.</p></div></div>
+            <div class="wstep"><span class="n">1</span><div><h4>Model reads, code constrains</h4><p>The note text goes to Nemotron at temperature 0 in JSON mode, bounded by a configurable <code>max_tokens</code>. The model returns strict JSON, and determinism here means the same note yields the same read.</p></div></div>
+            <div class="wstep"><span class="n">2</span><div><h4>Sanitise the raw output</h4><p>Code enforces a five-barrier-type allow-list, drops empty verbatim quotes, and defaults missing confidence to 80. Anything off-schema does not survive this step.</p></div></div>
+            <div class="wstep"><span class="n">3</span><div><h4>The grounding gate</h4><p>For each barrier, its verbatim quote is searched back in the source note — an exact case-insensitive match first, then a fuzzy sliding-window match at ≥0.75 similarity — and snapped to real character offsets. A quote that cannot be located means the barrier is <b>deleted</b> and the result is flagged ungrounded.</p></div></div>
+            <div class="wstep"><span class="n">4</span><div><h4>Only grounded barriers persist</h4><p>What reaches the board is exactly the set that survived the gate, each linked to its source sentence so a clinician can click through to the evidence. If the model is off or fails, a deterministic keyword extractor takes over.</p></div></div>
           </div>
 
-          <p class="point"><b>The point</b> — the model may be creative about <em>reading</em>, but every claim is mechanically verified against the source before anyone sees it; a hallucinated barrier physically cannot reach the board.</p>
+          <p class="point"><b>The point</b> — the model may be creative about <em>reading</em>, but every claim is mechanically verified against the source before anyone sees it. A hallucinated barrier physically cannot reach the board.</p>
         </div>
 
         <div class="capability">
           <h3>2 · Copilot — the right retrieval for each kind of question</h3>
-          <p>The job: answer two very different kinds of question — “what is happening on my ward right now?” and “what does policy say?” — each with the retrieval it actually needs. Two data shapes, two tools. <span style="color:var(--faint)">Uses structured output, embeddings, vector search, RAG, reranking, and grounded citation.</span></p>
+          <p>The job: answer two very different kinds of question — “what is happening on my ward right now?” and “what does policy say?” — each with the retrieval it needs. Two data shapes, two tools. <span style="color:var(--faint)">Uses structured output, embeddings, vector search, RAG, reranking, and grounded citation.</span></p>
 
           <svg viewBox="0 0 740 300" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="copilotTitle">
             <title id="copilotTitle">Copilot routing: a classifier splits a question into a ward-state path (validated JSON filter over board data) or a policy path (embed, vector search, rerank), and both paths reconverge on a cited answer or a grounded refusal.</title>
@@ -454,16 +454,16 @@
           <div class="walk">
             <div class="wstep"><span class="n">1</span><div><h4>Classify the question</h4><p>A first pass decides whether the question is about <code>ward_state</code>, about <code>policy</code>, or <code>out_of_scope</code>. That single decision routes everything downstream.</p></div></div>
             <div class="wstep"><span class="n">2</span><div><h4>Ward-state → validated filter</h4><p>The model translates the question into a small, validated JSON filter like <code>{mffd:true, barrier:"transport"}</code>, sanitised against an allow-list and run over the board data. The model chooses <b>what</b> to filter, never <b>how</b> to query — no SQL, no database access — and the matching beds light up.</p></div></div>
-            <div class="wstep"><span class="n">3</span><div><h4>Policy → genuine RAG</h4><p>The question is embedded and the policy passages are vector-searched by meaning in pgvector, then the shortlist is reranked with a sharper model to surface the most relevant few.</p></div></div>
+            <div class="wstep"><span class="n">3</span><div><h4>Policy → genuine RAG</h4><p>The question is embedded, the policy passages are vector-searched by meaning in pgvector, and the shortlist is reranked with a sharper model to surface the most relevant few.</p></div></div>
             <div class="wstep"><span class="n">4</span><div><h4>Answer from evidence, or refuse</h4><p>The model answers from <b>only</b> the numbered passages, citing each one it used — or it returns <code>grounded:false</code> and refuses (“I don’t have policy that covers that”). Weak support becomes a refusal, not a guess.</p></div></div>
           </div>
 
-          <p class="point"><b>The point</b> — structured data gets a validated filter; unstructured data gets vector RAG; both paths end the same way, by citing evidence or admitting there is none.</p>
+          <p class="point"><b>The point</b> — structured data gets a validated filter, unstructured data gets vector RAG, and both paths end the same way: by citing evidence or admitting there is none.</p>
         </div>
 
         <div class="capability">
           <h3>3 · Action recommender — a narrow, human-gated agent</h3>
-          <p>The job: given a patient’s barriers, propose the next concrete step for each — grounded in policy, capped to a safe menu, and never acting on its own. Retrieve, then reason, then hand to a human. <span style="color:var(--faint)">Uses agents &amp; tools, retrieval, and grounding.</span></p>
+          <p>The job: given a patient’s barriers, propose the next concrete step for each — grounded in policy, capped to a safe menu, and never acting on its own. Retrieve, reason, then hand to a human. <span style="color:var(--faint)">Uses agents &amp; tools, retrieval, and grounding.</span></p>
 
           <svg viewBox="0 0 740 236" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="agentTitle">
             <title id="agentTitle">Action recommender: retrieve policy from pgvector, reason over barriers plus policy to propose one allow-listed action per barrier, then a human approves or dismisses — nothing is sent to pharmacy or transport.</title>
@@ -513,17 +513,17 @@
           </svg>
 
           <div class="walk">
-            <div class="wstep"><span class="n">1</span><div><h4>Retrieve the relevant policy</h4><p>A tool call into pgvector pulls the policy passages that bear on this patient’s barriers — the agent gathers evidence before it reasons.</p></div></div>
+            <div class="wstep"><span class="n">1</span><div><h4>Retrieve the relevant policy</h4><p>A tool call into pgvector pulls the policy passages that bear on this patient’s barriers. The agent gathers evidence before it reasons.</p></div></div>
             <div class="wstep"><span class="n">2</span><div><h4>Reason over barriers plus policy</h4><p>The model proposes exactly one action per barrier from a closed allow-list — chase TTOs, book transport, arrange social care, escalate a review, or other — each with a one-sentence rationale grounded in cited policy and a priority of 1–3. Off-menu actions are coerced to a safe default.</p></div></div>
-            <div class="wstep"><span class="n">3</span><div><h4>Recommend only — a human decides</h4><p>Nothing acts autonomously. A person Approves or Dismisses each recommendation; approving marks the barrier <em>in progress</em> and writes an audit row. Nothing is ever sent to pharmacy or transport.</p></div></div>
+            <div class="wstep"><span class="n">3</span><div><h4>Recommend only — a human decides</h4><p>Nothing acts autonomously. A person approves or dismisses each recommendation; approving marks the barrier <em>in progress</em> and writes an audit row. Nothing is ever sent to pharmacy or transport.</p></div></div>
           </div>
 
-          <p class="point"><b>The point</b> — autonomy is capped by design: a fixed action menu, mandatory policy grounding, and a human gate on every single recommendation.</p>
+          <p class="point"><b>The point</b> — autonomy is capped by design: a fixed action menu, mandatory policy grounding, and a human gate on every recommendation.</p>
         </div>
 
         <div class="capability">
           <h3>4 · Forecast &amp; narrate — the deliberate absence of an LLM</h3>
-          <p>The job: predict discharge likelihood and demand, then explain it in plain language — while keeping the model as far from the arithmetic as possible. The numbers are calculated; only the prose is generated. <span style="color:var(--faint)">Uses the discipline of knowing when <em>not</em> to use an LLM.</span></p>
+          <p>The job: predict discharge likelihood and demand, then explain it in plain language — while keeping the model as far from the arithmetic as possible. The numbers are calculated; only the prose is generated. <span style="color:var(--faint)">Uses the discipline of knowing when <em>not</em> to use a language model.</span></p>
 
           <svg viewBox="0 0 740 224" width="100%" style="height:auto;max-width:100%;display:block;margin:12px 0" role="img" aria-labelledby="forecastTitle">
             <title id="forecastTitle">Forecast and narrate: a deterministic logistic model with readable monotone weights computes the probability with no LLM involved, then the finished numbers are handed to the model only to write a short briefing using exactly those numbers.</title>
@@ -565,11 +565,11 @@
           </svg>
 
           <div class="walk">
-            <div class="wstep"><span class="n">1</span><div><h4>Numbers from a transparent model</h4><p>A deterministic logistic model with readable, monotone weights produces the figures: being medically fit pushes discharge odds up, while each open barrier and a slow social-care package pushes them down, combined into a probability. Demand is a documented baseline. No language model touches any figure — it is inspectable and unit-tested.</p></div></div>
-            <div class="wstep"><span class="n">2</span><div><h4>Narrate, don’t recompute</h4><p>The finished numbers go to the model with one instruction: write a 2-to-4-sentence briefing using <b>exactly</b> these numbers, never inventing or recomputing one. The model does the language; the model never does the maths.</p></div></div>
+            <div class="wstep"><span class="n">1</span><div><h4>Numbers from a transparent model</h4><p>A deterministic logistic model with readable, monotone weights produces the figures. Being medically fit pushes discharge odds up; each open barrier and a slow social-care package pushes them down; the result is a probability. Demand is a documented baseline. No language model touches any figure — it is inspectable and unit-tested.</p></div></div>
+            <div class="wstep"><span class="n">2</span><div><h4>Narrate, don’t recompute</h4><p>The finished numbers go to the model with one instruction: write a two-to-four-sentence briefing using <b>exactly</b> these numbers, never inventing or recomputing one. The model does the language; it never does the maths.</p></div></div>
           </div>
 
-          <p class="point"><b>The point</b> — asking an LLM to predict a length-of-stay would be the anti-pattern (unaccountable, unfalsifiable); splitting the calculable part (a testable model) from the linguistic part (narration) is the lesson made concrete.</p>
+          <p class="point"><b>The point</b> — asking a language model to predict length of stay would be the anti-pattern: unaccountable and unfalsifiable. Splitting the calculable part (a testable model) from the linguistic part (narration) is the lesson made concrete.</p>
         </div>
       </div>
     </section>
@@ -579,7 +579,7 @@
       <div class="wrap">
         <span class="sec-num">03</span>
         <h2>The model-call harness</h2>
-        <p>The four pipelines above each reach a language model exactly once or twice — but the prompt is the smallest part of what happens. Every single model call in WardBeat is wrapped in the same fixed sequence of guards, and most of the reliability comes from that wrapper, not from the words sent to the model. The harness runs the same way whether the caller is extraction, the copilot, or the agent: acquire a token, bound the call in time, force structured output, re-validate it in code, ground it against the source, and — if anything is off or fails — degrade to a deterministic mock so the endpoint always returns something usable.</p>
+        <p>Each of the four pipelines above reaches a language model once or twice — but the prompt is the smallest part of what happens. Every model call in WardBeat is wrapped in the same fixed sequence of guards, and most of the reliability comes from that wrapper, not from the words sent to the model. The harness runs the same way whether the caller is extraction, the copilot, or the agent: acquire a token, bound the call in time, force structured output, re-validate it in code, ground it against the source, and — if anything is off or fails — degrade to a deterministic mock so the endpoint always returns something usable.</p>
 
         <svg viewBox="0 0 760 360" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="harnessTitle">
           <title id="harnessTitle">The fixed harness wrapped around every model call: a request passes a rate-limit token and a timeout in the AI plane, reaches the model at temperature 0 in JSON mode, then its output is tolerantly parsed, validated against allow-lists, and grounded to the source before returning a result — and any failure or disabled state branches to a deterministic mock that returns the same shape of result.</title>
@@ -676,15 +676,15 @@
         </svg>
 
         <div class="walk">
-          <div class="wstep"><span class="n">1</span><div><h4>Rate limit</h4><p>The AI plane holds an async token-bucket limiter sized to about <b>40 requests a minute</b> — headroom under the NIM free tier. A call has to acquire a token before it can reach a model, so a burst of extractions queues politely instead of tripping the provider’s limit.</p></div></div>
-          <div class="wstep"><span class="n">2</span><div><h4>Timeout</h4><p>The Next.js→AI-plane call is bounded by a <b>45-second abort timeout</b>, and the AI-plane→model call by a <b>30-second</b> one. A stalled connection cannot wedge a batch — the timeout fires, the call fails cleanly, and the fallback takes over.</p></div></div>
-          <div class="wstep"><span class="n">3</span><div><h4>Structured output</h4><p>The model runs at <b>temperature 0</b> with JSON mode (<code>response_format: json_object</code>) so output is repeatable and machine-readable. A tolerant parser extracts the first <code>{...}</code> block even if the model wraps its JSON in prose, so a chatty preamble never breaks the call.</p></div></div>
-          <div class="wstep"><span class="n">4</span><div><h4>Validate</h4><p>The parsed JSON is re-checked in code against <b>allow-lists</b> — barrier types, action types, intent fields. The model’s field names and values are never trusted as-is; unknown values are coerced to safe defaults or dropped entirely.</p></div></div>
+          <div class="wstep"><span class="n">1</span><div><h4>Rate limit</h4><p>The AI plane holds an async token-bucket limiter sized to about <b>40 requests a minute</b> — headroom under the NIM free tier. A call must acquire a token before it can reach a model, so a burst of extractions queues politely instead of tripping the provider’s limit.</p></div></div>
+          <div class="wstep"><span class="n">2</span><div><h4>Timeout</h4><p>The Next.js→AI-plane call is bounded by a <b>45-second abort timeout</b>, and the AI-plane→model call by a <b>30-second</b> one. A stalled connection cannot wedge a batch: the timeout fires, the call fails cleanly, and the fallback takes over.</p></div></div>
+          <div class="wstep"><span class="n">3</span><div><h4>Structured output</h4><p>The model runs at <b>temperature 0</b> with JSON mode (<code>response_format: json_object</code>), so output is repeatable and machine-readable. A tolerant parser extracts the first <code>{...}</code> block even when the model wraps its JSON in prose, so a chatty preamble never breaks the call.</p></div></div>
+          <div class="wstep"><span class="n">4</span><div><h4>Validate</h4><p>The parsed JSON is re-checked in code against <b>allow-lists</b> — barrier types, action types, intent fields. The model’s field names and values are never trusted as-is; unknown values are coerced to safe defaults or dropped.</p></div></div>
           <div class="wstep"><span class="n">5</span><div><h4>Ground</h4><p>Extracted claims are matched back to their source — a quote is located in the note, an answer must cite a retrieved passage — and anything that cannot be tied to evidence is <b>dropped or refused</b>. This is the same grounding gate the pipelines depend on, applied uniformly.</p></div></div>
           <div class="wstep"><span class="n">6</span><div><h4>Mock fallback</h4><p>If the model backend is disabled by a flag, is unavailable, or any step above raises, the call degrades to a <b>deterministic offline mock</b> that returns the same shape of result. The endpoint always returns something usable, and the app never hard-breaks.</p></div></div>
         </div>
 
-        <div class="safety-callout"><b>The prompt is the smallest part.</b> Blue boxes are the AI-plane guards, green is the model call itself, and teal is the code that verifies whatever the model returned. The model is trusted to be creative inside a fixed cage — and everything outside the green box is plain, testable code that runs the same way every time.</div>
+        <div class="safety-callout"><b>The prompt is the smallest part.</b> Blue boxes are the AI-plane guards, green is the model call itself, and teal is the code that verifies whatever the model returned. The model is trusted to be creative inside a fixed cage; everything outside the green box is plain, testable code that runs the same way every time.</div>
       </div>
     </section>
 
@@ -693,9 +693,9 @@
       <div class="wrap">
         <span class="sec-num">04</span>
         <h2>Request lifecycle</h2>
-        <p>Take a single Run extraction request — a clinician asks WardBeat to read a ward note and pull out the discharge barriers. It crosses all four planes and returns to Postgres, with Next.js in control the whole way, and the harness from the previous section wrapping the model call in the middle.</p>
+        <p>Take a single Run extraction request: a clinician asks WardBeat to read a ward note and pull out the discharge barriers. It crosses all four planes and returns to Postgres, with Next.js in control the whole way and the harness from the previous section wrapping the model call in the middle.</p>
 
-        <p>The point of walking it hop by hop is that every hop earns its place — none of them is there for tidiness. Each boundary crossing is a place where trust is checked or authority is handed over, and reading them in order is the clearest way to see why the topology is shaped the way it is. Notice as you go how the arrows narrow: the browser can reach exactly one plane, that plane can reach the AI plane and the database, and the AI plane can reach only the model. Authority decreases the further you get from the front door.</p>
+        <p>Walking it hop by hop shows that every hop earns its place; none is there for tidiness. Each boundary crossing is where trust is checked or authority is handed over, and reading them in order is the clearest way to see why the topology is shaped as it is. Notice how the arrows narrow: the browser can reach exactly one plane, that plane can reach the AI plane and the database, and the AI plane can reach only the model. Authority decreases the further you get from the front door.</p>
 
         <svg viewBox="0 0 760 300" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="archLifeTitle">
           <title id="archLifeTitle">Run extraction request lifecycle across the four planes</title>
@@ -744,28 +744,28 @@
             <span class="n">1</span>
             <div>
               <h4>The browser asks Next.js — and nothing else</h4>
-              <p>The clinician triggers a Server Action. The request passes the edge proxy, which checks the JWT session and role before the work begins — this is the outermost trust boundary, and it is on the hot path so an unauthenticated or under-privileged request is rejected before any expensive work runs. No API route is exposed; the browser cannot reach the AI plane, NIM or Postgres. <b>Why this hop exists:</b> a single front door means there is exactly one surface to authenticate, authorise, and apply the CSP to. Every other plane can therefore assume its caller is already trusted.</p>
+              <p>The clinician triggers a Server Action. The request passes the edge proxy, which checks the JWT session and role before the work begins. This is the outermost trust boundary, and it sits on the hot path, so an unauthenticated or under-privileged request is rejected before any expensive work runs. No API route is exposed; the browser cannot reach the AI plane, NIM, or Postgres. <b>Why this hop exists:</b> a single front door means exactly one surface to authenticate, authorise, and apply the CSP to. Every other plane can then assume its caller is already trusted.</p>
             </div>
           </div>
           <div class="wstep">
             <span class="n">2</span>
             <div>
               <h4>Next.js calls the AI plane over the private network</h4>
-              <p>Next.js sends the note text to <code>/extract</code> on the internal-only AI plane, carrying the shared <code>x-service-token</code> header. This hop never leaves the internal network. <b>Why this hop exists:</b> the AI plane is a second, internal trust boundary — it refuses any request without the service token, which is what lets it stay simple and unauthenticated-by-user while still never being reachable from outside. The browser has no route to it and no token to present even if it did.</p>
+              <p>Next.js sends the note text to <code>/extract</code> on the internal-only AI plane, carrying the shared <code>x-service-token</code> header. This hop never leaves the internal network. <b>Why this hop exists:</b> the AI plane is a second, internal trust boundary. It refuses any request without the service token, which lets it stay simple and free of per-user auth while never being reachable from outside. The browser has no route to it, and no token to present even if it did.</p>
             </div>
           </div>
           <div class="wstep">
             <span class="n">3</span>
             <div>
               <h4>The AI plane calls NIM — inside the harness</h4>
-              <p>The AI plane forwards the prompt to Nemotron over the OpenAI-compatible NIM API in JSON mode at temperature 0, authenticated with a bearer key and shaped by its token-bucket rate limiter and timeout. If NIM is unavailable, it degrades to a deterministic offline mock.</p>
+              <p>The AI plane forwards the prompt to Nemotron over the OpenAI-compatible NIM API in JSON mode at temperature 0, authenticated with a bearer key and shaped by its token-bucket rate limiter and timeout. If NIM is unavailable, the call degrades to a deterministic offline mock.</p>
             </div>
           </div>
           <div class="wstep">
             <span class="n">4</span>
             <div>
               <h4>The model returns structured output</h4>
-              <p>Nemotron returns grounded barriers, an estimated discharge date and the medically-fit-for-discharge flag. The AI plane parses, validates and grounds the result, then hands it back — holding no state of its own.</p>
+              <p>Nemotron returns grounded barriers, an estimated discharge date, and the medically-fit-for-discharge flag. The AI plane parses, validates, and grounds the result, then hands it back — holding no state of its own.</p>
             </div>
           </div>
           <div class="wstep">
@@ -779,7 +779,7 @@
             <span class="n">6</span>
             <div>
               <h4>Next.js — and only Next.js — writes to Postgres</h4>
-              <p>The extracted barriers and flags are written to PostgreSQL through the pooled Drizzle client. The AI plane never touched the database; the single writer is the front door. <b>Why this hop closes the loop:</b> the write is the one irreversible act in the whole request, and it happens in the plane that has been in control since step 1 — so the same process that authenticated the clinician is the one that decides what lands on the board, inside one transaction. There is no second writer to disagree with.</p>
+              <p>The extracted barriers and flags are written to PostgreSQL through the pooled Drizzle client. The AI plane never touched the database; the single writer is the front door. <b>Why this hop closes the loop:</b> the write is the one irreversible act in the whole request, and it happens in the plane that has been in control since step 1. The same process that authenticated the clinician decides what lands on the board, inside one transaction. There is no second writer to disagree with.</p>
             </div>
           </div>
         </div>
@@ -787,17 +787,17 @@
         <p class="point"><b>Why it matters</b> — six hops, three trust boundaries: the edge (is this clinician allowed?), the service token (is this caller the orchestrator?), and the model’s bearer key (is this the AI plane?). Trust is re-established at each crossing rather than assumed once, so compromising one plane does not hand an attacker the next.</p>
 
         <p class="subhead">Trust boundaries, made explicit</p>
-        <p>Three concentric boundaries do the security work, and it is worth naming each and the failure it prevents.</p>
+        <p>Three concentric boundaries do the security work. Each is worth naming, along with the failure it prevents.</p>
         <div class="grid2">
-          <div class="card"><h3>The browser only ever talks to Next.js</h3><p>There is no public API route and no client-side call to the AI plane, NIM, or Postgres. This collapses the attack surface to a single authenticated front door — the thing you would otherwise have to defend in three places you now defend in one.</p></div>
-          <div class="card"><h3>Edge: per-request nonce CSP + RBAC</h3><p>The proxy applies role-based access control from a JWT claim (no database read at the edge, so it stays fast) and a Content-Security-Policy carrying a fresh per-request nonce. The nonce means an injected inline script has no valid nonce and simply will not run — it turns the whole class of XSS-via-injected-<code>&lt;script&gt;</code> into a non-event, rather than relying on catching every injection point.</p></div>
-          <div class="card"><h3>The AI plane is internal-only and token-gated</h3><p>Every endpoint but <code>/health</code> demands the shared <code>x-service-token</code>, and the plane is never published to the internet. Even if an attacker reached the internal network, they would still need the token; even with the token, they reach a plane that holds no data and cannot write. Defence in depth, not a single wall.</p></div>
+          <div class="card"><h3>The browser only ever talks to Next.js</h3><p>There is no public API route and no client-side call to the AI plane, NIM, or Postgres. This collapses the attack surface to a single authenticated front door — what you would otherwise defend in three places, you now defend in one.</p></div>
+          <div class="card"><h3>Edge: per-request nonce CSP + RBAC</h3><p>The proxy applies role-based access control (RBAC) from a JWT claim — no database read at the edge, so it stays fast — plus a Content-Security-Policy (CSP) carrying a fresh per-request nonce. An injected inline script has no valid nonce and will not run, which turns the whole class of XSS-via-injected-<code>&lt;script&gt;</code> into a non-event instead of relying on catching every injection point.</p></div>
+          <div class="card"><h3>The AI plane is internal-only and token-gated</h3><p>Every endpoint but <code>/health</code> demands the shared <code>x-service-token</code>, and the plane is never published to the internet. An attacker on the internal network still needs the token; even with it, they reach a plane that holds no data and cannot write. Defence in depth, not a single wall.</p></div>
           <div class="card"><h3>The model plane is reached only by bearer key</h3><p>NIM sits behind an OpenAI-compatible API authenticated with a bearer key that only the AI plane holds. The models are a leaf: they compute and return, and have no path back to the browser, the orchestrator, or the database.</p></div>
         </div>
 
         <p class="subhead">Deployment &amp; data residency</p>
-        <p>The same lifecycle runs identically in the hosted demo and on-prem. The whole stack ships from Docker: in production <code>docker-compose.prod.yml</code> puts a Cloudflare Tunnel in front as the public gateway — there is no inbound port — routing to <code>app:3000</code> (Next.js), which talks to <code>db:5432</code> (Postgres) and <code>minio:9000</code> for uploads, with the AI plane as its own pinned image and every container running as a non-root user.</p>
-        <p>Going on-prem is a config change — swap the NIM base URL and key — not a rewrite, and this is a bigger claim than it sounds. The reason it holds is the <b>OpenAI-compatible contract</b>: the AI plane speaks to NIM through the same request and response shape whether the models run on NVIDIA’s hosted free tier or on the trust’s own GPUs, so moving from one to the other changes two environment values and nothing else. Because the container image, the schema, the orchestration, and every guard in the harness are identical across both, there is no fork of the codebase to maintain and no “on-prem edition” that drifts from the demo. That is precisely what keeps clinical data inside the trust’s own walls without a second, divergent build: the data-residency guarantee is a deployment setting, not a rewrite, and the thing you tested in the demo is bit-for-bit the thing that runs in the hospital.</p>
+        <p>The same lifecycle runs identically in the hosted demo and on-prem. The whole stack ships from Docker: in production, <code>docker-compose.prod.yml</code> puts a Cloudflare Tunnel in front as the public gateway — there is no inbound port — routing to <code>app:3000</code> (Next.js), which talks to <code>db:5432</code> (Postgres) and <code>minio:9000</code> for uploads. The AI plane is its own pinned image, and every container runs as a non-root user.</p>
+        <p>Going on-prem is a config change — swap the NIM base URL and key — not a rewrite. That is a bigger claim than it sounds, and it holds because of the <b>OpenAI-compatible contract</b>: the AI plane speaks to NIM through the same request and response shape whether the models run on NVIDIA’s hosted free tier or on the trust’s own GPUs. Moving between them changes two environment values and nothing else. The container image, the schema, the orchestration, and every guard in the harness are identical across both, so there is no fork of the codebase to maintain and no “on-prem edition” that drifts from the demo. That is what keeps clinical data inside the trust’s own walls without a second, divergent build: the data-residency guarantee is a deployment setting, not a rewrite, and what you tested in the demo is bit-for-bit what runs in the hospital.</p>
 
         <div class="safety-callout"><b>The lesson made concrete.</b> When the boundary between “what changes on-prem” and “what stays the same” is a config file rather than a code branch, going into a trust is a procurement conversation, not an engineering project — and the clinical safety you proved once is the clinical safety that ships.</div>
       </div>
@@ -808,7 +808,7 @@
       <div class="wrap">
         <span class="sec-num">05</span>
         <h2>Data &amp; knowledge</h2>
-        <p>The AI plane holds nothing; all of it lands here. WardBeat keeps everything in a single <b>PostgreSQL 17</b> database with the <b>pgvector</b> extension. Next.js is the only writer — schema and migrations are defined once, in TypeScript, through Drizzle ORM. That one database holds three kinds of data — the ward domain, the AI outputs, and the policy knowledge base — sitting right alongside the platform and identity tables. There is no separate vector database to run: the policy vectors live in the same Postgres as the relational ward data.</p>
+        <p>The AI plane holds nothing; all of it lands here. WardBeat keeps everything in a single <b>PostgreSQL 17</b> database with the <b>pgvector</b> extension. Next.js is the only writer, and schema and migrations are defined once, in TypeScript, through Drizzle ORM. That one database holds three kinds of data — the ward domain, the AI outputs, and the policy knowledge base — alongside the platform and identity tables. There is no separate vector database to run: the policy vectors live in the same Postgres as the relational ward data.</p>
 
         <p class="subhead">The data model</p>
         <svg viewBox="0 0 760 430" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="dm-title">
@@ -856,7 +856,7 @@
           <text x="32" y="384" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">indexed with an hnsw cosine index for fast approximate-nearest-neighbour search.</text>
         </svg>
 
-        <p>Because the relational ward data and the policy vectors share one Postgres via pgvector, there is no separate vector database to operate, and the vectors sit transactionally beside the data they relate to. For a corpus this size, that is the deliberate simplicity choice — one database to back up, one place where consistency is guaranteed.</p>
+        <p>Because the relational ward data and the policy vectors share one Postgres via pgvector, there is no separate vector database to operate, and the vectors sit transactionally beside the data they relate to. For a corpus this size, that is the deliberate simplicity choice: one database to back up, one place where consistency is guaranteed.</p>
 
         <p class="subhead">From note to audited action</p>
         <svg viewBox="0 0 760 150" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="lc-title">
@@ -890,10 +890,10 @@
 
         <div class="walk">
           <div class="wstep"><span class="n">1</span><div><h4>A note is written</h4><p>A nursing note lands as a row in <b>notes</b> — the free-text ward-round or nursing entry that everything downstream is grounded in.</p></div></div>
-          <div class="wstep"><span class="n">2</span><div><h4>Extraction runs</h4><p>A row is written to <b>aiExtractions</b> (the raw model output, with the model name) and grounded rows to <b>barriers</b>. Each barrier cites a character span back in the note — and only barriers whose quote was located in the note are stored.</p></div></div>
-          <div class="wstep"><span class="n">3</span><div><h4>Encounter status is updated</h4><p>The patient’s <b>encounters</b> row is denormalised with the current MFFD flag and estimated discharge date. Latest note wins.</p></div></div>
-          <div class="wstep"><span class="n">4</span><div><h4>The agent recommends</h4><p>The agent turns each barrier into one or more <b>recommendations</b> rows — action type, rationale, priority and citations — grounded in retrieved <b>policyChunks</b>.</p></div></div>
-          <div class="wstep"><span class="n">5</span><div><h4>A human approves</h4><p>On approval an <b>actionAudit</b> row records who approved or dismissed which recommendation and when, and the barrier is marked in progress. Nothing acts on external systems.</p></div></div>
+          <div class="wstep"><span class="n">2</span><div><h4>Extraction runs</h4><p>A row is written to <b>aiExtractions</b> (the raw model output, with the model name) and grounded rows to <b>barriers</b>. Each barrier cites a character span back in the note, and only barriers whose quote was located in the note are stored.</p></div></div>
+          <div class="wstep"><span class="n">3</span><div><h4>Encounter status is updated</h4><p>The patient’s <b>encounters</b> row is denormalised with the current MFFD flag and estimated discharge date. The latest note wins.</p></div></div>
+          <div class="wstep"><span class="n">4</span><div><h4>The agent recommends</h4><p>The agent turns each barrier into one or more <b>recommendations</b> rows — action type, rationale, priority, and citations — grounded in retrieved <b>policyChunks</b>.</p></div></div>
+          <div class="wstep"><span class="n">5</span><div><h4>A human approves</h4><p>On approval, an <b>actionAudit</b> row records who approved or dismissed which recommendation and when, and the barrier is marked in progress. Nothing acts on external systems.</p></div></div>
         </div>
 
         <p class="subhead">How the policy knowledge base is built</p>
@@ -935,7 +935,7 @@
           <text x="450" y="217" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#566a72">pgvector similarity search</text>
         </svg>
 
-        <p>Retrieval works by <b>meaning, not keywords</b>. A policy document is split into passages, each passage is embedded into a 1024-dim vector by the NVIDIA embedding model, and text plus vector are stored in <b>policyChunks</b> behind an hnsw cosine index. At query time the question is embedded the same way and pgvector finds the nearest chunks by cosine similarity. One subtlety matters: NVIDIA embedding models are <b>asymmetric</b> — passages are embedded with input_type <b>passage</b> and questions with input_type <b>query</b>, so the stored corpus and the incoming question land in the same space and match correctly.</p>
+        <p>Retrieval works by <b>meaning, not keywords</b>. A policy document is split into passages, each passage is embedded into a 1024-dim vector by the NVIDIA embedding model, and text plus vector are stored in <b>policyChunks</b> behind an hnsw cosine index. At query time, the question is embedded the same way and pgvector finds the nearest chunks by cosine similarity. One subtlety matters: NVIDIA embedding models are <b>asymmetric</b>. Passages are embedded with input_type <b>passage</b> and questions with input_type <b>query</b>, so the stored corpus and the incoming question land in the same space and match correctly.</p>
       </div>
     </section>
 
@@ -944,16 +944,16 @@
       <div class="wrap">
         <span class="sec-num">06</span>
         <h2>Next steps</h2>
-        <p>The architecture you have just read is deliberately the simplest thing that keeps clinical data in one place and every model call in a cage. That simplicity is a starting point, and a few of its edges are where the design grows next — each one an extension of a decision made above, not a reversal of it.</p>
+        <p>The architecture you have just read is deliberately the simplest thing that keeps clinical data in one place and every model call in a cage. That simplicity is a starting point, and a few of its edges are where the design grows next — each an extension of a decision made above, not a reversal of it.</p>
 
         <div class="grid2">
-          <div class="card"><h3>A shared rate-limit store for scale-out</h3><p>Today the AI plane’s token bucket and the app’s rate limiter are <b>in-memory</b> — correct and fast for a single instance. The moment you run several instances behind a load balancer, each holds its own counter and the effective limit multiplies. The fix is small precisely because the planes are already stateless: move the limiter to a shared store (Redis) so every instance draws from one bucket. The topology does not change; one piece of state moves out of process.</p></div>
+          <div class="card"><h3>A shared rate-limit store for scale-out</h3><p>Today the AI plane’s token bucket and the app’s rate limiter are <b>in-memory</b> — correct and fast for a single instance. Run several instances behind a load balancer and each holds its own counter, so the effective limit multiplies. The fix is small precisely because the planes are already stateless: move the limiter to a shared store (Redis) so every instance draws from one bucket. The topology does not change; one piece of state moves out of process.</p></div>
           <div class="card"><h3>OpenTelemetry tracing across the hops</h3><p>The six-hop lifecycle is easy to narrate on paper; in production you want to <em>see</em> a single request cross the browser → Next.js → AI plane → NIM → Postgres path as one trace, with timing on each boundary. Propagating a trace context across the hops turns the diagram in section 4 into a live, per-request waterfall — invaluable the first time a model call is slow and you need to know which hop owns the latency.</p></div>
           <div class="card"><h3>Shipping the Azure design</h3><p>The Docker + Cloudflare Tunnel deployment is the on-prem-friendly baseline. The <a href="/about-azure.html">Azure design</a> maps the same four planes onto managed services — Container Apps, a managed Postgres with pgvector, private networking — for trusts that prefer a cloud landing zone. Because the contract between planes is HTTP and a shared database, the mapping is a hosting decision, not an architectural one.</p></div>
-          <div class="card"><h3>Where the AI plane goes</h3><p>Everything that makes the plane stateless and swappable is what makes model upgrades routine: a newer Nemotron, a stronger reranker, or on-prem GPUs are all a config change behind the same endpoints. The harness and grounding gates stay exactly where they are — new models are dropped into the same cage, not trusted more.</p></div>
+          <div class="card"><h3>Where the AI plane goes</h3><p>Everything that makes the plane stateless and swappable makes model upgrades routine: a newer Nemotron, a stronger reranker, or on-prem GPUs are all a config change behind the same endpoints. The harness and grounding gates stay exactly where they are — new models are dropped into the same cage, not trusted more.</p></div>
         </div>
 
-        <p class="point"><b>Why it matters</b> — none of these is a rewrite. Each is a small change enabled by a decision already made: statelessness makes the shared limiter easy, single-writer makes tracing legible, and the OpenAI-compatible contract makes the hosting target interchangeable. Good architecture is the one whose next steps are cheap.</p>
+        <p class="point"><b>Why it matters</b> — none of these is a rewrite. Each is a small change enabled by a decision already made: statelessness makes the shared limiter easy, single-writer makes tracing legible, and the OpenAI-compatible contract makes the hosting target interchangeable. Good architecture is the kind whose next steps are cheap.</p>
 
         <p>For the full picture of what is planned and in what order, see the <a href="/about-roadmap.html">Roadmap</a> tab.</p>
       </div>

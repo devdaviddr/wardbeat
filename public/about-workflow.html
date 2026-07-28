@@ -173,19 +173,19 @@
       <div class="wrap">
         <span class="sec-num">01</span>
         <h2>Spec-driven development</h2>
-        <p>Non-trivial work on WardBeat starts with a short written spec that captures the <b>what</b> and <b>why</b> before anyone writes the <b>how</b>. The rule is simple: a new capability, a security-posture change, an infrastructure move, or a notable trade-off gets a spec; a trivial fix, a dependency bump, or a copy edit does not — a good commit message is enough there. The point is to make intent reviewable, keep scope honest, and leave the codebase a durable record of the decision behind each release.</p>
-        <p>Writing the contract before the code is the whole discipline. It reduces rework, because disagreements about scope surface on a page you can edit in minutes rather than in code you have to unpick over a day. It forces the <i>why</i> to be stated out loud, so a reviewer can push back on the goal, not just the diff. And it turns review into a conversation about intent — is this the right thing to build? — instead of a line-by-line hunt through an implementation that may already be pointed at the wrong target.</p>
+        <p>Non-trivial work on WardBeat starts with a short written spec that captures the <b>what</b> and <b>why</b> before anyone writes the <b>how</b>. The rule is simple: a new capability, a security-posture change, an infrastructure move, or a notable trade-off gets a spec; a trivial fix, a dependency bump, or a copy edit does not — a good commit message covers those. A spec makes intent reviewable, keeps scope honest, and leaves the codebase a durable record of the decision behind each release.</p>
+        <p>Writing the contract before the code is the whole discipline, and it pays off three ways. It cuts rework, because scope disagreements surface on a page you can edit in minutes rather than in code you unpick over a day. It forces the <i>why</i> into the open, so a reviewer can push back on the goal, not just the diff. And it turns review into a conversation about intent — is this the right thing to build? — instead of a line-by-line hunt through an implementation that may already point at the wrong target.</p>
 
         <p class="subhead">Two files for a release, one for a one-off</p>
-        <p>A WardBeat release is planned as a folder under <code>specs/releases/vX.Y.Z-slug/</code> holding two files that do deliberately different jobs. Splitting them keeps the frozen agreement apart from the plan that keeps moving.</p>
+        <p>A WardBeat release is planned in a folder under <code>specs/releases/vX.Y.Z-slug/</code> holding two files that do deliberately different jobs. The split keeps the frozen agreement apart from the plan that keeps moving.</p>
         <div class="grid2">
           <div class="card"><h3>spec.md — the contract</h3><p>The <b>what &amp; why</b>: summary, problem, goals, non-goals, scope, requirements, acceptance criteria, security. Frozen once it reaches <code>Accepted</code> — the agreed target the work is measured against.</p></div>
           <div class="card"><h3>spec-imp.md — the plan</h3><p>The <b>how</b>: approach, architecture deltas, milestones, data model, interfaces, the test &amp; eval plan, and a Definition of Done. A living document, updated as the work proceeds.</p></div>
         </div>
-        <p class="point"><b>Why the split</b> A contract you keep editing is not a contract. Freezing <code>spec.md</code> at <code>Accepted</code> means the acceptance criteria cannot quietly drift to match whatever got built — the finished work is held to what was actually agreed. Meanwhile <code>spec-imp.md</code> is expected to change as reality intrudes: it is where a discovered constraint or a better approach gets recorded without touching the agreement.</p>
+        <p class="point"><b>Why the split</b> A contract you keep editing is not a contract. Freezing <code>spec.md</code> at <code>Accepted</code> stops the acceptance criteria from quietly drifting to match whatever got built — the finished work is held to what was actually agreed. <code>spec-imp.md</code>, by contrast, is meant to change as reality intrudes: it is where a discovered constraint or a better approach gets recorded without touching the agreement.</p>
 
         <p class="subhead">One-off changes and the numbered history</p>
-        <p>A one-off change that still deserves a written intent — but is not a whole release — uses the flat <code>specs/TEMPLATE.md</code>, copied to <code>NNNN-slug.md</code> and opened as <code>Proposed</code>. The numbered specs <code>0001</code>–<code>0025</code> are history: <code>0001</code>–<code>0024</code> document the platform foundation WardBeat inherited, and <code>0025</code> is WardBeat’s own foundation spec. From <b>v0.2.0</b> onward, every WardBeat release lives in its own <code>specs/releases/vX.Y.Z-slug/</code> folder as the two-file pair.</p>
+        <p>A one-off change that deserves a written intent but is not a whole release uses the flat <code>specs/TEMPLATE.md</code>, copied to <code>NNNN-slug.md</code> and opened as <code>Proposed</code>. The numbered specs <code>0001</code>–<code>0025</code> are history: <code>0001</code>–<code>0024</code> document the platform foundation WardBeat inherited, and <code>0025</code> is WardBeat’s own foundation spec. From <b>v0.2.0</b> onward, every WardBeat release lives in its own <code>specs/releases/vX.Y.Z-slug/</code> folder as the two-file pair.</p>
         <div class="safety-callout"><b>Spec is intent-before; changelog is record-after.</b> The spec says why and what, written before the work. The <code>CHANGELOG.md</code> entry says what shipped, written for users after. They complement each other — neither is a substitute for the other, and a release fills in both.</div>
       </div>
     </section>
@@ -195,19 +195,19 @@
       <div class="wrap">
         <span class="sec-num">02</span>
         <h2>Trunk-based git</h2>
-        <p>WardBeat is deliberately trunk-based, not GitFlow. <code>main</code> is the only long-lived branch — there is no <code>develop</code>, <code>release</code>, or <code>hotfix</code>. Feature work branches off <code>main</code> as <code>feature/&lt;slug&gt;</code>, and opens a pull request straight back into <code>main</code>. A release is nothing more than a <code>vX.Y.Z</code> tag on a <code>main</code> commit; the tag is what defines the release. There is no required <code>Release vX.Y.Z</code> merge commit — a plain commit on <code>main</code> can be tagged directly.</p>
-        <p>The reason to work this way is that integration stays cheap and <code>main</code> stays releasable. Long-lived branches drift apart and turn merges into archaeology; a single trunk that everyone rejoins quickly keeps that drift small and the history honest. Because a release is just a tag on a good commit, cutting one is a labelling act, not a branch-management ceremony.</p>
+        <p>WardBeat is deliberately trunk-based, not GitFlow. <code>main</code> is the only long-lived branch — there is no <code>develop</code>, <code>release</code>, or <code>hotfix</code>. Feature work branches off <code>main</code> as <code>feature/&lt;slug&gt;</code> and opens a pull request straight back into <code>main</code>. A release is nothing more than a <code>vX.Y.Z</code> tag on a <code>main</code> commit; the tag defines the release. No <code>Release vX.Y.Z</code> merge commit is required — a plain commit on <code>main</code> can be tagged directly.</p>
+        <p>Working this way keeps integration cheap and <code>main</code> releasable. Long-lived branches drift apart and turn merges into archaeology; a single trunk that everyone rejoins quickly keeps that drift small and the history honest. And because a release is just a tag on a good commit, cutting one is a labelling act, not a branch-management ceremony.</p>
 
         <p class="subhead">Commits, hooks, and the changelog</p>
         <div class="grid2">
-          <div class="card"><h3>Conventional Commits</h3><p>Every commit follows <code>feat:</code>, <code>fix:</code>, <code>docs:</code>, <code>chore:</code>… enforced by a commitlint <code>commit-msg</code> hook. Body lines stay ≤ 100 characters, so the history reads cleanly and can be parsed by tooling.</p></div>
+          <div class="card"><h3>Conventional Commits</h3><p>Every commit follows <code>feat:</code>, <code>fix:</code>, <code>docs:</code>, <code>chore:</code>… enforced by a commitlint <code>commit-msg</code> hook. Body lines stay ≤ 100 characters, so the history reads cleanly and tooling can parse it.</p></div>
           <div class="card"><h3>pre-commit runs lint-staged</h3><p>A Husky <code>pre-commit</code> hook runs ESLint + Prettier on staged files before the commit lands, so formatting and lint drift never enters the trunk in the first place.</p></div>
           <div class="card"><h3>Keep a Changelog</h3><p><code>CHANGELOG.md</code> follows the Keep a Changelog format and is updated for every user-facing change — the after-the-fact record that pairs with the before-the-fact spec.</p></div>
           <div class="card"><h3>No AI credit in git</h3><p>No <code>Co-Authored-By: Claude</code>, no “Generated with…”, no assistant trailer of any kind on commits or PR descriptions. The history reads as human-authored work.</p></div>
         </div>
 
         <p class="subhead">Cutting a release</p>
-        <p>Bump the version, set the spec to <code>Shipped</code>, update <code>CHANGELOG.md</code>, then tag a <code>main</code> commit <code>vX.Y.Z</code> and push it. Pushing a <code>v*</code> tag is what triggers deploy when CI is wired; the pre-1.0 stream today is a series of such tags on <code>main</code>.</p>
+        <p>Bump the version, set the spec to <code>Shipped</code>, update <code>CHANGELOG.md</code>, then tag a <code>main</code> commit <code>vX.Y.Z</code> and push it. Pushing a <code>v*</code> tag triggers deploy once CI is wired; the pre-1.0 stream today is a series of such tags on <code>main</code>.</p>
         <pre style="overflow-x:auto;background:#eef3f4;border:1px solid #d9e2e5;border-radius:8px;padding:12px 14px;font-size:12.5px">git checkout main &amp;&amp; git pull
 git checkout -b feature/&lt;slug&gt;
 # ...write the spec, implement, run the gate...
@@ -216,7 +216,7 @@ git commit -m “feat: add flow copilot”      # Conventional Commits, body lin
 # then, on main, cut the release:
 git tag -a vX.Y.Z -m “short title”
 git push origin main --tags                 # the v* tag defines the release</pre>
-        <p class="point"><b>Why trunk-based</b> A trunk that is always releasable means there is never a “stabilise the release branch” phase — the last green commit is shippable by definition. That is only safe because the quality gate below is hard, which is what section 03 is about.</p>
+        <p class="point"><b>Why trunk-based</b> An always-releasable trunk means there is never a “stabilise the release branch” phase — the last green commit is shippable by definition. That is only safe because the quality gate below is hard, which is what section 03 covers.</p>
       </div>
     </section>
 
@@ -225,9 +225,9 @@ git push origin main --tags                 # the v* tag defines the release</pr
       <div class="wrap">
         <span class="sec-num">03</span>
         <h2>The quality gate</h2>
-        <p>Before pushing, one command has to pass end to end. It is the contract that keeps <code>main</code> releasable, and — because CI is deferred at this stage — it is the gate that actually matters today. It runs locally, on the developer’s machine, and nothing goes onto the trunk that has not cleared it.</p>
+        <p>Before pushing, one command has to pass end to end. It is the contract that keeps <code>main</code> releasable — and because CI is deferred at this stage, it is the gate that matters today. It runs locally, on the developer’s machine, and nothing reaches the trunk that has not cleared it.</p>
         <pre style="overflow-x:auto;background:#eef3f4;border:1px solid #d9e2e5;border-radius:8px;padding:12px 14px;font-size:12.5px">pnpm lint &amp;&amp; pnpm typecheck &amp;&amp; pnpm test &amp;&amp; pnpm build</pre>
-        <p>Each stage catches a different class of mistake, and chaining them with <code>&amp;&amp;</code> means the first failure stops the line — you never ship having only run half the checks.</p>
+        <p>Each stage catches a different class of mistake, and chaining them with <code>&amp;&amp;</code> means the first failure stops the line — you never ship having run only half the checks.</p>
         <div class="grid2">
           <div class="card"><h3>lint</h3><p><code>eslint .</code> — catches the class of bug a linter sees and enforces the house style, so review is about behaviour, not formatting.</p></div>
           <div class="card"><h3>typecheck</h3><p><code>tsc --noEmit</code> in strict mode — the type system rejects whole categories of runtime error before the code ever runs.</p></div>
@@ -236,7 +236,7 @@ git push origin main --tags                 # the v* tag defines the release</pr
         </div>
 
         <p class="subhead">The AI-specific gates</p>
-        <p>WardBeat has AI capabilities, and a passing type-check says nothing about whether a model still reads a note correctly. So two more gates sit alongside the standard four: the four eval harnesses and the FastAPI service’s own test suite. Because AI quality is measured, not assumed, these are gates, not dashboards — each harness exits non-zero when its gate is missed.</p>
+        <p>A passing type-check says nothing about whether a model still reads a clinical note correctly. So two more gates sit alongside the standard four: the four eval harnesses and the FastAPI service’s own test suite. AI quality here is measured, not assumed — these are gates, not dashboards, and each harness exits non-zero when its threshold is missed.</p>
         <div class="grid2">
           <div class="card"><h3>Four <code>eval:*</code> harnesses</h3><p><code>eval:extraction</code>, <code>eval:copilot</code>, <code>eval:actions</code>, and <code>eval:forecast</code> each run a labelled synthetic dataset through the live NVIDIA NIM models, score a metric that fits the task, and fail if the gate is missed — F1 ≥ 0.85 for extraction, ≥ 0.90 for RAG and actions, Spearman ρ ≥ 0.70 for the forecast.</p></div>
           <div class="card"><h3>The <code>ai/</code> pytest suite</h3><p>The FastAPI AI service has its own Python tests — <code>ai/tests/test_extract.py</code>, <code>test_forecast.py</code>, <code>test_config.py</code> — covering the service boundary and the deterministic forecast maths that must never be left to the model.</p></div>
@@ -250,7 +250,7 @@ git push origin main --tags                 # the v* tag defines the release</pr
       <div class="wrap">
         <span class="sec-num">04</span>
         <h2>The loop, end to end</h2>
-        <p>Put together, the practices form one repeatable loop from a written intent to a live release. The diagram traces a single change through it; each stage exists to make the next one safe.</p>
+        <p>Put together, these practices form one repeatable loop from written intent to live release. The diagram traces a single change through it; each stage exists to make the next one safe.</p>
 
         <svg viewBox="0 0 760 300" width="100%" style="height:auto;max-width:100%;display:block;margin:14px 0" role="img" aria-labelledby="wfLoopTitle">
           <title id="wfLoopTitle">The WardBeat development loop from spec to deploy</title>
@@ -322,7 +322,7 @@ git push origin main --tags                 # the v* tag defines the release</pr
       <div class="wrap">
         <span class="sec-num">05</span>
         <h2>Other ways to build it — with AI agents</h2>
-        <p>The spec → branch → gate loop above is the backbone, but it is not the only shape the work can take. Increasingly the fastest way to build is to <b>fan the work out across AI coding agents</b> and orchestrate them — and this guide itself was built that way, one agent per tab, in parallel. The patterns below change <em>who</em> holds the keyboard; the discipline around the code stays exactly the same.</p>
+        <p>The spec → branch → gate loop above is the backbone, but it is not the only shape the work can take. Increasingly, the fastest way to build is to <b>fan the work out across AI coding agents</b> and orchestrate them — this guide itself was built that way, one agent per tab, in parallel. The patterns below change <em>who</em> holds the keyboard; the discipline around the code stays exactly the same.</p>
 
         <svg viewBox="0 0 720 216" width="100%" style="height:auto;max-width:100%;display:block;margin:16px 0 8px" role="img" aria-labelledby="agentsTitle">
           <title id="agentsTitle">An orchestrator fans work out to parallel agents in isolated worktrees, which converge on one verify-and-merge gate</title>
@@ -360,15 +360,15 @@ git push origin main --tags                 # the v* tag defines the release</pr
 
         <div class="tech">
           <div class="tech-head"><h3>Git worktrees</h3><span class="tag">Isolation</span></div>
-          <p class="what"><code>git worktree add ../wt-feature feature/x</code> checks a second branch out into its own directory, sharing one repository. You get several branches live at once — no stashing, no switching the working tree out from under in-progress work.</p>
-          <ul class="why"><li><b>Why it matters.</b> It lets multiple tasks — or multiple agents — edit files <em>at the same time</em> without stepping on each other; each works in a clean, isolated copy and merges back once green. Agent tooling can hand each agent its own worktree automatically and discard it if nothing changed.</li></ul>
+          <p class="what"><code>git worktree add ../wt-feature feature/x</code> checks a second branch out into its own directory while sharing one repository. Several branches are live at once — no stashing, no switching the working tree out from under in-progress work.</p>
+          <ul class="why"><li><b>Why it matters.</b> Multiple tasks — or multiple agents — can edit files <em>at the same time</em> without stepping on each other; each works in a clean, isolated copy and merges back once green. Agent tooling can hand each agent its own worktree automatically and discard it if nothing changed.</li></ul>
           <p class="instead"><b>Instead of</b> stashing and branch-switching a single working tree, which serialises everything and risks losing in-progress state.</p>
         </div>
 
         <div class="tech">
           <div class="tech-head"><h3>Parallel agents (fan-out)</h3><span class="tag">Breadth &amp; speed</span></div>
           <p class="what">Scope a set of <em>independent</em> tasks and run an agent on each at once; an orchestrator collects and composes the results. WardBeat’s guide tabs were authored this way — one agent per page — as were the documentation audit and the diagram-overlap fixes.</p>
-          <ul class="why"><li><b>Why it matters.</b> Wall-clock collapses to the slowest single task instead of the sum, and each agent keeps a small, focused context rather than one thread holding everything at once.</li><li><b>Adversarial verification.</b> Spin up independent agents to try to <em>refute</em> a finding, and keep only what survives — diversity of perspective catches what a single pass misses.</li></ul>
+          <ul class="why"><li><b>Why it matters.</b> Wall-clock time collapses to the slowest single task instead of the sum, and each agent keeps a small, focused context rather than one thread holding everything at once.</li><li><b>Adversarial verification.</b> Spin up independent agents to try to <em>refute</em> a finding, and keep only what survives — a diversity of perspective catches what a single pass misses.</li></ul>
           <p class="instead"><b>Instead of</b> one agent doing everything sequentially — slower, and its context fills with unrelated detail until quality drops.</p>
         </div>
 
@@ -393,7 +393,7 @@ git push origin main --tags                 # the v* tag defines the release</pr
       <div class="wrap">
         <span class="sec-num">06</span>
         <h2>Why this way</h2>
-        <p>Each practice earns its place by preventing a specific failure. Together they are what lets a small team ship a clinical-facing AI product with a straight face — intent is written down, the trunk is always releasable, and quality is a number the release is measured against.</p>
+        <p>Each practice earns its place by preventing a specific failure. Together they let a small team ship a clinical-facing AI product with a straight face — intent is written down, the trunk is always releasable, and quality is a number the release is measured against.</p>
         <div class="grid2">
           <div class="tech">
             <div class="tech-head"><h3>Spec-first</h3><span class="tag">Intent before code</span></div>
