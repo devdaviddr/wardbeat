@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { Loader2, RotateCcw } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -55,25 +56,44 @@ export function CopilotDock({
     })
   }
 
+  function reset() {
+    setRes(null)
+    setInput('')
+    onHighlight([])
+  }
+
   return (
     <aside className="bg-background fixed right-4 bottom-4 z-40 flex max-h-[70vh] w-[92vw] max-w-sm flex-col rounded-xl border shadow-xl">
       <header className="flex items-center justify-between border-b p-3">
         <span className="text-sm font-semibold">Flow copilot</span>
-        <button
-          type="button"
-          onClick={() => {
-            onHighlight([])
-            onClose()
-          }}
-          className="text-muted-foreground hover:text-foreground text-sm"
-          aria-label="Close copilot"
-        >
-          ✕
-        </button>
+        <div className="flex items-center gap-0.5">
+          {res && !pending && (
+            <button
+              type="button"
+              onClick={reset}
+              className="text-muted-foreground hover:text-foreground rounded p-1"
+              aria-label="Ask a new question"
+              title="New question"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              onHighlight([])
+              onClose()
+            }}
+            className="text-muted-foreground hover:text-foreground rounded p-1 text-sm"
+            aria-label="Close copilot"
+          >
+            ✕
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 space-y-3 overflow-y-auto p-3 text-sm">
-        {!res && (
+        {!res && !pending && (
           <div className="text-muted-foreground space-y-2">
             <p>Ask about the ward or discharge policy:</p>
             <div className="flex flex-col gap-1.5">
@@ -90,7 +110,16 @@ export function CopilotDock({
             </div>
           </div>
         )}
-        {pending && <p className="text-muted-foreground">Thinking…</p>}
+        {pending && (
+          <div className="text-muted-foreground flex items-center gap-2">
+            <span className="flex items-center gap-1" aria-hidden="true">
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]"></span>
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]"></span>
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current"></span>
+            </span>
+            Thinking…
+          </div>
+        )}
         {res && !pending && (
           <div className="space-y-2">
             {res.path !== 'error' && (
@@ -158,8 +187,17 @@ export function CopilotDock({
           disabled={pending}
           className="h-8"
         />
-        <Button type="submit" size="sm" disabled={pending || !input.trim()}>
-          Ask
+        <Button
+          type="submit"
+          size="sm"
+          disabled={pending || !input.trim()}
+          className="min-w-[3rem]"
+        >
+          {pending ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-label="Working" />
+          ) : (
+            'Ask'
+          )}
         </Button>
       </form>
     </aside>
