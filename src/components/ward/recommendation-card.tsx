@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { FileText } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -9,6 +10,7 @@ import {
   dismissRecommendationAction,
 } from '@/lib/actions/decide'
 import type { CockpitRecommendation } from '@/lib/ward/cockpit'
+import { PolicyDialog } from './policy-dialog'
 
 const ACTION_LABELS: Record<string, string> = {
   chase_tto: 'Chase TTOs',
@@ -74,8 +76,16 @@ export function RecommendationCard({
               key={i}
               className="border-primary bg-muted/40 mt-1 rounded border-l-2 p-2 leading-relaxed"
             >
-              {c.text}
-              <span className="text-muted-foreground"> — {c.source}</span>
+              {c.text}{' '}
+              <PolicyDialog citation={{ text: c.text, source: c.source }}>
+                <button
+                  type="button"
+                  className="text-primary inline-flex items-center gap-0.5 underline-offset-2 hover:underline"
+                >
+                  — {c.source}
+                  <FileText className="h-3 w-3" />
+                </button>
+              </PolicyDialog>
             </blockquote>
           ))}
         </details>

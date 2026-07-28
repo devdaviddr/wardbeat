@@ -5,19 +5,9 @@ import { useRef, useState, useTransition } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import {
-  askCopilotAction,
-  type CopilotCitation,
-  type CopilotResponse,
-} from '@/lib/copilot/actions'
+import { PolicyDialog } from '@/components/ward/policy-dialog'
+import { askCopilotAction, type CopilotResponse } from '@/lib/copilot/actions'
 
 interface Turn {
   role: 'user' | 'assistant'
@@ -43,7 +33,6 @@ export function CopilotChat() {
   const [turns, setTurns] = useState<Turn[]>([])
   const [input, setInput] = useState('')
   const [pending, startTransition] = useTransition()
-  const [cite, setCite] = useState<CopilotCitation | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   function ask(question: string) {
@@ -137,15 +126,24 @@ export function CopilotChat() {
                           {c.label}
                         </Badge>
                       </Link>
+                    ) : c.kind === 'policy' ? (
+                      <PolicyDialog
+                        key={j}
+                        citation={{ text: c.detail, source: c.label }}
+                      >
+                        <button type="button">
+                          <Badge
+                            variant="outline"
+                            className="hover:bg-muted cursor-pointer"
+                          >
+                            {c.label}
+                          </Badge>
+                        </button>
+                      </PolicyDialog>
                     ) : (
-                      <button key={j} type="button" onClick={() => setCite(c)}>
-                        <Badge
-                          variant="outline"
-                          className="hover:bg-muted cursor-pointer"
-                        >
-                          {c.label}
-                        </Badge>
-                      </button>
+                      <Badge key={j} variant="outline">
+                        {c.label}
+                      </Badge>
                     ),
                   )}
                 </div>
@@ -176,20 +174,6 @@ export function CopilotChat() {
           Ask
         </Button>
       </form>
-
-      <Dialog open={cite !== null} onOpenChange={(o) => !o && setCite(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Source</DialogTitle>
-            <DialogDescription>{cite?.label}</DialogDescription>
-          </DialogHeader>
-          {cite?.detail && (
-            <blockquote className="border-primary bg-muted/40 rounded border-l-2 p-3 text-sm leading-relaxed">
-              {cite.detail}
-            </blockquote>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
