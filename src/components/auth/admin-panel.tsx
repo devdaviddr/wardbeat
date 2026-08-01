@@ -20,12 +20,14 @@ import {
 interface AdminPanelProps {
   initialUsers: UserWithRoles[]
   allRoles: Array<{ id: string; name: string }>
+  allWards: Array<{ id: string; name: string }>
   currentUserId: string
 }
 
 export function AdminPanel({
   initialUsers,
   allRoles,
+  allWards,
   currentUserId,
 }: AdminPanelProps) {
   const [users, setUsers] = useState<UserWithRoles[]>(initialUsers)
@@ -86,6 +88,7 @@ export function AdminPanel({
           <UserTable
             users={users}
             allRoles={allRoles}
+            allWards={allWards}
             currentUserId={currentUserId}
             onUsersChange={handleRefresh}
             onEditUser={setEditUser}

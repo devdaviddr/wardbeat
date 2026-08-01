@@ -14,6 +14,9 @@ import { BriefingStrip } from './briefing-strip'
 import { CopilotDock } from './copilot-dock'
 
 export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
+  // Server-computed capabilities (spec v0.12.0 M3). Hiding a button here is a
+  // courtesy, never the control — every server action re-checks.
+  const caps = cockpit.capabilities
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [status, setStatus] = useState<string | null>(null)
@@ -107,9 +110,11 @@ export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
           >
             Ask copilot
           </Button>
-          <Button size="sm" onClick={runExtraction} disabled={pending}>
-            {pending ? 'Extracting…' : 'Run extraction'}
-          </Button>
+          {caps.canRunExtraction && (
+            <Button size="sm" onClick={runExtraction} disabled={pending}>
+              {pending ? 'Extracting…' : 'Run extraction'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -136,6 +141,7 @@ export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
         key={selectedId ?? 'none'}
         bed={selected}
         people={cockpit.people}
+        capabilities={caps}
         onClose={() => setSelectedId(null)}
         onChanged={() => router.refresh()}
       />

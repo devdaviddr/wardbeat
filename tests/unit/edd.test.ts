@@ -15,7 +15,9 @@ const whereSpy = vi.fn()
 const returning = { value: [{ id: 'enc-1' }] as { id: string }[] }
 const updateThrows = { value: null as Error | null }
 
-const session = { value: null as { user: { id: string } } | null }
+const session = {
+  value: null as { user: { id: string; roles?: string[] } } | null,
+}
 
 vi.mock('@/lib/auth/session', () => ({
   getCurrentSession: async () => session.value,
@@ -30,6 +32,15 @@ vi.mock('@/lib/logger', () => ({
 
 vi.mock('@/db', () => ({
   db: {
+    // Authorization context read by `requireWardAccess` (v0.12.0): the target
+    // encounter sits on ward w1 and the caller is a member of w1.
+    query: {
+      encounters: {
+        findFirst: async () => ({ id: 'enc-1', bed: { wardId: 'w1' } }),
+      },
+      userWards: { findMany: async () => [{ wardId: 'w1' }] },
+      wards: { findFirst: async () => ({ id: 'w1' }) },
+    },
     update: () => ({
       set: (payload: unknown) => {
         setSpy(payload)
@@ -60,7 +71,7 @@ function writtenPayload(): Record<string, unknown> {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  session.value = { user: { id: 'user-1' } }
+  session.value = { user: { id: 'user-1', roles: ['clinician'] } }
   returning.value = [{ id: 'enc-1' }]
   updateThrows.value = null
 })
@@ -71,7 +82,7 @@ describe('authorization', () => {
 
     const res = await setEncounterEddAction('enc-1', '2026-08-14')
 
-    expect(res).toEqual({ ok: false, error: 'Unauthorized' })
+    expect(res).toEqual({ ok: false, error: 'Not signed in.' })
     expect(setSpy).not.toHaveBeenCalled()
     expect(revalidatePath).not.toHaveBeenCalled()
   })
@@ -81,19 +92,34 @@ describe('authorization', () => {
 
     const res = await setEncounterEddAction('enc-1', null)
 
-    expect(res).toEqual({ ok: false, error: 'Unauthorized' })
+    expect(res).toEqual({ ok: false, error: 'Not signed in.' })
     expect(setSpy).not.toHaveBeenCalled()
   })
 
   it('checks the session before validating, so it cannot be probed', async () => {
     session.value = null
 
-    // A malformed date from a signed-out caller must still read as Unauthorized
+    // A malformed date from a signed-out caller must still read as a refusal
     // rather than leaking that the input was the problem.
     const res = await setEncounterEddAction('enc-1', 'nonsense')
 
-    expect(res).toEqual({ ok: false, error: 'Unauthorized' })
+    expect(res).toEqual({ ok: false, error: 'Not signed in.' })
   })
+
+  it.each([['allied_health'], ['viewer'], ['member']])(
+    'refuses %s (no override_edd capability), and writes nothing',
+    async (role) => {
+      session.value = { user: { id: 'user-1', roles: [role] } }
+
+      const res = await setEncounterEddAction('enc-1', '2026-08-14')
+
+      expect(res).toEqual({
+        ok: false,
+        error: 'You do not have permission to do this.',
+      })
+      expect(setSpy).not.toHaveBeenCalled()
+    },
+  )
 })
 
 describe('date validation', () => {
@@ -202,7 +228,7 @@ describe('setting a date', () => {
   })
 
   it('attributes the override to the caller, not a client-supplied id', async () => {
-    session.value = { user: { id: 'consultant-9' } }
+    session.value = { user: { id: 'consultant-9', roles: ['clinician'] } }
 
     await setEncounterEddAction('enc-1', '2026-09-01')
 
@@ -233,7 +259,7 @@ describe('clearing the date', () => {
   })
 
   it('drops the previous author, so no stale attribution survives', async () => {
-    session.value = { user: { id: 'nurse-2' } }
+    session.value = { user: { id: 'nurse-2', roles: ['charge_nurse'] } }
 
     await setEncounterEddAction('enc-1', null)
 

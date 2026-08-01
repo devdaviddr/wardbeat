@@ -22,13 +22,37 @@ const PROTECTED_PREFIXES = [
 /** Auth pages an already-signed-in user should be bounced away from. */
 const AUTH_ROUTES = ['/login', '/register']
 /**
- * Optional: gate route prefixes by role at the edge (JWT claim only, no DB).
- * The admin UI here is gated server-side in `/settings`, so this is empty by
- * default. Add entries to protect custom routes; unauthorized users are sent to
- * `/403`. Example:
- *   const ROLE_REQUIRED = { '/admin': ['admin'], '/billing': ['admin', 'member'] }
+ * Ward roles that may enter the ward surface, mirroring `WARD_ROLES` in
+ * `src/lib/auth/ward-access.ts`. Duplicated by design: that module imports the
+ * database, and this file must stay edge-safe (no DB, no argon2) — never
+ * import it here. The legacy `member` role is deliberately absent.
  */
-const ROLE_REQUIRED: Record<string, string[]> = {}
+const WARD_ROLE_NAMES = [
+  'admin',
+  'bed_manager',
+  'charge_nurse',
+  'clinician',
+  'allied_health',
+  'viewer',
+]
+/**
+ * Gate route prefixes by role at the edge (JWT claim only, no DB round-trip).
+ * This is a redirect **convenience**, never the security boundary — every ward
+ * server action and read re-checks role AND ward membership server-side via
+ * `requireWardAccess` (spec v0.12.0 FR4). The JWT role claim can be stale
+ * until the next sign-in/session update, and membership is not on the token
+ * at all, which is exactly why the server-side check is the enforcement.
+ *
+ * `/dashboard` is intentionally NOT edge-gated: it is the post-login landing
+ * page, and the server renders a friendly "not assigned to a ward" state
+ * there instead of a hard `/403` bounce.
+ */
+const ROLE_REQUIRED: Record<string, string[]> = {
+  '/ward': WARD_ROLE_NAMES,
+  '/copilot': WARD_ROLE_NAMES,
+  '/actions': WARD_ROLE_NAMES,
+  '/briefing': WARD_ROLE_NAMES,
+}
 
 function buildCsp(nonce: string, isDev: boolean): string {
   // Dev needs 'unsafe-eval'/'unsafe-inline' for React Refresh + Turbopack HMR;

@@ -23,9 +23,11 @@ class Settings(BaseSettings):
     embed_dim: int = 1024
 
     # Service auth ----------------------------------------------------------
-    # Shared secret; Next.js sends it as X-Service-Token. Empty = auth disabled
-    # (dev convenience only).
+    # Shared secret; Next.js sends it as X-Service-Token. Empty = the service
+    # FAILS CLOSED and refuses every request (spec v0.12.0) unless
+    # AI_ALLOW_INSECURE_NO_TOKEN=true explicitly opts local dev out of auth.
     ai_service_token: str = ""
+    ai_allow_insecure_no_token: bool = False
 
     # Rate-limit budget for the free hosted tier (~40 RPM); keep headroom.
     nim_rpm: int = 30

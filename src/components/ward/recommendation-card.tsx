@@ -28,9 +28,12 @@ const ACTION_LABELS: Record<string, string> = {
  */
 export function RecommendationCard({
   rec,
+  canDecide,
   onChanged,
 }: {
   rec: CockpitRecommendation
+  /** Hides Approve/Dismiss; the decide actions re-check server-side. */
+  canDecide: boolean
   onChanged: () => void
 }) {
   const [pending, startTransition] = useTransition()
@@ -93,28 +96,32 @@ export function RecommendationCard({
         </details>
       )}
       <div className="mt-2 flex items-center gap-2">
-        <Button
-          size="sm"
-          disabled={pending}
-          onClick={() =>
-            decide(
-              () => approveRecommendationAction(rec.id),
-              'Approved — barrier marked in progress.',
-            )
-          }
-        >
-          Approve
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={pending}
-          onClick={() =>
-            decide(() => dismissRecommendationAction(rec.id), 'Dismissed.')
-          }
-        >
-          Dismiss
-        </Button>
+        {canDecide && (
+          <>
+            <Button
+              size="sm"
+              disabled={pending}
+              onClick={() =>
+                decide(
+                  () => approveRecommendationAction(rec.id),
+                  'Approved — barrier marked in progress.',
+                )
+              }
+            >
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={pending}
+              onClick={() =>
+                decide(() => dismissRecommendationAction(rec.id), 'Dismissed.')
+              }
+            >
+              Dismiss
+            </Button>
+          </>
+        )}
         {msg && (
           <span className="text-muted-foreground text-xs" role="status">
             {msg}

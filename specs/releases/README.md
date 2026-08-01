@@ -88,7 +88,7 @@ Fill `spec.md` first, get it to `Accepted`, then plan in `spec-imp.md`.
 | **v0.9.0**  | Open the referenced policy source               | [spec](v0.9.0-open-referenced-sources/spec.md) — Shipped         | _none — small change_                                                |
 | **v0.10.0** | Close the loop — barrier lifecycle              | [spec](v0.10.0-close-the-loop/spec.md) — Shipped                 | [plan](v0.10.0-close-the-loop/spec-imp.md) — Shipped                 |
 | **v0.11.0** | Trustworthy numbers                             | [spec](v0.11.0-trustworthy-numbers/spec.md) — Shipped            | [plan](v0.11.0-trustworthy-numbers/spec-imp.md) — Shipped            |
-| **v0.12.0** | Ward authorization & access audit               | [spec](v0.12.0-ward-rbac-audit/spec.md) — Proposed               | [plan](v0.12.0-ward-rbac-audit/spec-imp.md) — Draft                  |
+| **v0.12.0** | Ward authorization & access audit               | [spec](v0.12.0-ward-rbac-audit/spec.md) — Shipped                | [plan](v0.12.0-ward-rbac-audit/spec-imp.md) — Shipped                |
 | **v0.13.0** | Multi-ward — scoped reads & site view           | [spec](v0.13.0-multi-ward/spec.md) — Proposed                    | [plan](v0.13.0-multi-ward/spec-imp.md) — Draft                       |
 
 **v0.8.0 through v0.11.0 all ship in the single `v0.11.0` tag.** They were merged to

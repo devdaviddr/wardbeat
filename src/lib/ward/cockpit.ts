@@ -4,6 +4,15 @@ import { db } from '@/db'
 import type { ActionType } from '@/db/schema'
 import { forecastDischarge } from '@/lib/ai/client'
 import type { Provenance } from '@/lib/ai/provenance'
+import { recordAccess } from '@/lib/audit/record'
+import { getCurrentSession } from '@/lib/auth/session'
+import {
+  CAPABILITY_MATRIX,
+  requireWardAccess,
+  WARD_ROLES,
+  type WardCapability,
+  type WardRole,
+} from '@/lib/auth/ward-access'
 import { logger } from '@/lib/logger'
 import { sweepOverdueBarriers } from '@/lib/ward/barrier-notify'
 import { type Assignee, listAssignees } from '@/lib/ward/people'
@@ -34,6 +43,21 @@ export interface CockpitBed extends BoardBed {
   actionCount: number
 }
 
+/**
+ * What the current user may do on the ward surface, computed server-side from
+ * the capability matrix (spec v0.12.0 M3). UI affordances hide on these, but
+ * hiding a button is never the control — every server action re-checks.
+ */
+export interface CockpitCapabilities {
+  canClear: boolean
+  canApprove: boolean
+  canRunExtraction: boolean
+  canGenerate: boolean
+  canOverrideEdd: boolean
+  canCreateBarrier: boolean
+  canAssignComment: boolean
+}
+
 export interface Cockpit {
   wardId: string
   wardName: string
@@ -43,6 +67,8 @@ export interface Cockpit {
   lastExtractedAt: Date | null
   /** People a barrier can be assigned to. */
   people: Assignee[]
+  /** The current user's capabilities, for hiding unusable affordances. */
+  capabilities: CockpitCapabilities
 }
 
 /**
@@ -52,8 +78,45 @@ export interface Cockpit {
  * blocks on a model call.
  */
 export async function getCockpit(): Promise<Cockpit | null> {
+  // Read-side gate (spec v0.12.0 M3): no ward role or no ward membership ⇒
+  // no patient data, whatever the caller renders. The page shows a friendly
+  // "not assigned to a ward" state by running the same check itself.
+  const access = await requireWardAccess('view_board', { any: true })
+  if (!access.ok) return null
+
+  // Capabilities for UI affordances, from the same matrix the actions enforce.
+  const session = await getCurrentSession()
+  const roleNames = session?.user?.roles ?? []
+  const can = (capability: WardCapability): boolean =>
+    roleNames.some(
+      (r) =>
+        (WARD_ROLES as readonly string[]).includes(r) &&
+        CAPABILITY_MATRIX[capability][r as WardRole],
+    )
+  const capabilities: CockpitCapabilities = {
+    canClear: can('clear_dismiss_barrier'),
+    canApprove: can('approve_recommendation'),
+    canRunExtraction: can('run_extraction'),
+    canGenerate: can('generate_recommendations'),
+    canOverrideEdd: can('override_edd'),
+    canCreateBarrier: can('create_manual_barrier'),
+    canAssignComment: can('assign_comment'),
+  }
+
   const board = await getWardBoard()
   if (!board) return null
+
+  // Access audit (spec v0.12.0 FR5): ONE ward-granularity event per board
+  // read, not per bed. Fire-and-forget — recordAccess never throws and this
+  // must never delay the board (NFR3). Repeats within a short window are
+  // coalesced inside recordAccess. The actor is the user the view_board gate
+  // above already authorized.
+  void recordAccess({
+    actorUserId: access.userId,
+    subjectType: 'ward',
+    subjectId: board.wardId,
+    surface: 'board',
+  })
 
   // No job runner in this deployment, so overdue barriers are swept when
   // someone reads the board. Fire-and-forget: an alert must never delay or
@@ -137,5 +200,6 @@ export async function getCockpit(): Promise<Cockpit | null> {
     beds,
     lastExtractedAt: board.lastExtractedAt,
     people: await listAssignees(),
+    capabilities,
   }
 }

@@ -14,12 +14,25 @@ logging.basicConfig(level=logging.INFO)
 async def lifespan(app: FastAPI):
     settings = get_settings()
     app.state.limiter = RateLimiter(settings.nim_rpm)
-    logging.getLogger("wardbeat.ai").info(
+    log = logging.getLogger("wardbeat.ai")
+    log.info(
         "AI plane up — mock=%s model=%s rpm=%s",
         settings.use_mock,
         settings.nim_extract_model,
         settings.nim_rpm,
     )
+    if not settings.ai_service_token:
+        if settings.ai_allow_insecure_no_token:
+            log.warning(
+                "AI_ALLOW_INSECURE_NO_TOKEN=true — service auth is DISABLED. "
+                "Local development only; never run like this anywhere "
+                "reachable by anything but localhost."
+            )
+        else:
+            log.warning(
+                "AI_SERVICE_TOKEN is not set — every request will be refused "
+                "with 503 until it is configured (fail-closed, spec v0.12.0)."
+            )
     yield
 
 

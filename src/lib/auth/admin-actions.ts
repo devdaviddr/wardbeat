@@ -3,7 +3,7 @@
 import { eq, inArray } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { users, roles, userRoles } from '@/db/schema'
+import { users, roles, userRoles, userWards, wards } from '@/db/schema'
 import { requireRole, ForbiddenError } from '@/lib/auth/rbac'
 import { requireEmailVerifiedIfEnforced } from '@/lib/auth/verification-guard'
 import { createInviteToken } from '@/lib/auth/invite'
@@ -18,9 +18,11 @@ import {
   createUserSchema,
   updateUserSchema,
   assignRolesSchema,
+  assignWardsSchema,
   type CreateUserInput,
   type UpdateUserInput,
   type AssignRolesInput,
+  type AssignWardsInput,
 } from '@/lib/validations/auth'
 import { logger } from '@/lib/logger'
 
@@ -60,6 +62,8 @@ export interface UserWithRoles {
   email: string
   createdAt: Date
   roles: { id: string; name: string; description: string | null }[]
+  /** Ward memberships (spec v0.12.0 FR2) — ids into `wards`. */
+  wardIds: string[]
   hasPassword: boolean
 }
 
@@ -85,6 +89,7 @@ export async function getAllUsersWithRoles(): Promise<UserWithRoles[]> {
           role: true,
         },
       },
+      userWards: true,
     },
     orderBy: (users, { desc }) => [desc(users.createdAt)],
   })
@@ -97,6 +102,7 @@ export async function getAllUsersWithRoles(): Promise<UserWithRoles[]> {
     userRoles: Array<{
       role: { id: string; name: string; description: string | null }
     }> | null
+    userWards: Array<{ wardId: string }> | null
     hashedPassword: string | null
   }> | null
 
@@ -110,6 +116,7 @@ export async function getAllUsersWithRoles(): Promise<UserWithRoles[]> {
       name: ur.role.name,
       description: ur.role.description,
     })),
+    wardIds: (u.userWards ?? []).map((uw) => uw.wardId),
     hasPassword: !!u.hashedPassword,
   }))
 }
@@ -241,6 +248,7 @@ export async function createUser(input: CreateUserInput): Promise<CreatedUser> {
       name: ur.role.name,
       description: ur.role.description,
     })),
+    wardIds: [], // A freshly created user belongs to no ward until assigned.
     hasPassword: false,
     inviteToken: token,
     emailSent,
@@ -337,7 +345,7 @@ export async function updateUser(
   // Return updated user
   const updated = (await db.query.users.findFirst({
     where: eq(users.id, userId),
-    with: { userRoles: { with: { role: true } } },
+    with: { userRoles: { with: { role: true } }, userWards: true },
   })) as {
     id: string
     name: string | null
@@ -346,6 +354,7 @@ export async function updateUser(
     userRoles: Array<{
       role: { id: string; name: string; description: string | null }
     }> | null
+    userWards: Array<{ wardId: string }> | null
     hashedPassword: string | null
   } | null
 
@@ -363,6 +372,7 @@ export async function updateUser(
       name: ur.role.name,
       description: ur.role.description,
     })),
+    wardIds: (updated.userWards ?? []).map((uw) => uw.wardId),
     hasPassword: !!updated.hashedPassword,
   }
 }
@@ -465,6 +475,75 @@ export async function assignRoles(input: AssignRolesInput): Promise<void> {
     adminId: currentUserId,
     targetUserId: userId,
     roleIds,
+  })
+}
+
+/** All wards, for the admin membership UI (spec v0.12.0 FR2). Admin only. */
+export async function getAllWards(): Promise<{ id: string; name: string }[]> {
+  // Read gated by requireRole('admin'); not rate limited for the same reason
+  // as getAllUsersWithRoles — it runs on every /settings render.
+  await requireRole('admin')
+
+  const allWards = await db.query.wards.findMany({
+    orderBy: (wards, { asc }) => [asc(wards.name)],
+  })
+
+  return (allWards ?? []).map((w: { id: string; name: string }) => ({
+    id: w.id,
+    name: w.name,
+  }))
+}
+
+/**
+ * Assign/replace ward memberships for a user (spec v0.12.0 FR2). Admin only.
+ * An empty `wardIds` removes every membership — that user then sees no
+ * patient data on any surface (enforced by `requireWardAccess`).
+ */
+export async function assignWards(input: AssignWardsInput): Promise<void> {
+  await requireRole('admin')
+  await requireEmailVerifiedIfEnforced()
+  await checkAdminRateLimit('assign-wards')
+
+  const parsed = assignWardsSchema.safeParse(input)
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((i) => i.message).join(', '))
+  }
+
+  const { userId, wardIds } = parsed.data
+
+  // Verify user exists
+  const targetUser = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { id: true },
+  })
+  if (!targetUser) {
+    throw new Error('User not found.')
+  }
+
+  // Verify all wards exist
+  if (wardIds.length > 0) {
+    const validWards = await db.query.wards.findMany({
+      where: inArray(wards.id, wardIds),
+      columns: { id: true },
+    })
+    if (validWards.length !== wardIds.length) {
+      throw new Error('One or more wards do not exist.')
+    }
+  }
+
+  // Replace all memberships
+  await db.delete(userWards).where(eq(userWards.userId, userId))
+  if (wardIds.length > 0) {
+    await db
+      .insert(userWards)
+      .values(wardIds.map((wardId) => ({ userId, wardId })))
+  }
+
+  const session = await getCurrentSession()
+  logger.info('Admin assigned ward memberships', {
+    adminId: session?.user.id,
+    targetUserId: userId,
+    wardIds,
   })
 }
 

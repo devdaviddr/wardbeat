@@ -203,6 +203,7 @@ export const pushSubscriptions = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   userRoles: many(userRoles),
   files: many(files),
+  userWards: many(userWards),
 }))
 
 export const filesRelations = relations(files, ({ one }) => ({
@@ -531,8 +532,105 @@ export const barrierSuppressions = pgTable(
   ],
 )
 
+/* -------------------------------------------------------------------------- */
+/* WardBeat — ward membership & access audit (spec v0.12.0)                   */
+/*                                                                            */
+/* `user_wards` scopes authorization to ward membership: any patient-scoped   */
+/* capability requires membership of that patient's ward (enforced by         */
+/* `src/lib/auth/ward-access.ts`). `access_audit` is the append-only read/    */
+/* action log — reads as well as writes. NO application code may UPDATE or    */
+/* DELETE `access_audit` rows; the only write path is an INSERT.              */
+/* -------------------------------------------------------------------------- */
+
+export const ACCESS_SUBJECT_TYPES = [
+  'patient',
+  'encounter',
+  'ward',
+  'copilot_query',
+] as const
+export type AccessSubjectType = (typeof ACCESS_SUBJECT_TYPES)[number]
+
+export const ACCESS_SURFACES = [
+  'board',
+  'bed_drawer',
+  'copilot',
+  'briefing',
+  'extraction',
+  'actions',
+] as const
+export type AccessSurface = (typeof ACCESS_SURFACES)[number]
+
+/** Ward membership — a user may belong to any number of wards. */
+export const userWards = pgTable(
+  'user_wards',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    wardId: text('ward_id')
+      .notNull()
+      .references(() => wards.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.wardId] })],
+)
+
+/**
+ * Append-only access audit (spec v0.12.0 FR5/FR7). Who accessed which subject,
+ * when, and through which surface. `detail` carries surface context (e.g. the
+ * copilot question text). Actor is `set null` so deleting a user never erases
+ * the audit trail. Never UPDATEd or DELETEd through the application.
+ */
+export const accessAudit = pgTable(
+  'access_audit',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    actorUserId: text('actor_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    subjectType: text('subject_type').$type<AccessSubjectType>().notNull(),
+    // Nullable for ward-wide surfaces (e.g. a board view with no single subject).
+    subjectId: text('subject_id'),
+    surface: text('surface').$type<AccessSurface>().notNull(),
+    detail: jsonb('detail'),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [
+    // The two questions an auditor asks: "what did this person access?" and
+    // "who accessed this patient?"
+    index('access_audit_actor_created_idx').on(
+      table.actorUserId,
+      table.createdAt,
+    ),
+    index('access_audit_subject_created_idx').on(
+      table.subjectId,
+      table.createdAt,
+    ),
+  ],
+)
+
+export const userWardsRelations = relations(userWards, ({ one }) => ({
+  user: one(users, { fields: [userWards.userId], references: [users.id] }),
+  ward: one(wards, { fields: [userWards.wardId], references: [wards.id] }),
+}))
+
+export const accessAuditRelations = relations(accessAudit, ({ one }) => ({
+  actor: one(users, {
+    fields: [accessAudit.actorUserId],
+    references: [users.id],
+  }),
+}))
+
+export type UserWard = typeof userWards.$inferSelect
+export type NewUserWard = typeof userWards.$inferInsert
+export type AccessAuditRecord = typeof accessAudit.$inferSelect
+export type NewAccessAuditRecord = typeof accessAudit.$inferInsert
+
 export const wardsRelations = relations(wards, ({ many }) => ({
   beds: many(beds),
+  userWards: many(userWards),
 }))
 
 export const bedsRelations = relations(beds, ({ one, many }) => ({

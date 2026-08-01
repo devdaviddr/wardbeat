@@ -37,6 +37,39 @@ export const UPLOAD_LIMITS = {
   upload: { limit: 20, windowMs: 10 * 60_000 },
 } as const
 
+/**
+ * Per-user limits on the AI-backed server actions (spec v0.12.0 M5). These
+ * paths are authenticated, so the key is the user id — never the IP, which
+ * would conflate every user behind one hospital NAT.
+ *
+ * Budget arithmetic — the hosted NIM free tier allows ~40 RPM and the `ai`
+ * service self-throttles at NIM_RPM=30 (ai/app/settings.py), so ~30 RPM is
+ * the shared budget one user must not be able to exhaust alone:
+ *
+ * - copilot: ~3 NIM calls per question (route + retrieval embed/rerank +
+ *   answer). 6/min → worst case ≤ 18 calls/min from one user.
+ * - briefing: ≤ 2 NIM calls per generate (forecasts are deterministic; the
+ *   narration is the model call). 6 per 5 min → ≤ 12 calls/5 min ≈ 2.4 RPM.
+ * - generate: ~2 NIM calls per delayed patient (policy retrieval + recommend);
+ *   a full ~24-bed ward ≈ 48 calls per run. 2 runs per 10 min ≈ ≤ 10 RPM
+ *   sustained — the burst inside a run is smoothed by the AI plane's own
+ *   token bucket.
+ *
+ * Worst-case sustained total ≈ 18 + 2.4 + 10 ≈ 30 RPM — one user can at most
+ * saturate the budget briefly, not starve it indefinitely, and the fixed
+ * windows mean the pressure clears within minutes.
+ */
+export const AI_LIMITS = {
+  copilot: { limit: 6, windowMs: 60_000 },
+  briefing: { limit: 6, windowMs: 5 * 60_000 },
+  generate: { limit: 2, windowMs: 10 * 60_000 },
+} as const
+
+/** User-facing refusal for a rate-limited AI action (CLAUDE.md: expected
+ *  failures are returned, never thrown). */
+export const AI_RATE_LIMIT_MESSAGE =
+  'Too many requests — try again in a moment.'
+
 /** Disable in environments (e.g. certain test runs) via env. */
 const DISABLED = process.env.RATE_LIMIT_DISABLED === 'true'
 

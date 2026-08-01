@@ -4,7 +4,8 @@ import { useEffect } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import type { CockpitBed } from '@/lib/ward/cockpit'
+import { logBedViewAction } from '@/lib/audit/log-view'
+import type { CockpitBed, CockpitCapabilities } from '@/lib/ward/cockpit'
 import type { Assignee } from '@/lib/ward/people'
 
 import { AddBarrier } from './add-barrier'
@@ -15,11 +16,14 @@ import { RecommendationCard } from './recommendation-card'
 export function BedDrawer({
   bed,
   people,
+  capabilities,
   onClose,
   onChanged,
 }: {
   bed: CockpitBed | null
   people: Assignee[]
+  /** Hides affordances the user cannot use; server actions re-check. */
+  capabilities: CockpitCapabilities
   onClose: () => void
   onChanged: () => void
 }) {
@@ -28,6 +32,13 @@ export function BedDrawer({
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
+
+  // Access audit (spec v0.12.0 FR5): opening a bed with a patient records who
+  // looked at which patient. Fire-and-forget — never blocks or breaks the UI.
+  const viewedEncounterId = bed?.occupied ? (bed.encounterId ?? null) : null
+  useEffect(() => {
+    if (viewedEncounterId) void logBedViewAction(viewedEncounterId)
+  }, [viewedEncounterId])
 
   if (!bed) return null
 
@@ -110,6 +121,7 @@ export function BedDrawer({
                 edd={bed.edd}
                 source={bed.eddSource}
                 setByName={bed.eddSetByName}
+                canEdit={capabilities.canOverrideEdd}
                 onChanged={onChanged}
               />
             )}
@@ -120,7 +132,7 @@ export function BedDrawer({
                 <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                   Barriers ({bed.barriers.length})
                 </h3>
-                {bed.encounterId && (
+                {bed.encounterId && capabilities.canCreateBarrier && (
                   <AddBarrier
                     encounterId={bed.encounterId}
                     onChanged={onChanged}
@@ -138,6 +150,8 @@ export function BedDrawer({
                       key={b.id}
                       barrier={b}
                       people={people}
+                      canAssignComment={capabilities.canAssignComment}
+                      canClear={capabilities.canClear}
                       onChanged={onChanged}
                     />
                   ))}
@@ -161,6 +175,7 @@ export function BedDrawer({
                     <RecommendationCard
                       key={r.id}
                       rec={r}
+                      canDecide={capabilities.canApprove}
                       onChanged={onChanged}
                     />
                   ))}

@@ -20,12 +20,15 @@ export function EddEditor({
   edd,
   source,
   setByName,
+  canEdit,
   onChanged,
 }: {
   encounterId: string
   edd: string | null
   source: EddSource
   setByName: string | null
+  /** Hides the Set/Change controls; `setEncounterEddAction` re-checks. */
+  canEdit: boolean
   onChanged: () => void
 }) {
   const [editing, setEditing] = useState(false)
@@ -63,17 +66,19 @@ export function EddEditor({
             ) : (
               <Badge variant="outline">From the notes</Badge>
             ))}
-          <Button
-            size="sm"
-            variant="outline"
-            className="ml-auto"
-            onClick={() => {
-              setValue(edd ?? '')
-              setEditing(true)
-            }}
-          >
-            {edd ? 'Change' : 'Set'}
-          </Button>
+          {canEdit && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-auto"
+              onClick={() => {
+                setValue(edd ?? '')
+                setEditing(true)
+              }}
+            >
+              {edd ? 'Change' : 'Set'}
+            </Button>
+          )}
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-2">

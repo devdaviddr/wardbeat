@@ -81,6 +81,16 @@ export const assignRolesSchema = z.object({
   roleIds: z.array(z.string().uuid()).min(1, 'At least one role required'),
 })
 
+/**
+ * Admin: assign/replace ward memberships for a user (spec v0.12.0 FR2).
+ * An empty array is valid — it removes the user from every ward, which is the
+ * "sees no patient data at all" state.
+ */
+export const assignWardsSchema = z.object({
+  userId: z.string().uuid(),
+  wardIds: z.array(z.string().uuid()),
+})
+
 export type LoginInput = z.infer<typeof loginSchema>
 export type RegisterInput = z.infer<typeof registerSchema>
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
@@ -88,3 +98,4 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
 export type CreateUserInput = z.infer<typeof createUserSchema>
 export type UpdateUserInput = z.infer<typeof updateUserSchema>
 export type AssignRolesInput = z.infer<typeof assignRolesSchema>
+export type AssignWardsInput = z.infer<typeof assignWardsSchema>

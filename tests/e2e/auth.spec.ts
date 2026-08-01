@@ -19,10 +19,13 @@ test('register → dashboard → sign out → sign in', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/dashboard/)
   // `/dashboard` has been the ward board since v0.6.0, so the signed-in email
-  // lives only in the app-shell topbar, not in `main`. Assert both: the right
-  // identity, and that the board itself actually rendered.
+  // lives only in the app-shell topbar, not in `main`. Since v0.12.0 a freshly
+  // registered user has no clinical role and no ward membership, so the board
+  // must show the no-ward state and NO patient data — least privilege is the
+  // behaviour under test here, not a gap in it.
   await expect(page.getByRole('banner').getByText(email)).toBeVisible()
-  await expect(page.getByRole('main')).toContainText(/occupied/i)
+  await expect(page.getByRole('main')).toContainText(/not been assigned/i)
+  await expect(page.getByRole('main')).not.toContainText(/occupied/i)
 
   // Sign out
   await page.getByRole('button', { name: 'Sign out' }).click()

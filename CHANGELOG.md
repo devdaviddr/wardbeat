@@ -13,6 +13,98 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-01
+
+### Added
+
+- **Clinical roles and ward membership.** The role vocabulary grows from
+  `admin`/`member`/`viewer` to include `bed_manager`, `charge_nurse`,
+  `clinician` and `allied_health`, and users are assigned to wards
+  (`user_wards`). A capability matrix (marked **provisional** — it is a first
+  cut, not clinical governance) decides who may clear a barrier, approve a
+  recommendation, run extraction, and so on. Admins assign roles and ward
+  membership from Settings → Administration. See
+  `specs/releases/v0.12.0-ward-rbac-audit/`.
+- **An access audit that covers reads.** Viewing the board, opening a bed
+  drawer (who looked at which patient — the first thing an
+  information-governance review asks), asking the copilot (question text
+  included) and running extraction each write an append-only `access_audit`
+  record. Admins get a filterable view at Settings → Administration → audit.
+  No application code path can edit or delete audit rows.
+- **Rate limits on the AI-backed actions.** Copilot questions, briefing
+  generation and recommendation generation are now per-user rate limited
+  against the shared ~30 RPM model budget; previously any authenticated user
+  could drive unbounded model calls.
+- **Retention for raw model output.** `ai_extractions.raw_json` (which quotes
+  note text) is purged beyond `AI_RAW_RETENTION_DAYS` (default 30), invoked
+  opportunistically on extraction — there is no job runner, and the docs say
+  so rather than pretending to a scheduler.
+
+### Fixed
+
+- **Any authenticated user could read every patient and act on their care.**
+  `requireRole` was used eight times in the admin surfaces and zero times in
+  the ward domain; the ward routes required a session and nothing more. Every
+  ward server action — extraction, generation, approve/dismiss, the entire
+  barrier lifecycle, EDD override, copilot, briefing — is now authorized
+  through one fail-closed helper (`requireWardAccess`), checked **before**
+  any write and before rate-limit budget is consumed. A freshly registered
+  user now sees "You have not been assigned to a ward yet", not a ward of
+  patients — asserted in the e2e suite.
+- **A malformed copilot intent no longer ships the whole ward.** When the
+  model's structured filter failed validation, the fallback was "list every
+  bed" — sending all patient names, MFFD status and barriers to the AI
+  service. The fallback is now a refusal.
+- **The AI plane no longer runs open when its token is unset.** An empty
+  `AI_SERVICE_TOKEN` used to disable auth entirely; it now refuses requests
+  (503 naming the missing config), with an explicit
+  `AI_ALLOW_INSECURE_NO_TOKEN=true` opt-out for tokenless local dev that
+  warns loudly at startup. This also exposed that the "config never leaks
+  secrets" test had been asserting against a 401 body — vacuous; it now
+  authenticates and checks the real serialization.
+
+### Changed
+
+- The upgrade migration is **privilege-granting** and says so: existing
+  non-admin users receive `bed_manager` (the capability they already had in
+  practice) and membership of the existing ward, with counts printed at
+  migration time. New users registered after this release start with no
+  clinical role and no ward — least privilege by default.
+- Ward UI affordances (clear, approve, generate, extraction, EDD, add-barrier)
+  are hidden for roles that cannot use them; the server actions remain the
+  enforcement, hiding is convenience.
+
+### Added
+
+- **A queryable access audit.** Viewing the board records one ward-level
+  audit event per user (repeats within 60 seconds coalesce to one row), and
+  opening a bed with a patient records who looked at which patient. Records
+  are **append-only** — no application path can edit or delete them — and a
+  failed audit write is logged but never blocks or fails a clinical read.
+  Admins can browse them at **Settings → Administration → Access audit**
+  (`/settings/audit`), filtered by actor, subject id and date range, 50 per
+  page.
+
+### Security
+
+- **The AI-backed actions are rate limited per user.** The copilot, the flow
+  briefing (action and `/briefing` page) and recommendation generation now
+  draw from per-user fixed windows sized against the shared ~30 RPM NIM
+  budget (`AI_LIMITS` in `src/lib/rate-limit.ts`); past the limit the action
+  returns "Too many requests — try again in a moment" instead of spending
+  model calls.
+- **The AI service fails closed without its token.** An empty
+  `AI_SERVICE_TOKEN` used to disable auth on the whole AI plane; it now
+  refuses every request with 503 naming the missing config. Tokenless local
+  development must opt in explicitly with `AI_ALLOW_INSECURE_NO_TOKEN=true`,
+  which logs a loud startup warning.
+- **Raw model output is no longer retained forever.** `ai_extractions.raw_json`
+  (which includes quoted note text) older than `AI_RAW_RETENTION_DAYS`
+  (default 30) is nulled; the structured extraction columns are kept. The
+  purge is **opportunistic** — it piggybacks on extraction runs, throttled to
+  once an hour per process; there is no scheduler, so a ward that never runs
+  extraction again keeps its last raw payloads until the next run.
+
 ## [0.11.0] - 2026-08-01
 
 > **v0.8.0, v0.9.0 and v0.10.0 were merged to `main` without being tagged.**

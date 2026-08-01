@@ -207,6 +207,8 @@ def test_every_model_route_returns_the_envelope(path, body, monkeypatch):
 
     monkeypatch.setenv("NIM_MOCK", "true")
     monkeypatch.delenv("AI_SERVICE_TOKEN", raising=False)
+    # Tokenless now fails closed (spec v0.12.0); tests opt in explicitly.
+    monkeypatch.setenv("AI_ALLOW_INSECURE_NO_TOKEN", "true")
     get_settings.cache_clear()
 
     # As a context manager so the lifespan runs — /extract needs app.state.limiter.
@@ -231,6 +233,7 @@ def test_deterministic_forecast_routes_carry_no_provenance(path, monkeypatch):
     from app.settings import get_settings
 
     monkeypatch.delenv("AI_SERVICE_TOKEN", raising=False)
+    monkeypatch.setenv("AI_ALLOW_INSECURE_NO_TOKEN", "true")
     get_settings.cache_clear()
 
     res = TestClient(app).post(path, json={})

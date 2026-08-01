@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 
 import { db } from '@/db'
 import { encounters } from '@/db/schema'
-import { getCurrentSession } from '@/lib/auth/session'
+import { requireWardAccess } from '@/lib/auth/ward-access'
 import { logger } from '@/lib/logger'
 
 /**
@@ -51,9 +51,12 @@ export async function setEncounterEddAction(
   encounterId: string,
   edd: string | null,
 ): Promise<EddResult> {
-  const session = await getCurrentSession()
-  const actor = session?.user?.id
-  if (!actor) return { ok: false, error: 'Unauthorized' }
+  // Role + ward membership, resolved from the target encounter, checked
+  // before validation so a denied caller cannot probe the input rules
+  // (spec v0.12.0 M3).
+  const access = await requireWardAccess('override_edd', { encounterId })
+  if (!access.ok) return access
+  const actor = access.userId
 
   if (edd !== null) {
     if (!ISO_DATE.test(edd)) {

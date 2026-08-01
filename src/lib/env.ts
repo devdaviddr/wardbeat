@@ -143,6 +143,16 @@ const envSchema = z
       .string()
       .optional()
       .transform((v) => v === 'true'),
+    // Days to retain `ai_extractions.raw_json` (raw model output, including
+    // quoted note text). Older rows have only the raw payload nulled — the
+    // structured extraction columns are kept. Purged opportunistically on
+    // extraction runs, not on a schedule (spec v0.12.0 M5).
+    AI_RAW_RETENTION_DAYS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .default(30),
 
     // --- Build identity (baked into the image at CI build time) ------------
     // ci.yml passes these as Docker build-args (APP_VERSION=git ref name,
