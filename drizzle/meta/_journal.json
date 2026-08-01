@@ -85,6 +85,20 @@
       "when": 1785124199501,
       "tag": "0011_nifty_taskmaster",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785566307421,
+      "tag": "0012_colorful_scalphunter",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785568147253,
+      "tag": "0013_dry_thor_girl",
+      "breakpoints": true
     }
   ]
 }

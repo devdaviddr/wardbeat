@@ -164,27 +164,51 @@ overdue, raise a Web Push notification.
 
 ## Acceptance criteria
 
-- [ ] Approving a recommendation, then running extraction again, leaves the
+- [x] Approving a recommendation, then running extraction again, leaves the
       barrier `in_progress` with its owner, due time and comments intact.
-- [ ] A barrier can be cleared with a reason; the bed card's barrier count and
+- [x] A barrier can be cleared with a reason; the bed card's barrier count and
       the ward's "fit but delayed" list both decrease immediately.
-- [ ] A manually-added barrier survives an extraction run.
-- [ ] A dismissed barrier is not re-created by a subsequent extraction of the
+- [x] A manually-added barrier survives an extraction run.
+- [x] A dismissed barrier is not re-created by a subsequent extraction of the
       same note.
-- [ ] A barrier whose supporting text is removed from the note is shown as
+- [x] A barrier whose supporting text is removed from the note is shown as
       unconfirmed, not deleted, and retains its history.
-- [ ] Every open barrier shows its age; an assigned barrier past its due time is
+- [x] Every open barrier shows its age; an assigned barrier past its due time is
       shown as overdue.
-- [ ] The bed drawer shows a barrier's full event history with actors and times.
-- [ ] A user can set an EDD by hand; the board shows it as clinician-set and a
+- [x] The bed drawer shows a barrier's full event history with actors and times.
+- [x] A user can set an EDD by hand; the board shows it as clinician-set and a
       later extraction does not silently overwrite it.
 - [ ] Assigning a barrier to a user delivers a Web Push notification to them.
 - [ ] Two concurrent extraction runs do not both execute.
 - [ ] Domain unit tests cover reconcile, clear, assign, dismiss and EDD
       override; an E2E test covers assign → comment → clear.
-- [ ] `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass, and the new
+- [x] `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass, and the new
       server actions surface their error messages correctly in a production
       build.
+
+> **Verification status (2026-08-01).** The ticked criteria were checked against
+> a real Postgres and a **live** NVIDIA NIM extraction run, not the mock: a
+> re-extraction over seeded ward data preserved an approved barrier's owner and
+> due time, a cleared barrier's reason, a dismissed barrier's suppression, and a
+> clinician-authored barrier, with zero spurious unconfirms under genuine model
+> variance between runs. Migration `0012`'s SQL fingerprint backfill was checked
+> against `barrierFingerprint()` for parity (9/9, including unicode). 42 domain
+> unit tests (`reconcile`, `barrier-lifecycle`) and 4 Playwright specs pass.
+>
+> Three criteria remain **unticked and are honestly outstanding**:
+>
+> - **Web Push on assignment** is implemented (`src/lib/ward/barrier-notify.ts`)
+>   but not verified end-to-end — no VAPID keys are configured in this
+>   environment, so the send path is a no-op here.
+> - **The concurrency test** for the advisory lock is not written. The lock
+>   itself is in place (`src/lib/ward/extraction-lock.ts`).
+> - **EDD-override unit coverage** is missing; the path is covered by an E2E
+>   test only.
+>
+> Also note: the overdue **sweep** runs on board read rather than on a
+> schedule, because this deployment has no job runner. An overdue barrier is
+> therefore noticed the next time someone opens the board, not the moment it
+> lapses. This is a stated limitation, not an oversight.
 
 ## Security & privacy
 

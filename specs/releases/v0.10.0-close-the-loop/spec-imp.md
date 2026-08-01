@@ -1,7 +1,7 @@
 ---
 release: v0.10.0
 title: Close the loop — barrier lifecycle & human authorship — implementation plan
-status: Draft # Draft | In Progress | Ready | Shipped
+status: In Progress # Draft | In Progress | Ready | Shipped
 spec: ./spec.md
 branch: feature/close-the-loop
 created: 2026-08-01

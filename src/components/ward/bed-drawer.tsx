@@ -5,23 +5,21 @@ import { useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { CockpitBed } from '@/lib/ward/cockpit'
+import type { Assignee } from '@/lib/ward/people'
 
+import { AddBarrier } from './add-barrier'
+import { BarrierRecord } from './barrier-record'
+import { EddEditor } from './edd-editor'
 import { RecommendationCard } from './recommendation-card'
-
-const BARRIER_LABELS: Record<string, string> = {
-  tto: 'TTO / meds',
-  transport: 'Transport',
-  social_care: 'Social care',
-  review: 'Review',
-  other: 'Other',
-}
 
 export function BedDrawer({
   bed,
+  people,
   onClose,
   onChanged,
 }: {
   bed: CockpitBed | null
+  people: Assignee[]
   onClose: () => void
   onChanged: () => void
 }) {
@@ -105,11 +103,30 @@ export function BedDrawer({
               </div>
             </section>
 
+            {/* Discharge date — clinician-overridable */}
+            {bed.encounterId && (
+              <EddEditor
+                encounterId={bed.encounterId}
+                edd={bed.edd}
+                source={bed.eddSource}
+                setByName={bed.eddSetByName}
+                onChanged={onChanged}
+              />
+            )}
+
             {/* Barriers */}
             <section>
-              <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-                Barriers ({bed.barriers.length})
-              </h3>
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                  Barriers ({bed.barriers.length})
+                </h3>
+                {bed.encounterId && (
+                  <AddBarrier
+                    encounterId={bed.encounterId}
+                    onChanged={onChanged}
+                  />
+                )}
+              </div>
               {bed.barriers.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
                   {bed.extracted ? 'No open barriers.' : 'Not yet analysed.'}
@@ -117,21 +134,12 @@ export function BedDrawer({
               ) : (
                 <ul className="space-y-2">
                   {bed.barriers.map((b) => (
-                    <li key={b.id} className="rounded border p-2 text-sm">
-                      <div className="mb-1 flex items-center gap-2">
-                        <Badge variant="outline" className="border-amber-400">
-                          {BARRIER_LABELS[b.type] ?? b.type}
-                        </Badge>
-                      </div>
-                      <details className="text-muted-foreground text-xs">
-                        <summary className="cursor-pointer">
-                          &ldquo;{b.quote}&rdquo;
-                        </summary>
-                        <p className="mt-1 leading-relaxed">
-                          From the {b.authorRole} note: {b.noteText}
-                        </p>
-                      </details>
-                    </li>
+                    <BarrierRecord
+                      key={b.id}
+                      barrier={b}
+                      people={people}
+                      onChanged={onChanged}
+                    />
                   ))}
                 </ul>
               )}

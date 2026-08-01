@@ -1,0 +1,1 @@
+ALTER TABLE "barriers" ADD COLUMN "overdue_notified_at" timestamp;

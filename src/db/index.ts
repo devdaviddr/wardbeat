@@ -50,3 +50,10 @@ export const db = drizzle(client, {
 
 export { schema }
 export type Database = typeof db
+
+/**
+ * The raw postgres-js client. Needed only where a dedicated connection is
+ * required — currently the extraction advisory lock, which must hold a
+ * session-scoped lock across many separate queries. Prefer `db` everywhere else.
+ */
+export { client as sqlClient }

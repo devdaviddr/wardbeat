@@ -1,18 +1,32 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 
-import { aiExtractions, barriers, encounters, notes } from './schema'
+import { reconcileBarriers } from '@/lib/ward/reconcile'
+
+import {
+  aiExtractions,
+  barrierEvents,
+  barriers,
+  barrierSuppressions,
+  encounters,
+  notes,
+} from './schema'
 
 /**
  * Shared persistence for one note's extraction result — used by both the ward
  * board Server Action (`runWardExtractionAction`) and the headless CLI
  * (`run-extraction.ts`) so their write paths can't drift.
  *
- * The whole note is written in a single transaction: we clear the note's prior
- * barriers/extraction and re-insert atomically, so an idempotent re-run can
- * never leave a note stranded with zero barriers if a later step fails. Callers
- * process a given encounter's notes oldest-first, so the latest note's MFFD/EDD
- * wins on the encounter.
+ * Since v0.10.0 this **reconciles** rather than delete-and-reinsert. The old
+ * path dropped every barrier for the note and re-inserted at `pending`, which
+ * meant one person re-running extraction wiped the whole ward's triage — owners,
+ * due times, progress notes and approvals all gone. Now AI-derived fields are
+ * refreshed in place, human state survives, and a barrier the notes no longer
+ * support is flagged rather than removed. The decision rules live in
+ * `@/lib/ward/reconcile`; this module only applies them.
+ *
+ * The whole note is still written in a single transaction, and callers process
+ * a given encounter's notes oldest-first so the latest note's MFFD/EDD wins.
  */
 
 /**
@@ -39,7 +53,18 @@ export interface NoteRef {
   encounterId: string
 }
 
-// Loose db type: we only use delete/insert/update/transaction, none of which
+export interface PersistResult {
+  /** Barriers the extraction still supports (inserted + confirmed). */
+  barriers: number
+  grounded: boolean
+  inserted: number
+  updated: number
+  unconfirmed: number
+  /** Incoming barriers dropped because a human had dismissed them. */
+  suppressed: number
+}
+
+// Loose db type: we only use select/insert/update/transaction, none of which
 // depend on the schema generic (drizzle infers columns from the table object,
 // not from this parameter), so any postgres-js drizzle instance fits.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,10 +74,11 @@ export async function persistExtraction(
   db: Db,
   note: NoteRef,
   result: PersistableExtraction,
-): Promise<{ barriers: number; grounded: boolean }> {
-  await db.transaction(async (tx) => {
-    // Idempotent re-run: drop this note's prior AI output first.
-    await tx.delete(barriers).where(eq(barriers.sourceNoteId, note.id))
+  now: Date = new Date(),
+): Promise<PersistResult> {
+  return db.transaction(async (tx) => {
+    // Prior AI output for this note is superseded; the barriers it produced are
+    // reconciled below rather than dropped with it.
     await tx.delete(aiExtractions).where(eq(aiExtractions.noteId, note.id))
 
     const [extraction] = await tx
@@ -68,37 +94,94 @@ export async function persistExtraction(
       })
       .returning()
 
-    if (result.barriers.length > 0) {
-      await tx.insert(barriers).values(
-        result.barriers.map((b) => ({
-          encounterId: note.encounterId,
-          sourceNoteId: note.id,
-          extractionId: extraction?.id,
-          type: b.type,
-          status: b.status ?? 'pending',
-          sourceQuote: b.source.quote,
-          sourceStart: b.source.start ?? null,
-          sourceEnd: b.source.end ?? null,
-          confidence: b.confidence,
-        })),
-      )
+    const existing = await tx
+      .select({
+        id: barriers.id,
+        type: barriers.type,
+        status: barriers.status,
+        origin: barriers.origin,
+        fingerprint: barriers.fingerprint,
+        sourceStart: barriers.sourceStart,
+        sourceEnd: barriers.sourceEnd,
+        unconfirmedAt: barriers.unconfirmedAt,
+      })
+      .from(barriers)
+      .where(eq(barriers.sourceNoteId, note.id))
+
+    const suppressionRows = await tx
+      .select({ fingerprint: barrierSuppressions.fingerprint })
+      .from(barrierSuppressions)
+      .where(eq(barrierSuppressions.sourceNoteId, note.id))
+
+    const plan = reconcileBarriers({
+      incoming: result.barriers,
+      existing,
+      suppressed: new Set(suppressionRows.map((r) => r.fingerprint)),
+      encounterId: note.encounterId,
+      sourceNoteId: note.id,
+      extractionId: extraction?.id ?? null,
+      now,
+      newId: () => crypto.randomUUID(),
+    })
+
+    if (plan.insert.length > 0) {
+      await tx.insert(barriers).values(plan.insert)
     }
 
-    // Denormalise current discharge status onto the encounter.
+    for (const { id, patch } of plan.update) {
+      await tx.update(barriers).set(patch).where(eq(barriers.id, id))
+    }
+
+    for (const { id, at } of plan.unconfirm) {
+      await tx
+        .update(barriers)
+        .set({ unconfirmedAt: at })
+        .where(eq(barriers.id, id))
+    }
+
+    if (plan.events.length > 0) {
+      await tx.insert(barrierEvents).values(plan.events)
+    }
+
+    // Denormalise current discharge status onto the encounter. A clinician-set
+    // EDD outranks the model's: extraction may fill an empty date but must
+    // never silently overwrite one a person entered (spec v0.10.0 FR9).
     await tx
       .update(encounters)
       .set({
         mffdFlag: result.mffd_flag,
         edd: result.edd ?? null,
-        lastExtractedAt: new Date(),
+        lastExtractedAt: now,
       })
-      .where(eq(encounters.id, note.encounterId))
+      .where(
+        and(
+          eq(encounters.id, note.encounterId),
+          eq(encounters.eddSource, 'ai'),
+        ),
+      )
+
+    await tx
+      .update(encounters)
+      .set({ mffdFlag: result.mffd_flag, lastExtractedAt: now })
+      .where(
+        and(
+          eq(encounters.id, note.encounterId),
+          eq(encounters.eddSource, 'human'),
+        ),
+      )
 
     await tx
       .update(notes)
-      .set({ processedAt: new Date() })
+      .set({ processedAt: now })
       .where(eq(notes.id, note.id))
-  })
 
-  return { barriers: result.barriers.length, grounded: result.grounded }
+    return {
+      barriers: plan.insert.length + plan.update.length,
+      grounded: result.grounded,
+      inserted: plan.insert.length,
+      updated: plan.update.length,
+      unconfirmed: plan.unconfirm.length,
+      suppressed: plan.suppressed.length,
+    }
+  })
 }

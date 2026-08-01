@@ -256,8 +256,41 @@ export const BARRIER_TYPES = [
 ] as const
 export type BarrierType = (typeof BARRIER_TYPES)[number]
 
-export const BARRIER_STATUSES = ['pending', 'in_progress', 'cleared'] as const
+// `cleared` = the work is done. `dismissed` = the AI got this wrong. They are
+// different clinically and must not be collapsed (spec v0.10.0).
+export const BARRIER_STATUSES = [
+  'pending',
+  'in_progress',
+  'cleared',
+  'dismissed',
+] as const
 export type BarrierStatus = (typeof BARRIER_STATUSES)[number]
+
+// Who authored a barrier. Extraction only ever reconciles `ai` rows, so a
+// clinician-added barrier can never be deleted by a re-run (spec v0.10.0 FR2).
+export const BARRIER_ORIGINS = ['ai', 'human'] as const
+export type BarrierOrigin = (typeof BARRIER_ORIGINS)[number]
+
+// Append-only lifecycle history. `confirmed`/`unconfirmed` are written by the
+// extraction reconcile; the rest by human action.
+export const BARRIER_EVENT_KINDS = [
+  'created',
+  'confirmed',
+  'unconfirmed',
+  'assigned',
+  'unassigned',
+  'due_set',
+  'commented',
+  'cleared',
+  'dismissed',
+  'reopened',
+] as const
+export type BarrierEventKind = (typeof BARRIER_EVENT_KINDS)[number]
+
+// Whether the encounter's current EDD came from extraction or a named
+// clinician. Extraction must not silently overwrite a human-set date.
+export const EDD_SOURCES = ['ai', 'human'] as const
+export type EddSource = (typeof EDD_SOURCES)[number]
 
 export const BED_STATUSES = ['free', 'occupied', 'cleaning'] as const
 export type BedStatus = (typeof BED_STATUSES)[number]
@@ -313,6 +346,13 @@ export const encounters = pgTable(
     // the ward board reads without a per-encounter aggregate join.
     mffdFlag: boolean('mffd_flag').notNull().default(false),
     edd: text('edd'), // ISO date string
+    // EDD authorship (spec v0.10.0 FR9). A human-set EDD is never silently
+    // overwritten by a later extraction.
+    eddSource: text('edd_source').$type<EddSource>().notNull().default('ai'),
+    eddSetByUserId: text('edd_set_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    eddSetAt: timestamp('edd_set_at', { mode: 'date' }),
     lastExtractedAt: timestamp('last_extracted_at', { mode: 'date' }),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   },
@@ -371,7 +411,9 @@ export const barriers = pgTable(
     encounterId: text('encounter_id')
       .notNull()
       .references(() => encounters.id, { onDelete: 'cascade' }),
-    // Source provenance — every barrier must cite the note + span it came from.
+    // Source provenance — every AI barrier must cite the note + span it came
+    // from. A human-authored barrier cites the note it was raised against but
+    // carries a `description` instead of a quote.
     sourceNoteId: text('source_note_id')
       .notNull()
       .references(() => notes.id, { onDelete: 'cascade' }),
@@ -384,9 +426,107 @@ export const barriers = pgTable(
     sourceStart: integer('source_start'),
     sourceEnd: integer('source_end'),
     confidence: integer('confidence'), // 0-100
+
+    /* -- lifecycle (spec v0.10.0) ------------------------------------------ */
+    origin: text('origin').$type<BarrierOrigin>().notNull().default('ai'),
+    createdByUserId: text('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    // Free text for human-authored barriers; AI barriers use `sourceQuote`.
+    description: text('description'),
+    ownerUserId: text('owner_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    dueAt: timestamp('due_at', { mode: 'date' }),
+    clearedAt: timestamp('cleared_at', { mode: 'date' }),
+    clearedReason: text('cleared_reason'),
+    clearedByUserId: text('cleared_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    // Age anchor. Unlike `createdAt` before v0.10.0, this survives a re-run
+    // because reconcile updates rows in place instead of deleting them.
+    firstSeenAt: timestamp('first_seen_at', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    // Last extraction run whose output still supported this barrier.
+    lastConfirmedAt: timestamp('last_confirmed_at', { mode: 'date' }),
+    // Set when the notes stop supporting it; cleared if it reappears. Never
+    // deleted — "the note no longer says this" is not "a human said it's wrong".
+    unconfirmedAt: timestamp('unconfirmed_at', { mode: 'date' }),
+    // Stable reconcile key: type + normalised source quote. See
+    // `src/lib/ward/reconcile.ts`.
+    fingerprint: text('fingerprint').notNull().default(''),
+    // Set once the overdue sweep has alerted the owner, so re-reading the board
+    // doesn't re-notify. Cleared whenever the due time moves.
+    overdueNotifiedAt: timestamp('overdue_notified_at', { mode: 'date' }),
+
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   },
-  (table) => [index('barriers_encounter_idx').on(table.encounterId)],
+  (table) => [
+    index('barriers_encounter_idx').on(table.encounterId),
+    index('barriers_owner_idx').on(table.ownerUserId),
+    index('barriers_status_idx').on(table.status),
+    index('barriers_fingerprint_idx').on(table.sourceNoteId, table.fingerprint),
+  ],
+)
+
+/**
+ * Append-only lifecycle history for a barrier — the progress thread in the bed
+ * drawer and the audit of who did what. Never updated or deleted.
+ */
+export const barrierEvents = pgTable(
+  'barrier_events',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    barrierId: text('barrier_id')
+      .notNull()
+      .references(() => barriers.id, { onDelete: 'cascade' }),
+    kind: text('kind').$type<BarrierEventKind>().notNull(),
+    // Null actor = the system (an extraction run), not a person.
+    actorUserId: text('actor_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    // Comment text, or the reason given when clearing/dismissing/reopening.
+    body: text('body'),
+    // `{ from, to }` for status transitions, `{ ownerUserId }` for assignment.
+    meta: jsonb('meta'),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [index('barrier_events_barrier_idx').on(table.barrierId)],
+)
+
+/**
+ * Durable dismissal (spec v0.10.0 FR3). Dismissing a barrier records its
+ * fingerprint here so a later extraction of the same note does not re-create
+ * it — otherwise "the AI got this wrong" would be undone by the next run.
+ */
+export const barrierSuppressions = pgTable(
+  'barrier_suppressions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    encounterId: text('encounter_id')
+      .notNull()
+      .references(() => encounters.id, { onDelete: 'cascade' }),
+    sourceNoteId: text('source_note_id')
+      .notNull()
+      .references(() => notes.id, { onDelete: 'cascade' }),
+    fingerprint: text('fingerprint').notNull(),
+    dismissedByUserId: text('dismissed_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    reason: text('reason'),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('barrier_suppressions_note_fp_uniq').on(
+      table.sourceNoteId,
+      table.fingerprint,
+    ),
+  ],
 )
 
 export const wardsRelations = relations(wards, ({ many }) => ({
@@ -408,6 +548,10 @@ export const encountersRelations = relations(encounters, ({ one, many }) => ({
     references: [patients.id],
   }),
   bed: one(beds, { fields: [encounters.bedId], references: [beds.id] }),
+  eddSetBy: one(users, {
+    fields: [encounters.eddSetByUserId],
+    references: [users.id],
+  }),
   notes: many(notes),
   barriers: many(barriers),
 }))
@@ -424,7 +568,7 @@ export const aiExtractionsRelations = relations(aiExtractions, ({ one }) => ({
   note: one(notes, { fields: [aiExtractions.noteId], references: [notes.id] }),
 }))
 
-export const barriersRelations = relations(barriers, ({ one }) => ({
+export const barriersRelations = relations(barriers, ({ one, many }) => ({
   encounter: one(encounters, {
     fields: [barriers.encounterId],
     references: [encounters.id],
@@ -432,6 +576,22 @@ export const barriersRelations = relations(barriers, ({ one }) => ({
   sourceNote: one(notes, {
     fields: [barriers.sourceNoteId],
     references: [notes.id],
+  }),
+  owner: one(users, {
+    fields: [barriers.ownerUserId],
+    references: [users.id],
+  }),
+  events: many(barrierEvents),
+}))
+
+export const barrierEventsRelations = relations(barrierEvents, ({ one }) => ({
+  barrier: one(barriers, {
+    fields: [barrierEvents.barrierId],
+    references: [barriers.id],
+  }),
+  actor: one(users, {
+    fields: [barrierEvents.actorUserId],
+    references: [users.id],
   }),
 }))
 
@@ -444,6 +604,10 @@ export type NewNote = typeof notes.$inferInsert
 export type AiExtraction = typeof aiExtractions.$inferSelect
 export type Barrier = typeof barriers.$inferSelect
 export type NewBarrier = typeof barriers.$inferInsert
+export type BarrierEvent = typeof barrierEvents.$inferSelect
+export type NewBarrierEvent = typeof barrierEvents.$inferInsert
+export type BarrierSuppression = typeof barrierSuppressions.$inferSelect
+export type NewBarrierSuppression = typeof barrierSuppressions.$inferInsert
 
 /* -------------------------------------------------------------------------- */
 /* WardBeat — policy knowledge base for the flow copilot (spec v0.3.0)        */
