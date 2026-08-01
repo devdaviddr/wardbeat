@@ -1,7 +1,7 @@
 ---
 release: v0.8.0 # semver tag this release will ship as
 title: AI configuration visibility in Settings
-status: Proposed # Proposed | Accepted | Shipped | Superseded | Rejected
+status: Accepted # Proposed | Accepted | Shipped | Superseded | Rejected
 phase: Platform — operability slice
 created: 2026-07-28
 updated: 2026-07-28
@@ -96,17 +96,25 @@ Non-admins see the reorganised sections but not the AI configuration card.
 
 ## Acceptance criteria
 
-- [ ] `GET /config` on the AI plane returns mode, models, endpoint host, rpm,
+- [x] `GET /config` on the AI plane returns mode, models, endpoint host, rpm,
       timeout, extract-max-tokens, embed dim, and `api_key_configured` /
       `service_token_required` booleans — and never a secret value.
-- [ ] With `NIM_MOCK=true` (or no key) the card shows **Mock**; with a real key
+- [x] With `NIM_MOCK=true` (or no key) the card shows **Mock**; with a real key
       and `NIM_MOCK=false` it shows **Live** and the configured model ids.
-- [ ] Stopping the AI plane leaves Settings rendering, with the card showing
+- [x] Stopping the AI plane leaves Settings rendering, with the card showing
       **Unreachable**.
-- [ ] The AI configuration card is visible to admins only.
-- [ ] Settings renders under section headings; existing cards keep working.
-- [ ] `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass; AI-plane
+- [x] The AI configuration card is visible to admins only.
+- [x] Settings renders under section headings; existing cards keep working.
+- [x] `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass; AI-plane
       unit tests cover the `/config` shape and secret redaction.
+
+> **Post-release verification (2026-08-01).** All criteria met; merged to `main`
+> and awaiting a release tag. The card reports the **configured** mode, which is
+> not the same as the mode a given response actually used — a live deployment
+> falling back to the mock still reads **Live** here. Per-response provenance is
+> owned by [v0.11.0 FR4](../v0.11.0-trustworthy-numbers/spec.md), which also
+> extends this card with the embedding model the stored policy vectors were built
+> with.
 
 ## Security & privacy
 
