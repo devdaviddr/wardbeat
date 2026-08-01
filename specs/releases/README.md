@@ -84,16 +84,18 @@ Fill `spec.md` first, get it to `Accepted`, then plan in `spec-imp.md`.
 | **v0.5.0**  | Forecasting & narration                         | [spec](v0.5.0-forecasting-narration/spec.md) — Shipped           | [plan](v0.5.0-forecasting-narration/spec-imp.md) — Shipped           |
 | **v0.6.0**  | Flow cockpit — board-centric UX                 | [spec](v0.6.0-flow-cockpit/spec.md) — Shipped                    | [plan](v0.6.0-flow-cockpit/spec-imp.md) — Shipped                    |
 | **v0.7.0**  | Action queue onto the board                     | _no spec folder — see `CHANGELOG.md`_                            | —                                                                    |
-| **v0.8.0**  | AI configuration in Settings                    | [spec](v0.8.0-ai-configuration-settings/spec.md) — Accepted      | [plan](v0.8.0-ai-configuration-settings/spec-imp.md) — Ready         |
-| **v0.9.0**  | Open the referenced policy source               | [spec](v0.9.0-open-referenced-sources/spec.md) — Accepted        | _none — small change_                                                |
-| **v0.10.0** | Close the loop — barrier lifecycle              | [spec](v0.10.0-close-the-loop/spec.md) — Accepted                | [plan](v0.10.0-close-the-loop/spec-imp.md) — Draft                   |
-| **v0.11.0** | Trustworthy numbers                             | [spec](v0.11.0-trustworthy-numbers/spec.md) — Proposed           | [plan](v0.11.0-trustworthy-numbers/spec-imp.md) — Draft              |
+| **v0.8.0**  | AI configuration in Settings                    | [spec](v0.8.0-ai-configuration-settings/spec.md) — Shipped       | [plan](v0.8.0-ai-configuration-settings/spec-imp.md) — Shipped       |
+| **v0.9.0**  | Open the referenced policy source               | [spec](v0.9.0-open-referenced-sources/spec.md) — Shipped         | _none — small change_                                                |
+| **v0.10.0** | Close the loop — barrier lifecycle              | [spec](v0.10.0-close-the-loop/spec.md) — Shipped                 | [plan](v0.10.0-close-the-loop/spec-imp.md) — Shipped                 |
+| **v0.11.0** | Trustworthy numbers                             | [spec](v0.11.0-trustworthy-numbers/spec.md) — Shipped            | [plan](v0.11.0-trustworthy-numbers/spec-imp.md) — Shipped            |
 | **v0.12.0** | Ward authorization & access audit               | [spec](v0.12.0-ward-rbac-audit/spec.md) — Proposed               | [plan](v0.12.0-ward-rbac-audit/spec-imp.md) — Draft                  |
 | **v0.13.0** | Multi-ward — scoped reads & site view           | [spec](v0.13.0-multi-ward/spec.md) — Proposed                    | [plan](v0.13.0-multi-ward/spec-imp.md) — Draft                       |
 
-**v0.8.0 and v0.9.0 are merged to `main` but not yet tagged** — hence `Accepted`/`Ready`
-rather than `Shipped`. Under this project's lifecycle a release is a `vX.Y.Z` tag, so the
-status flips on tagging, not on merge.
+**v0.8.0 through v0.11.0 all ship in the single `v0.11.0` tag.** They were merged to
+`main` without being tagged; back-tagging their original commits would have published
+releases whose `package.json` still said `0.7.0` and triggered deploys of superseded
+code. Each keeps its own spec folder and `CHANGELOG.md` section, because they are
+genuinely separable slices — only the tag is shared.
 
 ### Planned arc (v0.10.0 → v0.13.0)
 

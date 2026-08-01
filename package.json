@@ -1,6 +1,6 @@
 {
   "name": "wardbeat",
-  "version": "0.7.0",
+  "version": "0.11.0",
   "private": true,
   "license": "MIT",
   "description": "A full-stack, AI-enabled application that helps keep a hospital ward flowing and beds utilised.",

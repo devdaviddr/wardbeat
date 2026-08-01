@@ -9,6 +9,22 @@ harnesses run against the live NVIDIA NIM models and **exit non-zero** when a
 gate is missed, so they double as a release gate. This is the concrete form of
 the project's thesis — _we don't trust the model, we measure it._
 
+> **Read the numbers with their limits in view.** The datasets are small — 12
+> labelled notes, 6 policy questions, 6 ward questions, 6 action cases, 5 policy
+> documents. At n=6 a 0.90 gate has no resolution between 0.83 and 1.0, so a
+> reported "100%" is noise-dominated and means "nothing failed", not "this is
+> accurate". Each harness prints its own `n` for exactly this reason. Growing
+> the sets with de-identified real notes is the single biggest improvement
+> available here, and is tracked in the [Roadmap](roadmap.md).
+>
+> **Until v0.11.0 the gates could not fail.** Every harness passed with
+> `NIM_MOCK=true`, so an expired API key would have left all four green — a
+> passing run did not evidence that a model was involved at all. Each harness
+> now records the `provenance` of every response and **refuses to print a
+> score** unless it came from a live model. Use `--allow-mock` to score the
+> offline path deliberately; the harness then says plainly that the numbers do
+> not evidence model quality. Nothing below is meaningful without that guard.
+
 ## The three layers of testing
 
 | Layer                        | Tooling                                 | What it proves                                                            |
@@ -23,12 +39,20 @@ Each is a standalone script under `src/eval/` (run with `pnpm eval:<name>`), sco
 the **live** AI plane against planted ground truth, prints the numbers, and exits
 non-zero if any gate is missed.
 
-| Harness    | Command                | Dataset                                        | Metric(s)                                                                       | Gate                         | Verified live          |
-| ---------- | ---------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------- | ---------------------- |
-| Extraction | `pnpm eval:extraction` | Labelled synthetic notes (`notes.eval_labels`) | Barrier-type **precision / recall / F1**, plus MFFD (fit-flag) accuracy         | F1 ≥ 0.85                    | **88%** F1             |
-| Copilot    | `pnpm eval:copilot`    | Labelled policy questions + ward questions     | Retrieval **hit-rate**, answer **groundedness**, ward **query-intent** accuracy | all ≥ 0.90                   | **100% / 100% / 100%** |
-| Actions    | `pnpm eval:actions`    | Labelled barrier → action cases                | Action **appropriateness**, rationale **policy-grounding**                      | both ≥ 0.90                  | **100% / 100%**        |
-| Forecast   | `pnpm eval:forecast`   | Labelled synthetic notes (features + truth)    | Discharge **Spearman rank correlation**; narration **numeric-consistency**      | ρ ≥ 0.70; consistency ≥ 0.90 | **0.92 / 100%**        |
+| Harness    | Command                | Dataset                                        | Metric(s)                                                                       | Gate           | Verified live          |
+| ---------- | ---------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------- | -------------- | ---------------------- |
+| Extraction | `pnpm eval:extraction` | Labelled synthetic notes (`notes.eval_labels`) | Barrier-type **precision / recall / F1**, plus MFFD (fit-flag) accuracy         | F1 ≥ 0.85      | **88%** F1             |
+| Copilot    | `pnpm eval:copilot`    | Labelled policy questions + ward questions     | Retrieval **hit-rate**, answer **groundedness**, ward **query-intent** accuracy | all ≥ 0.90     | **100% / 100% / 100%** |
+| Actions    | `pnpm eval:actions`    | Labelled barrier → action cases                | Action **appropriateness**, rationale **policy-grounding**                      | both ≥ 0.90    | **100% / 100%**        |
+| Forecast   | `pnpm eval:forecast`   | Hand-labelled discharge windows (n≈12)         | Discharge **Spearman rank correlation**; narration **numeric-consistency**      | see note below | restated in v0.11.0    |
+
+**The forecast gate was rebuilt in v0.11.0 and its old ρ = 0.92 is retired.**
+Ground truth was `mffd − 0.1 × open_barriers` — a monotone re-encoding of the
+very features the model weights — so the correlation measured that two
+sign-consistent linear functions agree, not predictive accuracy. It could not
+fail unless someone flipped a weight's sign. The target is now hand-assigned per
+encounter in the seed, independent of the model's inputs. Carrying the old
+number forward would have been the same dishonesty in new clothes.
 
 ### What each one actually checks
 
@@ -76,10 +100,24 @@ into CI unchanged when CI is re-introduced (see [Roadmap](roadmap.md)).
 ### Mock vs live
 
 By default the AI plane runs the **deterministic offline mock** (`NIM_MOCK=true`,
-or no `NVIDIA_API_KEY`) — the evals still run and exercise the full pipeline. To
+or no `NVIDIA_API_KEY`). The evals still exercise the full pipeline in that mode,
+but since v0.11.0 they **refuse to report a score** from it:
+
+```
+✗ Provenance gate failed: 12/12 responses did not come from a live model.
+    /extract → mock ×12
+```
+
+Pass `--allow-mock` to score the offline path deliberately — the harness prints a
+warning first, saying plainly that the numbers do not evidence model quality. To
 evaluate the real models, set `NIM_MOCK=false` and a `NVIDIA_API_KEY`, recreate
 the `ai` container, and re-run. The numbers in the table above are the **live**
 NIM figures.
+
+A live run can still report `fallback` responses: the call reached NVIDIA and
+failed, and the mock answered. Those count as non-live and fail the gate, which
+is the point — a fallback used to be indistinguishable from success. Check the
+`ai` container logs for the `warn` line naming the exception type.
 
 ## Unit tests
 

@@ -1,7 +1,7 @@
 ---
 release: v0.11.0
 title: Trustworthy numbers — honest inputs, visible provenance
-status: Proposed # Proposed | Accepted | Shipped | Superseded | Rejected
+status: Shipped # Proposed | Accepted | Shipped | Superseded | Rejected
 phase: Phase 2 — from viewer to tool
 created: 2026-08-01
 updated: 2026-08-01
@@ -149,23 +149,52 @@ one currently configured.
 
 ## Acceptance criteria
 
-- [ ] No occurrence of a hardcoded `days_admitted` remains in `src/`; discharge
+- [x] No occurrence of a hardcoded `days_admitted` remains in `src/`; discharge
       probability changes when an encounter's `admittedAt` changes.
-- [ ] With no admission history seeded, the briefing shows an explanation
+- [x] With no admission history seeded, the briefing shows an explanation
       instead of an expected-admissions number.
 - [ ] With `NIM_MOCK=true`, a copilot answer is visibly marked as not
       model-generated and shows no green grounded badge.
 - [ ] Killing the NIM endpoint mid-session produces answers marked `fallback`,
       not answers marked grounded.
-- [ ] The board shows a "last read" timestamp that updates after an extraction
+- [x] The board shows a "last read" timestamp that updates after an extraction
       run.
-- [ ] `pnpm eval:copilot` (and the other three) exit **non-zero** when run
+- [x] `pnpm eval:copilot` (and the other three) exit **non-zero** when run
       against mocks without `--allow-mock`.
 - [ ] The forecast eval fails if a model weight's sign is flipped **and** its
       ground truth is not a linear re-encoding of the model's own inputs.
-- [ ] Seeding policy chunks in mock mode and then querying in live mode raises a
+- [x] Seeding policy chunks in mock mode and then querying in live mode raises a
       visible embedding-mismatch warning.
-- [ ] `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass.
+- [x] `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass.
+
+> **Verification status (2026-08-01).** Ticked criteria were checked against a
+> real Postgres and a **live** NVIDIA NIM deployment, not the mock.
+>
+> The provenance guard was the release's own first test, and it worked: run
+> against mocks all four harnesses fail (`12/12`, `24/24`, `12/12`, `2/2`
+> non-live responses); run live they pass. Pointed at the live plane it then
+> found two defects nothing else could see — `NIM_EXTRACT_MAX_TOKENS` was never
+> passed through Docker Compose, and its `1024` default truncated the reasoning
+> model mid-JSON, failing 4–8 of every 12 live extractions **invisibly behind
+> the fallback**. Restoring `3072` measured 8/12 failures down to 2–3/12.
+>
+> Three criteria are **not ticked** and are honestly outstanding:
+>
+> - **Killing NIM mid-session** to observe `fallback` was never staged
+>   deliberately. It was however observed _in the wild_ — the extraction
+>   timeouts above surface as `fallback`, with a `warn` log naming the
+>   exception type — so the path is exercised, just not by a designed test.
+> - **The `NIM_MOCK=true` copilot badge** is covered by unit tests and by
+>   reading, not by looking at a rendered page. No UI in this release has been
+>   visually reviewed.
+> - **The forecast-eval sign-flip test** was not performed. The circular ground
+>   truth is replaced and the old ρ retired, but "fails when a weight flips" is
+>   asserted by construction rather than demonstrated.
+>
+> Residual known issue: roughly 2–3 of 12 live extractions still fall back, now
+> as read timeouts rather than truncation. Raising the NIM timeout to 60s was
+> tried and made it worse (5/12) and much slower, so it was reverted. This is a
+> model-reliability problem that v0.11.0 makes **visible** rather than fixes.
 
 ## Security & privacy
 

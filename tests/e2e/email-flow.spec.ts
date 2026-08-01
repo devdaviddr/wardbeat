@@ -16,21 +16,25 @@ async function waitForEmailLink(
   address: string,
   linkRe: RegExp,
 ): Promise<string> {
-  // 60 × 500ms = 30s. The previous 9s deadline was tight enough to flake when
-  // the suite runs in parallel and SMTP delivery queues behind other tests.
-  // `limit` keeps the target message in the page once a dev Mailpit has
-  // accumulated mail from earlier runs.
+  // 60 × 500ms = 30s. `limit` keeps the target in the page once a dev Mailpit
+  // has accumulated mail from earlier runs.
+  //
+  // Scan EVERY message for the address, not just the newest. One recipient can
+  // hold several — the password-reset test registers first, so a verification
+  // mail sits on top of the reset mail. Taking only `find()`'s first hit meant
+  // re-examining the same wrong message on every poll until the deadline, which
+  // looked like a timing flake and was not one.
   for (let i = 0; i < 60; i++) {
     const list = await request.get(`${MAILPIT}/api/v1/messages?limit=200`)
     const { messages = [] } = (await list.json()) as {
       messages?: Array<{ ID: string; To?: Array<{ Address?: string }> }>
     }
-    const msg = messages.find((m) =>
+    const mine = messages.filter((m) =>
       (m.To ?? []).some(
         (t) => t.Address?.toLowerCase() === address.toLowerCase(),
       ),
     )
-    if (msg) {
+    for (const msg of mine) {
       const full = await request.get(`${MAILPIT}/api/v1/message/${msg.ID}`)
       const { Text = '' } = (await full.json()) as { Text?: string }
       const match = Text.match(linkRe)
@@ -38,7 +42,10 @@ async function waitForEmailLink(
     }
     await new Promise((r) => setTimeout(r, 500))
   }
-  throw new Error(`No email link matching ${linkRe} for ${address}`)
+  throw new Error(
+    `No email link matching ${linkRe} for ${address} after 30s ` +
+      `(searched every message for that recipient, not just the newest)`,
+  )
 }
 
 test.beforeEach(async ({ request }) => {

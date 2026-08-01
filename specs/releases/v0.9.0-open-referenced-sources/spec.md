@@ -1,7 +1,7 @@
 ---
 release: v0.9.0
 title: Open the referenced policy source
-status: Accepted # Proposed | Accepted | Shipped | Superseded | Rejected
+status: Shipped # Proposed | Accepted | Shipped | Superseded | Rejected
 phase: Barrier/action intelligence — traceability slice
 created: 2026-07-28
 updated: 2026-07-28

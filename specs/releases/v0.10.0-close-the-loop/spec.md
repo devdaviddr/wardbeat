@@ -1,7 +1,7 @@
 ---
 release: v0.10.0
 title: Close the loop — barrier lifecycle & human authorship
-status: Accepted # Proposed | Accepted | Shipped | Superseded | Rejected
+status: Shipped # Proposed | Accepted | Shipped | Superseded | Rejected
 phase: Phase 2 — from viewer to tool
 created: 2026-08-01
 updated: 2026-08-01
@@ -178,9 +178,9 @@ overdue, raise a Web Push notification.
 - [x] The bed drawer shows a barrier's full event history with actors and times.
 - [x] A user can set an EDD by hand; the board shows it as clinician-set and a
       later extraction does not silently overwrite it.
-- [ ] Assigning a barrier to a user delivers a Web Push notification to them.
-- [ ] Two concurrent extraction runs do not both execute.
-- [ ] Domain unit tests cover reconcile, clear, assign, dismiss and EDD
+- [x] Assigning a barrier to a user delivers a Web Push notification to them.
+- [x] Two concurrent extraction runs do not both execute.
+- [x] Domain unit tests cover reconcile, clear, assign, dismiss and EDD
       override; an E2E test covers assign → comment → clear.
 - [x] `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass, and the new
       server actions surface their error messages correctly in a production
@@ -195,15 +195,24 @@ overdue, raise a Web Push notification.
 > against `barrierFingerprint()` for parity (9/9, including unicode). 42 domain
 > unit tests (`reconcile`, `barrier-lifecycle`) and 4 Playwright specs pass.
 >
-> Three criteria remain **unticked and are honestly outstanding**:
+> **Update (2026-08-01, later).** The three criteria that were outstanding are
+> now closed:
 >
-> - **Web Push on assignment** is implemented (`src/lib/ward/barrier-notify.ts`)
->   but not verified end-to-end — no VAPID keys are configured in this
->   environment, so the send path is a no-op here.
-> - **The concurrency test** for the advisory lock is not written. The lock
->   itself is in place (`src/lib/ward/extraction-lock.ts`).
-> - **EDD-override unit coverage** is missing; the path is covered by an E2E
->   test only.
+> - **Web Push on assignment** is genuinely verified, not merely implemented. A
+>   real VAPID keypair was generated and the send path exercised end-to-end
+>   through `web-push` to a local HTTPS capture server: the payload arrived
+>   `aes128gcm`-encrypted with the plaintext absent from the wire, and the VAPID
+>   JWT verified cryptographically against the public key. Delivery to a real
+>   push service (FCM/APNs) is still untested.
+> - **The advisory lock has an integration test** against a real Postgres,
+>   holding the lock from a genuinely separate connection. It was
+>   mutation-tested — disabling the rejection branch makes exactly the two
+>   concurrency assertions fail.
+> - **EDD override has unit coverage**, which found a real bug on the way:
+>   `Number.isNaN(Date.parse(edd))` accepts `2026-02-30` because V8 rolls it
+>   over to 2 March. As `edd` is a text column and a human-set date is never
+>   corrected by extraction, the board would have shown "30 Feb" permanently
+>   while downstream code read 2 March. Fixed with a calendar round-trip.
 >
 > Also note: the overdue **sweep** runs on board read rather than on a
 > schedule, because this deployment has no job runner. An overdue barrier is

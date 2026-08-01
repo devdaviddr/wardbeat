@@ -1,7 +1,7 @@
 ---
 release: v0.8.0
 title: AI configuration visibility in Settings — implementation plan
-status: Ready # Draft | In Progress | Ready | Shipped
+status: Shipped # Draft | In Progress | Ready | Shipped
 spec: ./spec.md
 branch: feature/ai-config-settings
 created: 2026-07-28

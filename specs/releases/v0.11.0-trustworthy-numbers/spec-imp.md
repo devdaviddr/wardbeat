@@ -1,7 +1,7 @@
 ---
 release: v0.11.0
 title: Trustworthy numbers — implementation plan
-status: Draft # Draft | In Progress | Ready | Shipped
+status: Shipped # Draft | In Progress | Ready | Shipped
 spec: ./spec.md
 branch: feature/trustworthy-numbers
 created: 2026-08-01

@@ -13,6 +13,86 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-01
+
+> **v0.8.0, v0.9.0 and v0.10.0 were merged to `main` without being tagged.**
+> They are documented as their own sections below, but all four ship in the
+> `v0.11.0` tag — back-tagging their original commits would have published
+> releases whose `package.json` still said `0.7.0`, and triggered deploys of
+> superseded code.
+
+### Added
+
+- **Every AI answer says what produced it.** Responses from the AI plane now
+  carry `provenance` — `live`, `mock`, or `fallback` — plus the model actually
+  called, surfaced in the copilot, the recommendation card and the briefing. A
+  non-live answer is visually distinct and no longer claims to be grounded. See
+  `specs/releases/v0.11.0-trustworthy-numbers/`.
+- **Demand is projected from the ward's own admission history**, and the
+  briefing states what it was projected from.
+
+### Fixed
+
+- **`fallback` was indistinguishable from success.** When a live model call
+  failed, the AI plane answered from the deterministic mock and still returned
+  `grounded: true` with citations — so the interface showed a green "grounded"
+  badge on prose no model composed, and nothing in the response, the UI or the
+  logs said otherwise. `grounded` is now gated on provenance, the mocks stop
+  claiming it, and every fallback logs a warning with the exception type.
+  (Extraction is a deliberate exception: its `grounded` asserts each quote was
+  found verbatim in the note, which stays true when the mock produced it.)
+- **The bed position was arithmetic on constants.** `days_admitted` was
+  hardcoded to `3` for every patient, so the discharge model's length-of-stay
+  term never varied; expected admissions was a fixed `0.5/hr`, so "net 3 beds
+  short" was the same number regardless of ward, hour or day. Length of stay now
+  comes from `encounters.admittedAt`, demand from real history, and a figure that
+  cannot be computed honestly is **omitted with a reason** rather than defaulted.
+- **The eval gates could not fail.** All four harnesses passed with
+  `NIM_MOCK=true`, so an expired API key would have left every gate green — a
+  passing run did not evidence that a model was involved at all. Each harness now
+  records the provenance of every response and refuses to print a score unless it
+  came from a live model, overridable only with an explicit `--allow-mock` flag
+  (a CLI flag, not an env var, so it cannot be set once and silently disabled).
+- **The forecast eval's ground truth was circular** — `mffd − 0.1 × open_barriers`
+  is a re-encoding of the features the model weights, so its Spearman ρ could not
+  fail unless a weight's sign was flipped. Replaced with a hand-assigned target;
+  the old gate is retired rather than carried forward, and the harness now prints
+  its own `n` so the score is read with appropriate scepticism.
+- **`NIM_EXTRACT_MAX_TOKENS` was never passed through Docker Compose**, so the
+  documented knob did nothing, and its `1024` default truncated the reasoning
+  model mid-JSON — failing between a third and two-thirds of live extractions,
+  invisibly, behind the fallback. Restored to `3072` and plumbed through Compose:
+  measured 8/12 failures down to 2–3/12. The residual failures are read timeouts
+  and are now **visible** rather than fixed.
+- **Policy search now notices when it is comparing nonsense.** Policy chunks are
+  embedded at seed time through the same endpoint used at query time, so seeding
+  with the offline mock and then switching to a live model left the database
+  full of hash-derived vectors while questions were embedded for real. Both are
+  1024-dimensional, so the search returned confident, plausible, meaningless
+  passages — with a green "grounded" badge on the answer built from them, and no
+  error anywhere. Each stored chunk now records the model that embedded it; a
+  mismatch makes the copilot **refuse and say why** instead of answering, and
+  Settings → System shows the stored model beside the configured one. Remedy is
+  a re-seed: `pnpm db:seed:policy`.
+- **One reranker failure no longer degrades retrieval until restart.** A single
+  404 set a process-lifetime flag that was never reset, silently dropping every
+  later copilot answer back to raw cosine ordering. The back-off is now time
+  boxed to 15 minutes and both the disable and the recovery are logged. A
+  transient 5xx or timeout no longer backs off at all.
+
+### Changed
+
+- `policy_chunks` gains `embedding_model` and `recommendations` gains
+  `provenance`. Both are nullable, and null means **unknown** rather than
+  "assume the current setting" — a recommendation card shows what produced it or
+  says nothing, never a guess. The `embedding_model` backfill stamps existing
+  rows with whatever is configured at migration time and says loudly that this
+  is an assumption; re-seeding is the only way to make it a fact.
+- `/embed` carries provenance like every other model output, so hash-derived
+  vectors can be told from real ones per response.
+
+## [0.10.0] - 2026-08-01
+
 ### Added
 
 - **Barriers now have a life.** A barrier can be **assigned** to someone with a
@@ -34,27 +114,14 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
   underlying barrier and sets a due time in the same step.
 - **Web Push reaches its first real ward events** — being assigned a barrier,
   and a barrier going overdue. The push plumbing has existed since the platform
-  baseline and was wired only to user registration.
+  baseline and was wired only to user registration. The overdue sweep runs on
+  board read rather than on a schedule: this deployment has no job runner, so an
+  overdue barrier is noticed the next time someone opens the board.
 - **The board says when the notes were last read**, so staff can judge how
   current it is.
 
 ### Fixed
 
-- **Policy search now notices when it is comparing nonsense.** Policy chunks are
-  embedded at seed time through the same endpoint used at query time, so seeding
-  with the offline mock and then switching to a live model left the database
-  full of hash-derived vectors while questions were embedded for real. Both are
-  1024-dimensional, so the search returned confident, plausible, meaningless
-  passages — with a green "grounded" badge on the answer built from them, and no
-  error anywhere. Each stored chunk now records the model that embedded it; a
-  mismatch makes the copilot **refuse and say why** instead of answering, and
-  Settings → System shows the stored model beside the configured one. Remedy is
-  a re-seed: `pnpm db:seed:policy`.
-- **One reranker failure no longer degrades retrieval until restart.** A single
-  404 set a process-lifetime flag that was never reset, silently dropping every
-  later copilot answer back to raw cosine ordering. The back-off is now time
-  boxed to 15 minutes and both the disable and the recovery are logged. A
-  transient 5xx or timeout no longer backs off at all.
 - **Re-running extraction no longer destroys the ward's work.** Persistence
   deleted and re-inserted every barrier for a note, so one person clicking "Run
   extraction" silently wiped every triage decision made that morning — approvals
@@ -69,6 +136,15 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
   check and its three writes were separate statements; they are now one
   transaction with the row locked, so the second approval gets "Already
   approved" instead of corrupting the audit trail.
+- **Impossible discharge dates were accepted.** The EDD guard used
+  `Number.isNaN(Date.parse(edd))`, which does not reject `2026-02-30` — V8 rolls
+  it over to 2 March. Since `edd` is stored as text and a clinician-set date is
+  never corrected by extraction, the board would have shown "30 Feb" permanently
+  while every downstream `new Date(edd)` read it as 2 March.
+- **Accessibility: three colour-contrast failures.** `amber-600` (3.19:1) and
+  `green-600` (3.21:1) on white, and white on the `green-500` success badge
+  (2.21:1), all below the WCAG AA 4.5:1 threshold. Moved to `amber-700` /
+  `green-700` and added the dark-mode variants several of them lacked.
 
 ### Changed
 
@@ -76,12 +152,8 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
   clinically distinct from `cleared` ("the work is done") and must not be
   collapsed into it.
 - Barrier age is anchored to a new `first_seen_at` that survives re-extraction.
-- `policy_chunks` gains `embedding_model` and `recommendations` gains
-  `provenance`. Both are nullable, and null means **unknown** rather than
-  "assume the current setting" — a recommendation card shows what produced it or
-  says nothing, never a guess. The `embedding_model` backfill stamps existing
-  rows with whatever is configured at migration time and says loudly that this
-  is an assumption; re-seeding is the only way to make it a fact.
+
+## [0.9.0] - 2026-07-28
 
 ### Added
 
@@ -91,6 +163,11 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
   server-side from the citation; degrades to the passage when the document can't
   be found). No migration or re-seed. See
   `specs/releases/v0.9.0-open-referenced-sources/`.
+
+## [0.8.0] - 2026-07-28
+
+### Added
+
 - **AI configuration in Settings.** Admins get a read-only AI configuration card
   showing whether the AI plane is running live on NVIDIA NIM or the deterministic
   mock, the extraction/embedding/rerank model ids, the model endpoint host, and
@@ -112,17 +189,18 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
   wedge the whole batch), fans notes out across encounters with bounded
   concurrency instead of running strictly sequentially, and isolates per-note
   failures so one bad note is counted (`(N failed)` in the status) rather than
-  aborting the run. Each note's clear-and-reinsert now runs in a transaction, so
-  a re-run can't strand a note with zero barriers.
+  aborting the run.
 
 ### Changed
 
 - Extraction persistence is now shared between the ward-board Server Action and
   the `pnpm db:extract` CLI (`src/db/persist-extraction.ts`) so their write
   paths can't drift.
-- The AI extraction call's completion-token budget is configurable via
-  `NIM_EXTRACT_MAX_TOKENS` (default `1024`, down from a hard-coded `3072`),
-  cutting per-call latency on the reasoning model.
+- The AI extraction call's completion-token budget became configurable via
+  `NIM_EXTRACT_MAX_TOKENS`, defaulting to `1024` to cut per-call latency on the
+  reasoning model. **This was a mistake and is reverted in 0.11.0** — the lower
+  budget truncated the model mid-JSON and failed a large share of extractions
+  invisibly.
 
 ## [0.7.0] - 2026-07-27
 

@@ -1,7 +1,7 @@
 ---
 release: v0.8.0 # semver tag this release will ship as
 title: AI configuration visibility in Settings
-status: Accepted # Proposed | Accepted | Shipped | Superseded | Rejected
+status: Shipped # Proposed | Accepted | Shipped | Superseded | Rejected
 phase: Platform — operability slice
 created: 2026-07-28
 updated: 2026-07-28
