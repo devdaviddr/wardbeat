@@ -6,7 +6,8 @@ PostgreSQL 17 (with the **pgvector** extension) accessed through
 [Drizzle ORM](https://orm.drizzle.team) with a `postgres-js` driver. Next.js is the
 **single writer** — the FastAPI AI plane is stateless and never touches the database.
 Schema splits into the inherited **platform** tables (auth, files, push) and the
-**WardBeat** tables (ward domain, AI outputs, policy KB).
+**WardBeat** tables (ward domain, AI outputs, ward membership & access audit, policy KB) —
+24 tables in total.
 
 ### Entity-Relationship Diagram
 
@@ -94,6 +95,12 @@ erDiagram
     notes ||--o{ ai_extractions : "extracted from"
     notes ||--o{ barriers : "cited by (source_note_id)"
     ai_extractions ||--o{ barriers : "grounds"
+    barriers ||--o{ barrier_events : "timeline"
+    encounters ||--o{ barrier_suppressions : "scoped to"
+    notes ||--o{ barrier_suppressions : "fingerprinted against"
+    users ||--o{ user_wards : "member of"
+    wards ||--o{ user_wards : "membership"
+    users ||--o{ access_audit : "actor (set null)"
     barriers ||--o{ recommendations : "resolves"
     recommendations ||--o{ action_audit : "decided in"
     policy_docs ||--o{ policy_chunks : "chunked into"
@@ -144,9 +151,44 @@ erDiagram
         text source_note_id FK "citation"
         text extraction_id FK
         text type "tto|transport|social_care|review|other"
-        text status "pending|in_progress|cleared"
+        text status "pending|in_progress|cleared|dismissed"
+        text origin "ai|human"
         text source_quote
         integer confidence
+        text fingerprint "reconcile key"
+    }
+    barrier_events {
+        text id PK
+        text barrier_id FK
+        text kind "created|confirmed|unconfirmed|assigned|unassigned|due_set|commented|cleared|dismissed|reopened"
+        text actor_user_id FK "null = system"
+        text body "comment or reason"
+        jsonb meta
+    }
+    barrier_suppressions {
+        text id PK
+        text encounter_id FK
+        text source_note_id FK "UK with fingerprint"
+        text fingerprint
+        text dismissed_by_user_id FK
+        text reason
+    }
+    users {
+        text id PK "see platform ERD"
+    }
+    user_wards {
+        text user_id PK "FK"
+        text ward_id PK "FK"
+        timestamp created_at
+    }
+    access_audit {
+        text id PK
+        text actor_user_id FK "set null on user delete"
+        text subject_type "patient|encounter|ward|copilot_query"
+        text subject_id "nullable for ward-wide surfaces"
+        text surface "board|bed_drawer|copilot|briefing|extraction|actions"
+        jsonb detail
+        timestamp created_at
     }
     recommendations {
         text id PK
@@ -189,7 +231,7 @@ erDiagram
 | `sessions`            | Database sessions (unused under JWT strategy)             |
 | `verification_tokens` | Single-use tokens for password reset & email verification |
 | `authenticators`      | WebAuthn/passkey credentials                              |
-| `roles`               | Roles: admin, member, viewer                              |
+| `roles`               | Platform roles (admin, member, viewer) + clinical roles   |
 | `user_roles`          | Many-to-many users ↔ roles                                |
 | `files`               | Uploaded file metadata + S3 storage                       |
 | `push_subscriptions`  | Web Push subscriptions per device                         |
@@ -206,12 +248,21 @@ erDiagram
 
 **WardBeat — AI outputs:**
 
-| Table             | Purpose                                                                                                         |
-| ----------------- | --------------------------------------------------------------------------------------------------------------- |
-| `ai_extractions`  | Per-note extraction result (EDD, MFFD, escalations, raw JSON)                                                   |
-| `barriers`        | Discharge blockers (`tto`/`transport`/`social_care`/`review`/`other`) with a **cited source note + quote/span** |
-| `recommendations` | Recommend-only next-best actions, each with a policy citation                                                   |
-| `action_audit`    | Human approve/dismiss decisions on recommendations (who + when)                                                 |
+| Table                  | Purpose                                                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `ai_extractions`       | Per-note extraction result (EDD, MFFD, escalations, raw JSON)                                                                  |
+| `barriers`             | Discharge blockers (`tto`/`transport`/`social_care`/`review`/`other`) with a **cited source note + quote/span**                |
+| `barrier_events`       | **Append-only** barrier lifecycle timeline (`kind`, actor, comment/reason `body`, `meta`) — never updated or deleted           |
+| `barrier_suppressions` | Durable dismissals: a dismissed barrier's `fingerprint` per source note (unique together), so re-extraction can't re-create it |
+| `recommendations`      | Recommend-only next-best actions, each with a policy citation                                                                  |
+| `action_audit`         | Human approve/dismiss decisions on recommendations (who + when)                                                                |
+
+**WardBeat — ward membership & access audit:**
+
+| Table          | Purpose                                                                                                                                                                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `user_wards`   | Ward membership (composite PK `user_id` + `ward_id`) — patient-scoped capabilities require membership of the patient's ward                                                                                                                 |
+| `access_audit` | **Append-only** access log (reads _and_ writes): actor (`set null` on user delete), `subject_type`/`subject_id`, `surface`, `detail`. Indexed on (actor, created_at) and (subject, created_at) for "what did X access?" / "who accessed Y?" |
 
 **WardBeat — policy knowledge base (RAG):**
 
@@ -236,7 +287,8 @@ pnpm db:studio      # visual DB browser
 **Key files:**
 
 - `src/db/migrate.ts:23` - Migration runner (Docker entrypoint)
-- `src/db/seed.ts` - Idempotent seed (roles admin/member/viewer + demo admin user)
+- `src/db/seed.ts` - Idempotent seed: 7 roles — platform (`admin`, `member`, `viewer`) +
+  clinical (`bed_manager`, `charge_nurse`, `clinician`, `allied_health`) — plus a demo admin user
 
 ### Important Features
 
@@ -245,6 +297,9 @@ pnpm db:studio      # visual DB browser
 - Roles carried as `roles: string[]` claim on JWT (no DB round-trip to read)
 - Edge gating via `proxy.ts`
 - Server-side guards in `src/lib/auth/rbac.ts`
+- Clinical roles (`bed_manager`, `charge_nurse`, `clinician`, `allied_health`) are scoped by
+  ward membership (`user_wards`) via `src/lib/auth/ward-access.ts`; accesses are recorded in
+  the append-only `access_audit` table
 
 #### File Storage
 

@@ -25,7 +25,7 @@ on this box, see [Feature → Production](workflow.md).
 Each step is announced before it runs:
 
 ```text
-preflight ─▶ secrets (.env, AUTH_SECRET) ─▶ choose mode
+preflight ─▶ secrets (.env: AUTH_SECRET, AI service token) ─▶ choose mode
    ├─ quick     → trycloudflare.com URL (no account)
    ├─ guided    → your domain, token pasted from the dashboard
    └─ automated → your domain, provisioned by Terraform
@@ -36,7 +36,15 @@ preflight ─▶ secrets (.env, AUTH_SECRET) ─▶ choose mode
 It is **idempotent** — safe to re-run. It never rotates an existing
 `AUTH_SECRET` without asking (rotation logs everyone out and voids outstanding
 password-reset/verification tokens), and it writes `.env` and any Terraform vars
-`chmod 600`, never printing secrets.
+`chmod 600`, never printing secrets. It also generates
+`WARDBEAT_AI_SERVICE_TOKEN`, the shared secret between the app and the internal
+AI plane, which the production stack requires.
+
+The stack it brings up includes the **AI plane** (`ai` service, internal-only —
+never exposed through the tunnel). By default it runs in offline mock mode
+(`NIM_MOCK=true`): deterministic AI stubs, no NVIDIA key, no external calls. To
+go live, set `NIM_MOCK=false` and `NVIDIA_API_KEY` in `.env` and recreate the
+`ai` service — see [AI design](ai-design.md) and [`ai/README.md`](../ai/README.md).
 
 ---
 
@@ -261,8 +269,9 @@ register your box as a **GitHub self-hosted runner** and enable the shipped
 2. Put the box's config at
    `~/.config/wardbeat/.env` (chmod 600) — the runner's
    checkout is wiped every run (`git clean`), so `.env` can't live in the work
-   tree. It needs at least `AUTH_SECRET`, `AUTH_URL`,
-   `CLOUDFLARE_TUNNEL_TOKEN`, `APP_IMAGE` (and optionally `APP_TAG`). Override
+   tree. It needs at least `AUTH_SECRET`, `WARDBEAT_AI_SERVICE_TOKEN`,
+   `AUTH_URL`, `CLOUDFLARE_TUNNEL_TOKEN`, `APP_IMAGE` (and optionally
+   `APP_TAG`). Override
    the path with a `DEPLOY_ENV_FILE` env var on the runner if you prefer.
 3. Set the repo variable `SELF_HOSTED_DEPLOY = true` (Settings → Secrets and
    variables → Actions → Variables). Until you do, `deploy.yml` is skipped.
@@ -364,7 +373,7 @@ external drive — see [backups.md](backups.md#optional-offsite-copy-disk-failur
 | **503 everywhere + "No ingress rules" in `cloudflared` logs** | The tunnel is _locally-managed_ (created with `cloudflared tunnel create`), so a token-run daemon gets no remote config. Create tunnels in the **dashboard** or via **Terraform** (both remotely-managed), or push a remote config: the token embedded in `~/.cloudflared/cert.pem` (`ARGO TUNNEL TOKEN` block → base64 JSON `.apiToken`) can `PUT …/cfd_tunnel/<id>/configurations`. |
 | **Quick URL changed**                                         | It's ephemeral by design — use guided/automated for a stable domain.                                                                                                                                                                                                                                                                                                                  |
 | **Rate limiting sees wrong IP**                               | Traffic must arrive via Cloudflare so `CF-Connecting-IP` is present; direct origin hits won't have it.                                                                                                                                                                                                                                                                                |
-| **`make deploy` / timer tick fails — `.env` not found**       | The box's `.env` needs at least `AUTH_SECRET`, `AUTH_URL`, `CLOUDFLARE_TUNNEL_TOKEN`, and `APP_IMAGE` (+ optionally `APP_TAG`). `make deploy` reads the project-dir `.env`; `make deploy-timer` copies it in each tick from `~/.config/wardbeat/.env` — override the source path with `DEPLOY_ENV_FILE`.                                                                              |
+| **`make deploy` / timer tick fails — `.env` not found**       | The box's `.env` needs at least `AUTH_SECRET`, `WARDBEAT_AI_SERVICE_TOKEN`, `AUTH_URL`, `CLOUDFLARE_TUNNEL_TOKEN`, and `APP_IMAGE` (+ optionally `APP_TAG`). `make deploy` reads the project-dir `.env`; `make deploy-timer` copies it in each tick from `~/.config/wardbeat/.env` — override the source path with `DEPLOY_ENV_FILE`.                                                 |
 
 ---
 

@@ -125,14 +125,20 @@ See [SECURITY.md](../SECURITY.md) for the vulnerability-reporting process and
 src/
 ├── app/
 │   ├── (auth)/                  # login · register · forgot/reset-password · verify-email
-│   ├── (dashboard)/             # protected area with app shell
+│   ├── (dashboard)/             # board (dashboard) · ward · copilot · briefing · settings (+audit) · about
 │   ├── api/                     # auth · files · health endpoints
 │   └── manifest.ts, offline/    # PWA support
-├── components/                  # auth forms, file upload, push, pwa, settings, shell, theme, UI primitives
-├── db/                          # Drizzle schema, migrate.ts, seed.ts
-├── lib/                         # auth, email, push, storage, shell/nav, validations, env
+├── components/                  # ward · copilot · briefing · about · auth · files · push · pwa · settings · shell · theme · ui
+├── db/                          # Drizzle schema, migrate/seed scripts (base, ward, policy), extraction/recommend runners
+├── eval/                        # AI eval harnesses (extraction · copilot · actions · forecast) + provenance/narration guards
+├── lib/
+│   ├── ai/                      # server-only AI-plane client, provenance, AI config, embedding-model drift
+│   ├── auth/                    # config (edge) · index (node) · rbac · ward-access · roles · tokens · session
+│   ├── ward/ copilot/ briefing/ actions/ audit/   # domain logic (barriers, RAG, forecasts, audit)
+│   └── email/ push/ storage/ shell/ validations/ env.ts · logger.ts · rate-limit.ts
 ├── types/                       # shared TypeScript types
 └── proxy.ts                     # edge protection + role gating
+ai/                              # FastAPI AI plane — routers (extract · embed · copilot · agent · forecast), NIM client, mocks
 ```
 
 ### Key Files for Reference

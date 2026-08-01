@@ -77,7 +77,7 @@ pytest                        # unit tests incl. the /config secret-redaction te
 | `NIM_EMBED_MODEL`            | `nvidia/nv-embedqa-e5-v5`             | Embedding model for policy retrieval (asymmetric query/passage)                                                          |
 | `NIM_RERANK_MODEL`           | `nvidia/llama-3.2-nv-rerankqa-1b-v2`  | Cross-encoder reranker for retrieved passages                                                                            |
 | `EMBED_DIM`                  | `1024`                                | Embedding dimensions (must match the `policy_chunks.embedding` column)                                                   |
-| `NIM_EXTRACT_MAX_TOKENS`     | `1024`                                | Completion budget/call (reasoning + JSON); lower = faster                                                                |
+| `NIM_EXTRACT_MAX_TOKENS`     | `3072`                                | Completion budget/call (reasoning + JSON); lower = faster                                                                |
 | `NIM_TIMEOUT`                | `30.0`                                | Per-call model timeout (seconds)                                                                                         |
 | `NIM_RPM`                    | `30`                                  | Rate-limit budget (headroom under the free tier's ~40 RPM)                                                               |
 | `AI_SERVICE_TOKEN`           | —                                     | Shared secret; must match Next.js `WARDBEAT_AI_SERVICE_TOKEN`. **Unset = every request refused (503, fail-closed)**      |

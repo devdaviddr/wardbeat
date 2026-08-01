@@ -97,20 +97,23 @@ releases whose `package.json` still said `0.7.0` and triggered deploys of supers
 code. Each keeps its own spec folder and `CHANGELOG.md` section, because they are
 genuinely separable slices — only the tag is shared.
 
-### Planned arc (v0.10.0 → v0.13.0)
+### Release arc (v0.10.0 → v0.13.0)
 
-These four were planned together on 2026-08-01 after a product review, and they are
-**ordered by dependency, not preference**:
+These four were planned together on 2026-08-01 after a product review, **ordered by
+dependency, not preference**. v0.10.0–v0.12.0 have since **shipped** (statuses in the
+index above); **v0.13.0 is the only one still pending** (`Proposed`):
 
-- **v0.10.0** turns a read-only viewer into a tool — a barrier gains an owner, a due time,
-  a progress log and a way to be cleared, and human work stops being destroyed by
-  re-extraction.
-- **v0.11.0** makes every number honest or absent, and every AI output's provenance
-  visible. It also makes the eval gates capable of failing, which they currently are not.
-- **v0.12.0** is the gate before any real data: clinical roles, authorization on every ward
-  action, and an access audit covering reads.
-- **v0.13.0** makes ward an explicit scope, adds a site view and closes the bed lifecycle.
-  It **depends on v0.12.0** — ward membership is what scoping intersects against.
+- **v0.10.0** _(shipped)_ turns a read-only viewer into a tool — a barrier gains an owner,
+  a due time, a progress log and a way to be cleared, and human work stops being destroyed
+  by re-extraction.
+- **v0.11.0** _(shipped)_ makes every number honest or absent, and every AI output's
+  provenance visible. It also makes the eval gates capable of failing, which they
+  previously could not.
+- **v0.12.0** _(shipped)_ is the gate before any real data: clinical roles, authorization
+  on every ward action, and an access audit covering reads.
+- **v0.13.0** _(proposed — planned next)_ makes ward an explicit scope, adds a site view
+  and closes the bed lifecycle. It **depends on v0.12.0** — ward membership is what
+  scoping intersects against.
 
 Earlier releases' `Post-release verification` notes record which of their acceptance
 criteria were **not** met and which of these releases now owns them.

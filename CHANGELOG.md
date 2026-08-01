@@ -13,6 +13,40 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The AI plane is now part of the production stack.** `docker-compose.prod.yml`
+  gained the internal-only `ai` service (no published ports, reached solely by
+  `app` over the compose network) and wires `WARDBEAT_AI_URL` /
+  `WARDBEAT_AI_SERVICE_TOKEN` plus the four `FEATURE_*` flags (default on) into
+  the app. Previously a production deploy booted with every AI call pointed at
+  a nonexistent `localhost:8000`.
+- **Fresh production deploys no longer fail migrations.** The prod database
+  image is now `pgvector/pgvector:pg17` (was `postgres:17-alpine`), which the
+  `CREATE EXTENSION vector` migration for the policy knowledge base requires.
+- `make setup` generates a strong `WARDBEAT_AI_SERVICE_TOKEN` (keeping
+  `AI_SERVICE_TOKEN` in lockstep) instead of leaving the dev placeholder from
+  `.env.example`; the prod compose file now requires the variable, matching the
+  AI plane's fail-closed behaviour.
+- `.env.example` and `ai/README.md` now state the real `NIM_EXTRACT_MAX_TOKENS`
+  default (3072 — what `ai/app/settings.py` and the compose files use), not 1024.
+
+### Changed
+
+- **README rewritten as a product README** — current at v0.12.0 (was framed
+  around v0.7.0), with a verified quick start that includes the AI plane and
+  ward/policy seeds, and a curated documentation index.
+- **New [AI design](docs/ai-design.md) document** consolidating the shipped AI
+  architecture: two-plane topology, the four AI capabilities, grounding,
+  provenance (`live`/`mock`/`fallback`), the deterministic-vs-LLM boundary,
+  human-in-the-loop points, degradation behaviour, and eval gates.
+- Docs refreshed to v0.12.0 reality: `features.md`, `database.md` (the four
+  ward-membership/audit/lifecycle tables and the seven seeded roles),
+  `roadmap.md` and `specs/releases/README.md` (v0.10–v0.12 marked shipped),
+  `DEMO.md`, `summary.md`, `explaining-wardbeat.md` (retired eval numbers
+  removed), `architecture.md` (current project tree), and
+  `deployment.md`/`self-hosting.md` (AI service token requirement).
+
 ## [0.12.0] - 2026-08-01
 
 ### Added

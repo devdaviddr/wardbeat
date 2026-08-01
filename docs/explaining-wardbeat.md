@@ -155,11 +155,15 @@ around the model, not the wording of the prompt.
 
 > "Each capability has a labelled synthetic dataset, a metric that fits the task,
 > and a hard gate that exits non-zero — so they double as a release gate.
-> Extraction F1 is 88% against an 0.85 gate; retrieval hit-rate and groundedness
-> are 100%; the forecast's rank correlation is 0.92; and the briefing's
-> numeric-consistency is 100%, which proves the narrator never invents a figure.
-> F1 catches both missed and invented barriers; rank correlation matches how the
-> forecast is actually used — to _order_ patients."
+> Extraction F1 is 88% against an 0.85 gate; the copilot and action harnesses
+> score 100% against 0.90 gates; and the deterministic forecast is gated at
+> Spearman ρ ≥ 0.70 against **hand-assigned** targets — its original ground
+> truth turned out to be circular, a re-encoding of the model's own features, so
+> in v0.11.0 I retired that number rather than carry it forward. The harnesses
+> also refuse to print a score unless the answers came from a live model, so a
+> dead API key can't leave the gates green. F1 catches both missed and invented
+> barriers; rank correlation matches how the forecast is actually used — to
+> _order_ patients."
 
 **Why it lands:** picking the metric that matches how the output is used (not just
 "accuracy") is the tell of someone who has evaluated ML for real.
@@ -243,9 +247,11 @@ domains. "Config change, not rewrite" is the architecture paying off.
   > mocked."
 
 - **"What's not built yet?"** _(answer honestly — it earns trust)_
-  > "It's a portfolio slice on synthetic data. The bed-lifecycle loop (admit /
-  > discharge), write-back to real systems, CI-gated evals, and metrics/tracing are
-  > on the roadmap. It surfaces flow and recommends; it deliberately doesn't act."
+  > "It's a portfolio slice on synthetic data. Since the first cut, the barrier
+  > lifecycle, AI provenance, and ward RBAC with an access audit have shipped —
+  > but the bed-lifecycle loop (admit / discharge), write-back to real systems,
+  > CI-gated evals, and metrics/tracing are still on the roadmap. It surfaces
+  > flow and recommends; it deliberately doesn't act on external systems."
 
 ---
 

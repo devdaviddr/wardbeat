@@ -1,4 +1,4 @@
-# WardBeat demo runbook (v0.7.0)
+# WardBeat demo runbook (v0.12.0)
 
 [← Back to README](../README.md) · [PRD](prd.md) ·
 [release spec](../specs/releases/v0.2.0-barrier-intelligence-ward-board/spec.md)
@@ -29,6 +29,11 @@ pnpm db:extract               # populate the board headlessly (or use the UI but
 pnpm db:recommend             # generate action recommendations (or use the UI button) (v0.4.0)
 ```
 
+> **Ward membership (v0.12.0):** the seeded demo login is an **admin**, which
+> bypasses ward-membership checks — so this runbook works as-is. A **non-admin**
+> user must first be assigned to the ward at **Settings → Administration**, or
+> they'll see _"You have not been assigned to a ward yet"_ instead of the board.
+
 ## 3. Run the app
 
 ```bash
@@ -48,6 +53,16 @@ everything lives on one screen:
   **Approve / Dismiss** (approve marks the barrier in progress + writes an audit
   row — recommend-only). Try bed **B4** — its note has a prompt injection and the
   model still reads the patient as _not fit_.
+- **Barrier lifecycle** (v0.10.0, in the drawer): **assign** a barrier with a
+  due time, add a **progress** note ("pharmacy says 4pm"), and **mark it
+  cleared** with a reason — every transition lands in an append-only event log.
+  Clinicians can also **add** a barrier the extraction missed, **dismiss** one
+  it invented (durably — re-extraction won't resurrect it), and **override the
+  EDD**.
+- **Provenance badge** (v0.11.0): every AI answer — copilot, recommendation
+  cards, the briefing — says whether it came from the **live** model, the
+  **mock**, or a **fallback**; a non-live answer is visually distinct and never
+  claims to be grounded.
 - **Ask copilot** (toolbar): ask _"which patients are fit but waiting on
   transport?"_ → the answer **highlights those beds**; or _"what are the criteria
   for discharging on IV antibiotics?"_ → grounded policy answer; off-topic is

@@ -2,267 +2,194 @@
 
 # WardBeat
 
-**A full-stack, AI-enabled application that helps keep a hospital ward flowing and beds utilised.**
+**A clinical-operations copilot for hospital ward flow — every bed, every barrier, every next action, in one place, explained.**
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-20232a?logo=react&logoColor=61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169e1?logo=postgresql&logoColor=white)
-![Auth.js](https://img.shields.io/badge/Auth.js-v5-000000?logo=auth0&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8?logo=tailwindcss&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-AI%20plane-009688?logo=fastapi&logoColor=white)
+![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76b900?logo=nvidia&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17%20%2B%20pgvector-4169e1?logo=postgresql&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-ready-5a0fc8?logo=pwa&logoColor=white)
-![Status](https://img.shields.io/badge/status-v0.7.0%20shipped-15803d.svg)
+![Status](https://img.shields.io/badge/status-v0.12.0%20shipped-15803d.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 </div>
 
 ---
 
-> **Status: shipping (v0.7.0).** The flow cockpit is live: a ward board that
-> extracts discharge barriers from notes, a grounded copilot, human-approved
-> action recommendations, and deterministic forecasting with AI narration — all
-> on a stateless FastAPI AI plane over NVIDIA NIM. Work is spec-driven in
-> [`specs/`](specs/README.md); see the [platform guide](docs/guide.html) (in-app
-> at `/about`) for the product tour and the [roadmap](docs/roadmap.md) for
-> what's next. CI is deferred — quality gates run locally (see below).
+> **Status: shipping (v0.12.0).** The flow cockpit is live end to end: AI-extracted,
+> cited discharge barriers with a full human lifecycle; a grounded copilot; policy-backed
+> action recommendations a human approves; deterministic forecasting with AI narration;
+> per-response AI provenance; ward-scoped RBAC and an append-only access audit. Runs
+> entirely on **synthetic data**. Next up: [multi-ward](specs/releases/README.md).
+> CI is deferred — quality gates run locally (see [Contributing](#contributing)).
 
 ## What it is
 
-**WardBeat** is a clinical operations tool for hospital ward flow — helping
-charge nurses and bed managers keep patients moving and beds utilised, with AI
-assistance to surface bottlenecks and next-best actions. The problem space,
-scope, and first slice of functionality are defined in
-[spec 0025](specs/0025-wardbeat-foundation.md); this README documents the
-platform WardBeat is built on and how to run and contribute to it.
+WardBeat is a live **flow cockpit** for a hospital ward. It reads the ward's
+free-text nursing and ward-round notes with a small language model and turns
+them into a board of **who is medically fit to leave and exactly what is
+blocking them** — with every finding traceable to the sentence it came from.
+On top of that board it layers a grounded natural-language copilot, an agent
+that proposes the next-best action per barrier for a human to approve, and a
+deterministic discharge/demand forecast that an LLM only narrates — never
+computes.
 
-## Foundations
+It is explicitly **decision support, not autonomy**: nothing acts on external
+systems, every AI claim is grounded or refused, and quality is measured by
+eval harnesses with hard gates rather than asserted. The stack is
+self-hostable containers (Next.js BFF + internal FastAPI AI plane over
+[NVIDIA NIM](docs/ai-design.md)), so the same system can run on a trust's own
+infrastructure and patient data never has to leave the network.
 
-WardBeat is built on an opinionated, batteries-included platform on **Next.js 16**
-(App Router, RSC, Server Actions). Everything below is inherited, wired up, and
-verified end to end — so product work starts from a proven base, not a blank page:
+## The problems it solves
 
-- 🔐 **Auth** via Auth.js v5 — email + password (Argon2id, JWT), plus opt-in **[GitHub & Google OAuth](docs/oauth.md)**; edge-protected routes
-- ✉️ **[Password reset & email verification](docs/email.md)** — single-use hashed tokens, anti-enumeration, optional verify soft gate (opt-in with SMTP)
-- 🧑‍⚖️ **Role-based access control** — roles on the JWT, edge + server guards, admin user-management, invite-based account claim
-- 🗄️ **PostgreSQL + Drizzle ORM** — type-safe schema (see the **[ERD](docs/database.md#entity-relationship-diagram)**), committed migrations
-- 📁 **File uploads** — self-hosted, S3-compatible object storage (MinIO), size/type validation, per-user quota
-- 📱 **PWA + responsive app shell** — installable, offline-resilient, **[Web Push](docs/push.md)**, light/dark theming, mobile-to-desktop layout
-- 🔎 **SEO** — OpenGraph/Twitter cards, `robots.txt` + `sitemap.xml`
-- 💾 **[Automated backups](docs/backups.md)** — nightly Postgres + MinIO, doctor script, tested restore runbook
-- 🧪 **Tested** — Vitest units + Playwright E2E
-- 🐳 **Docker** — multi-stage, non-root production image
-- 🛡️ **Strict TypeScript**, ESLint, Prettier, and pre-commit hooks
+Hospitals lose bed capacity not because beds are physically full, but because
+**flow stalls** — an information and coordination problem:
 
-See **[Features](docs/features.md)** for the full inherited list.
+- **Invisible barriers.** A patient is fit for discharge but stuck on meds to
+  take out, transport, a care package, or a review — and nobody has one
+  current view of _why_.
+- **Signal buried in prose.** Discharge dates, barriers, and escalations live
+  in free-text notes, not structured fields. It's a reading problem, not a
+  data-entry problem.
+- **Reactive, not predictive.** Bed managers firefight at 2 pm on discharges
+  that should have been planned that morning.
+- **Nobody owns the chase.** A barrier with no owner, no due time, and no
+  progress log is nobody's job.
+- **AI that can't be trusted.** A tool that quietly invents a number or hides
+  a fallback behind a "grounded" badge loses a ward's trust permanently — so
+  WardBeat makes provenance, grounding, and honest omission first-class.
 
-> **CI/CD is intentionally deferred.** The GitHub Actions pipelines were removed
-> for this stage — quality gates run **locally** (see [Contributing](#contributing)).
-> The [CI/CD doc](docs/ci-cd.md) and [Feature → Production](docs/workflow.md)
-> playbook describe the pipeline as it will be re-introduced later; they are
-> reference, not the current wiring.
+## Features
+
+- **Live ward board** — every bed with status, estimated discharge date,
+  fitness flag, and barrier chips; filter to the beds you could free today;
+  barrier age and ownership at a glance.
+- **AI barrier extraction** — schema-constrained extraction from notes with a
+  grounding gate: every barrier must quote its source sentence or it's
+  dropped. Prompt-injection defended; re-extraction never destroys human work.
+- **Barrier lifecycle** — assign an owner and due time, keep a progress
+  thread, clear with a reason, all on an append-only event log. Clinicians can
+  add barriers the AI missed, durably dismiss ones it invented, and override
+  the discharge date.
+- **Flow copilot** — grounded Q&A over live ward state (validated structured
+  filters — the model never authors a query) and trust discharge policy
+  (pgvector RAG with reranking); cited answers or explicit refusals, with
+  click-through to the referenced policy passage.
+- **Action recommendations** — a policy-grounded agent proposes the next-best
+  action per barrier; a human approves or dismisses, transactionally audited.
+  Recommend-only, always.
+- **Forecasting & briefing** — deterministic discharge probability and demand
+  projection; an LLM narrates the numbers and is forbidden from inventing
+  any. Figures that can't be computed honestly are omitted with a reason.
+- **AI provenance & evals** — every AI response is labelled `live` / `mock` /
+  `fallback` in the UI, and four eval harnesses (extraction F1 88%, gate
+  0.85) refuse to print a score unless it came from a live model.
+- **Ward RBAC & access audit** — clinical roles, ward membership, a
+  fail-closed authorization check on every ward action, per-user AI rate
+  limits, and an append-only audit of reads (who viewed which patient, who
+  asked what) browsable at `/settings/audit`.
+- **Production-grade platform** — Auth.js v5 (Argon2id, JWT, OAuth), Drizzle +
+  Postgres 17 with committed migrations, MinIO object storage, web push,
+  installable PWA with an auth-safe service worker, nightly backups with a
+  tested restore runbook, and a one-command self-hosting path behind a
+  Cloudflare Tunnel.
+
+Full inventory: [Features](docs/features.md) · release history:
+[CHANGELOG](CHANGELOG.md).
 
 ## How it works
 
-WardBeat reads the ward's **free-text notes** and turns them into a live board of
-**who is fit to leave and what's blocking them** — every finding traceable to the
-sentence it came from. When a bed manager hits **Run extraction**:
-
 ```mermaid
-flowchart TD
-    U["Bed manager clicks 'Run extraction'"] --> NX["Next.js server action (BFF)"]
-    NX -->|read notes| PG[("Postgres")]
-    NX -->|"POST /extract + service token (per note)"| API["FastAPI ai service (internal)"]
-    API -->|schema-constrained prompt| NIM["NVIDIA NIM — Nemotron Nano 9B"]
-    NIM -->|"JSON: mffd, edd, barriers[]"| API
-    API -->|"ground each quote to a note span; drop unverifiable"| NX
-    NX -->|persist barriers + discharge status| PG
-    NX -->|revalidate| BOARD["Ward board re-renders: barrier chips + citations"]
+flowchart LR
+    B["Browser"] --> NX["Next.js 16 BFF — UI, auth, sole DB writer, AI orchestrator"]
+    NX --> PG[("Postgres 17 + pgvector")]
+    NX -->|service token| AI["FastAPI AI plane (internal, stateless)"]
+    AI --> NIM["NVIDIA NIM — extract · embed · rerank · generate"]
 ```
 
-1. **Read** — Next.js (the BFF) pulls each patient's notes from Postgres.
-2. **Extract** — it sends each note to the internal **FastAPI** service, which prompts
-   a small **NVIDIA NIM** model to return strict JSON `{ mffd, edd, barriers[] }`. The
-   note is treated as data to read, never instructions to follow (prompt-injection
-   defence).
-3. **Ground** — FastAPI verifies every barrier's quoted evidence actually appears in the
-   note, records the character span, and **drops anything it can't locate** — so the
-   board only ever shows cited, real findings.
-4. **Persist** — Next.js writes the structured barriers back to Postgres (Drizzle) and
-   denormalises MFFD/EDD onto each encounter.
-5. **Render** — the board refreshes; barrier chips are clickable to reveal the highlighted
-   source sentence.
-
-**Two runtimes, one front door:** the browser only ever talks to Next.js (UI, auth,
-database); the Python **FastAPI** AI plane is internal-only, called server-side with a
-shared token. Extraction runs on real NIM, or a deterministic **offline mock** (one env
-flag) that also serves as the fallback if a live call fails — so the board never breaks.
-Quality is measured, not assumed: `pnpm eval:extraction` scores barrier **F1** against
-labelled ground truth (88% on live NIM, gate 0.85). Full design in the
-**[PRD](docs/prd.md)**; run it via the **[demo runbook](docs/DEMO.md)**.
+Two runtimes, one front door: the browser only ever talks to Next.js; the
+Python AI plane is internal-only and stateless. Every model call is
+rate-limited, timeout-bounded, schema-validated on both sides, grounded
+against its source, and stamped with provenance — and the whole system runs
+offline on deterministic mocks with a single env flag (`NIM_MOCK`). The full
+design, guardrails, and model choices are in **[AI design](docs/ai-design.md)**.
 
 ## Quick start
 
-**Prerequisites:** Node 22 (see `.nvmrc`) · [pnpm](https://pnpm.io) (`corepack enable`) · Docker
+**Prerequisites:** Node 22 (`.nvmrc`) · pnpm 11 (`corepack enable`) · Docker
+with Compose v2.
 
 ```bash
-# 1. Install
 pnpm install
-
-# 2. Configure environment
 cp .env.example .env
-npx auth secret            # generates AUTH_SECRET — paste into .env
+npx auth secret                 # paste the value into AUTH_SECRET in .env
 
-# 3. Start Postgres + MinIO, apply schema, seed a demo user
-pnpm docker:db
-pnpm docker:minio
+docker compose up -d db ai      # Postgres (pgvector) + the AI plane (offline mock mode)
+pnpm docker:minio               # object storage (profile photos / uploads)
+
 pnpm db:migrate
-pnpm db:seed                # → demo@example.com / Password123
+pnpm db:seed                    # demo@example.com / Password123 (admin)
+pnpm db:seed:ward               # demo ward — 16 beds, notes with barriers
+pnpm db:seed:policy             # discharge-policy KB (requires the ai service)
 
-# 4. Run
-pnpm dev                    # http://localhost:3000
+pnpm dev                        # http://localhost:3000
 ```
 
-Sign in with the demo account, or register a new one at `/register`.
-For the installable PWA (service worker is production-only): `pnpm build && pnpm start`.
+Sign in as the demo admin, open the board, and hit **Run extraction** — or
+follow the **[demo runbook](docs/DEMO.md)** for the full walkthrough. To use
+real models instead of the offline mocks, set `NIM_MOCK=false` and an
+`NVIDIA_API_KEY`, then recreate the `ai` container. Environment reference and
+all scripts: [Usage & Development](docs/usage.md).
 
 ## Documentation
 
-| Doc                                                       | What's inside                                                                                                                                                                            |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 📖 **[Platform guide](docs/guide.html)**                  | The product guide — problem, what it does, patient flow, architecture, AI tooling & models, evaluation, stack. Served in-app at `/about` (with `/about/architecture` and `/about/azure`) |
-| 🩺 **[PRD](docs/prd.md)**                                 | Product vision, GenAI reference architecture (NVIDIA NIM), roadmap                                                                                                                       |
-| 🧪 **[Evals](docs/evals.md)**                             | Testing & evaluating the AI — the four eval harnesses, datasets, gates, and how to run them                                                                                              |
-| 📈 **[Monitoring](docs/monitoring.md)**                   | Observing the AI at runtime — structured logs, health/config endpoints, and the signals to watch                                                                                         |
-| 🗺️ **[Roadmap](docs/roadmap.md)**                         | How WardBeat could improve — product, AI & models, evaluation, and operability                                                                                                           |
-| 🎤 **[Explaining WardBeat](docs/explaining-wardbeat.md)** | A talk track for explaining the project to technical people — 30s / 2-min / deep-dive, audience tailoring, and Q&A                                                                       |
-| 📐 **[Specs](specs/README.md)**                           | Spec-driven development — WardBeat features + inherited platform specs                                                                                                                   |
-| 📋 **[Features](docs/features.md)**                       | Complete inherited feature list and what's included                                                                                                                                      |
-| 🏛️ **[Architecture](docs/architecture.md)**               | Request flow, auth design, security model, project structure                                                                                                                             |
-| 🗄️ **[Database](docs/database.md)**                       | ERD, schema, migrations, Drizzle workflow, seeding                                                                                                                                       |
-| 🔑 **[OAuth](docs/oauth.md)**                             | GitHub + Google sign-in — setup, callback URLs, linking                                                                                                                                  |
-| ✉️ **[Email](docs/email.md)**                             | SMTP setup, password reset, email verification, soft gate                                                                                                                                |
-| 📱 **[PWA & App Shell](docs/pwa.md)**                     | Manifest, service worker strategy, icons, responsive shell                                                                                                                               |
-| 🔔 **[Web Push](docs/push.md)**                           | VAPID setup, subscribe/send, service-worker handlers                                                                                                                                     |
-| 🛠️ **[Usage & Development](docs/usage.md)**               | Scripts, env vars, testing, Docker, extending the app                                                                                                                                    |
-| 📦 **[Self-hosting](docs/self-hosting.md)**               | `make setup` clone-to-live + continuous deployment (`make deploy`)                                                                                                                       |
-| 🚀 **[Deployment](docs/deployment.md)**                   | Cloudflare Tunnel — quick, guided, and Terraform paths                                                                                                                                   |
-| ⚙️ **[CI/CD](docs/ci-cd.md)**                             | Pipeline design (deferred — see the note above)                                                                                                                                          |
-| 🔁 **[Feature → Production](docs/workflow.md)**           | One playbook: branch → PR → release → deploy                                                                                                                                             |
-| 💾 **[Backups](docs/backups.md)**                         | Nightly Postgres + MinIO backups, restore runbook, offsite                                                                                                                               |
-
-## Development workflow
-
-WardBeat follows **spec-driven, trunk-based development**:
-
-1. **Spec first.** Non-trivial work starts with a spec — copy
-   [`specs/TEMPLATE.md`](specs/TEMPLATE.md) to the next free `NNNN-slug.md`,
-   open it as `Proposed`, and get to `Accepted` before building. See
-   [`specs/README.md`](specs/README.md).
-2. **Branch off `main`** as `feature/<slug>`. `main` is the only long-lived
-   branch; a release is a `vX.Y.Z` tag on `main`.
-3. **Conventional Commits**, enforced by a commitlint `commit-msg` hook; a
-   `pre-commit` hook runs ESLint + Prettier on staged files.
-4. **Open a PR into `main`** and run the local gate first (below).
-
-Full detail: [CONTRIBUTING.md](CONTRIBUTING.md) and
-[Feature → Production](docs/workflow.md).
-
-## Scripts
-
-Full reference — see **[Usage & Development](docs/usage.md)** for details.
-
-| Command                              | What it does                                            |
-| ------------------------------------ | ------------------------------------------------------- |
-| `pnpm dev`                           | Start the dev server (Turbopack) at `localhost:3000`    |
-| `pnpm build` · `pnpm start`          | Production build · serve the build                      |
-| `pnpm lint` · `pnpm lint:fix`        | ESLint (check · autofix)                                |
-| `pnpm typecheck`                     | Type-check with `tsc --noEmit`                          |
-| `pnpm format` · `pnpm format:check`  | Prettier (write · check)                                |
-| `pnpm test` · `pnpm test:watch`      | Unit tests (Vitest) — run once · watch                  |
-| `pnpm test:e2e` · `pnpm test:e2e:ui` | End-to-end tests (Playwright) — headless · UI runner    |
-| `pnpm db:generate`                   | Generate a SQL migration from the Drizzle schema        |
-| `pnpm db:migrate`                    | Apply pending migrations                                |
-| `pnpm db:studio`                     | Open Drizzle Studio (visual DB browser)                 |
-| `pnpm db:seed`                       | Seed the demo admin + base roles (idempotent)           |
-| `pnpm docker:db`                     | Start local Postgres                                    |
-| `pnpm docker:minio`                  | Start local MinIO + one-shot bucket init                |
-| `pnpm docker:mail`                   | Start local Mailpit (email catcher for the email E2E)   |
-| `pnpm gen:icons` · `pnpm gen:og`     | Regenerate the PWA icon set · the OpenGraph share image |
+| Area             | Docs                                                                                                                                                                                          |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Product**      | [PRD](docs/prd.md) · [Features](docs/features.md) · [Demo runbook](docs/DEMO.md) · [Explaining WardBeat](docs/explaining-wardbeat.md) · [Roadmap](docs/roadmap.md) · in-app guide at `/about` |
+| **AI**           | [AI design](docs/ai-design.md) · [Evals](docs/evals.md) · [Monitoring](docs/monitoring.md) · [AI plane service reference](ai/README.md)                                                       |
+| **Architecture** | [Architecture](docs/architecture.md) · [Database](docs/database.md) · [Security policy](SECURITY.md)                                                                                          |
+| **Platform**     | [Usage & Development](docs/usage.md) · [PWA & app shell](docs/pwa.md) · [Web push](docs/push.md) · [OAuth](docs/oauth.md) · [Email](docs/email.md)                                            |
+| **Operations**   | [Self-hosting](docs/self-hosting.md) · [Deployment](docs/deployment.md) · [Backups](docs/backups.md) · [CI/CD](docs/ci-cd.md) _(deferred — reference design)_                                 |
+| **Process**      | [Specs](specs/README.md) · [Feature → Production](docs/workflow.md) · [CONTRIBUTING](CONTRIBUTING.md) · [CHANGELOG](CHANGELOG.md)                                                             |
 
 ## Tech stack
 
-| Layer      | Choice                                                                         |
-| ---------- | ------------------------------------------------------------------------------ |
-| Framework  | Next.js 16 · React 19 · TypeScript 5.9 (strict)                                |
-| Auth       | Auth.js (NextAuth) v5 — Credentials + GitHub/Google OAuth, JWT, Argon2id, RBAC |
-| Email      | Optional SMTP via nodemailer — off by default, any provider                    |
-| Database   | PostgreSQL 17 · Drizzle ORM + drizzle-kit                                      |
-| Storage    | MinIO (S3-compatible) · @aws-sdk/client-s3                                     |
-| UI         | Tailwind CSS v4 · shadcn/ui · lucide-react                                     |
-| Validation | Zod (shared client/server schemas)                                             |
-| Testing    | Vitest + Testing Library · Playwright (Mailpit for email)                      |
-| Tooling    | ESLint (flat) · Prettier · Husky · lint-staged                                 |
-| Delivery   | Multi-stage Docker (standalone, non-root) · Cloudflare Tunnel                  |
-
-## Project structure
-
-```
-src/
-├── app/            # App Router: (auth) + (dashboard) groups, api/ (incl. files/[id]), PWA manifest & offline
-├── components/     # auth · files · push · pwa · settings · shell · theme · ui (shadcn)
-├── db/             # Drizzle schema, client, migrate & seed scripts
-├── lib/            # auth (config/actions/rbac/oauth/tokens/recovery), email, push, storage (S3/MinIO), shell/nav, validations, env
-├── types/          # shared TypeScript types
-└── proxy.ts        # edge route protection + role gating (Next 16 "proxy" convention)
-```
-
-Full tree and rationale in **[Architecture](docs/architecture.md)**.
+| Layer    | Choice                                                                                      |
+| -------- | ------------------------------------------------------------------------------------------- |
+| Web      | Next.js 16 (App Router, RSC, Server Actions) · React 19 · TypeScript 5.9 strict             |
+| AI plane | FastAPI (Python 3.12) · NVIDIA NIM — Nemotron Nano 9B, NV-EmbedQA-E5-v5, Llama-3.2 RerankQA |
+| Database | PostgreSQL 17 + pgvector · Drizzle ORM (committed migrations)                               |
+| Auth     | Auth.js v5 — credentials (Argon2id, JWT) + GitHub/Google OAuth · ward RBAC                  |
+| UI       | Tailwind CSS v4 · shadcn/ui · installable PWA                                               |
+| Storage  | MinIO (S3-compatible)                                                                       |
+| Testing  | Vitest · Playwright (+ axe a11y) · pytest · four AI eval harnesses                          |
+| Delivery | Multi-stage non-root Docker · Cloudflare Tunnel (no open ports)                             |
 
 ## Deployment
 
-WardBeat runs as a self-hosted Docker stack behind a **Cloudflare Tunnel** — no
-open ports, no reverse proxy, no certs. Three on-ramps, all converging on the
-same runtime:
-
-- **Quick** — `make tunnel-quick` → an instant `https://<random>.trycloudflare.com` URL, no Cloudflare account.
-- **Guided** — your domain, a tunnel token pasted from the Cloudflare dashboard.
-- **Automated** — your domain, provisioned end-to-end by Terraform.
-
-The guided path to all three, clone-to-live, is `make setup` — see
-**[Self-hosting](docs/self-hosting.md)**. For per-command / Terraform
-reference: **[Deployment](docs/deployment.md)**.
-
-## Roadmap
-
-**Inherited platform** (proven and in place):
-
-- [x] Credentials auth · Drizzle/Postgres · Docker · PWA · responsive app shell
-- [x] Auth rate limiting · nonce CSP + HSTS · structured-logging shim
-- [x] RBAC · invite-based account claim · optional email delivery
-- [x] File uploads & object storage · dark mode · SEO/OpenGraph · OAuth · Web Push
-- [x] Cloudflare Tunnel deployment · automated backups
-
-**WardBeat product** (planned — see [`specs/`](specs/README.md)):
-
-- [x] Repository scaffold & development process ([0025](specs/0025-wardbeat-foundation.md))
-- [x] Ward, bed, and patient-flow domain model ([v0.2.0](specs/releases/v0.2.0-barrier-intelligence-ward-board/spec.md))
-- [x] Live ward board with AI-extracted, cited discharge barriers ([v0.2.0](specs/releases/v0.2.0-barrier-intelligence-ward-board/spec.md))
-- [x] Natural-language flow copilot — ward-state Q&A + policy RAG ([v0.3.0](specs/releases/v0.3.0-flow-copilot/spec.md))
-- [x] Action recommendations — agentic, policy-grounded, human-in-the-loop ([v0.4.0](specs/releases/v0.4.0-action-recommendations/spec.md))
-- [x] Forecasting & narration — deterministic LOS/demand models + LLM briefing ([v0.5.0](specs/releases/v0.5.0-forecasting-narration/spec.md))
-- [x] Flow cockpit — board-centric UX unifying all of the above ([v0.6.0](specs/releases/v0.6.0-flow-cockpit/spec.md))
+Self-hosted Docker behind a **Cloudflare Tunnel** — no open ports, no reverse
+proxy, no certs. `make setup` is the clone-to-live wizard with three on-ramps
+(instant `trycloudflare.com` URL, guided with your own domain, or fully
+Terraform-provisioned), and `make deploy` handles continuous pull-based
+deploys. See [Self-hosting](docs/self-hosting.md) and
+[Deployment](docs/deployment.md).
 
 ## Contributing
 
-Commits run ESLint + Prettier via a Husky `pre-commit` hook. Before opening a PR,
-run the full local gate (CI is deferred, so this is the gate that matters):
+Spec-driven, trunk-based: non-trivial work starts with a spec in
+[`specs/releases/`](specs/releases/README.md), branches off `main`, and lands
+by PR with Conventional Commits (hook-enforced). CI is deferred, so the local
+gate is the gate that matters:
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
-See **[CONTRIBUTING.md](CONTRIBUTING.md)** and **[Usage & Development](docs/usage.md)**
-for the full workflow.
+Full workflow: [CONTRIBUTING.md](CONTRIBUTING.md) ·
+[Feature → Production](docs/workflow.md).
 
 ## License
 

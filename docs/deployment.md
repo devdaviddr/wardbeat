@@ -34,20 +34,23 @@ and [architecture.md](architecture.md).
 
 - Docker + Docker Compose (v2.24+ — the deploy compose files use a newer
   Compose merge feature).
-- A `.env` with at least `AUTH_SECRET` and `DATABASE_URL` (see [`.env.example`](../.env.example)).
+- A `.env` with at least `AUTH_SECRET`, `WARDBEAT_AI_SERVICE_TOKEN`, and
+  `DATABASE_URL` (see [`.env.example`](../.env.example)); `make setup`
+  generates the secrets.
 - For named tunnels: a domain on Cloudflare and (for the automated path) a
   scoped API token — **Account → Cloudflare Tunnel: Edit**, **Zone → DNS: Edit**.
 
 ## Environment variables
 
-| Variable                                       | Used by                | Notes                                         |
-| ---------------------------------------------- | ---------------------- | --------------------------------------------- |
-| `AUTH_SECRET`                                  | runtime (all modes)    | required                                      |
-| `CLOUDFLARE_TUNNEL_TOKEN`                      | runtime (named tunnel) | from `make tunnel-provision` or the dashboard |
-| `AUTH_URL`                                     | runtime (named tunnel) | your public `https://…` URL                   |
-| `CLOUDFLARE_API_TOKEN`                         | provisioning           | scoped: Tunnel:Edit + DNS:Edit                |
-| `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_ZONE_ID` | provisioning           | from the Cloudflare dashboard                 |
-| `TUNNEL_HOSTNAME`                              | provisioning           | e.g. `app.example.com`                        |
+| Variable                                       | Used by                | Notes                                                      |
+| ---------------------------------------------- | ---------------------- | ---------------------------------------------------------- |
+| `AUTH_SECRET`                                  | runtime (all modes)    | required                                                   |
+| `WARDBEAT_AI_SERVICE_TOKEN`                    | runtime (all modes)    | required — app↔ai shared secret; `make setup` generates it |
+| `CLOUDFLARE_TUNNEL_TOKEN`                      | runtime (named tunnel) | from `make tunnel-provision` or the dashboard              |
+| `AUTH_URL`                                     | runtime (named tunnel) | your public `https://…` URL                                |
+| `CLOUDFLARE_API_TOKEN`                         | provisioning           | scoped: Tunnel:Edit + DNS:Edit                             |
+| `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_ZONE_ID` | provisioning           | from the Cloudflare dashboard                              |
+| `TUNNEL_HOSTNAME`                              | provisioning           | e.g. `app.example.com`                                     |
 
 Runtime vars go in `.env`; provisioning vars are best kept in
 `infra/cloudflare/terraform.tfvars` (gitignored). See [`.env.example`](../.env.example).

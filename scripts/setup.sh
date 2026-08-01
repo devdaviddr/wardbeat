@@ -147,6 +147,22 @@ ensure_env() {
   else
     set_env AUTH_SECRET "$(openssl rand -base64 33)"; ok "Generated a strong AUTH_SECRET"
   fi
+
+  # WARDBEAT_AI_SERVICE_TOKEN — the app↔ai shared secret. The AI plane fails
+  # closed without it, and docker-compose.prod.yml requires it. Both sides read
+  # it from the same key set: keep WARDBEAT_AI_SERVICE_TOKEN (Next.js) and
+  # AI_SERVICE_TOKEN (FastAPI, host-run dev) in lockstep. Replace the
+  # .env.example dev placeholder with a real secret; keep an existing one.
+  if env_active WARDBEAT_AI_SERVICE_TOKEN \
+    && ! grep -qE '^WARDBEAT_AI_SERVICE_TOKEN="?dev-service-token' "$ENV_FILE"; then
+    ok "Kept existing WARDBEAT_AI_SERVICE_TOKEN"
+  else
+    local ai_token
+    ai_token="$(openssl rand -hex 32)"
+    set_env WARDBEAT_AI_SERVICE_TOKEN "$ai_token"
+    set_env AI_SERVICE_TOKEN "$ai_token"
+    ok "Generated a strong WARDBEAT_AI_SERVICE_TOKEN (app<->ai shared secret)"
+  fi
 }
 
 # ---------------------------------------------------------------------------

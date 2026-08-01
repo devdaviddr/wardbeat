@@ -1,10 +1,17 @@
-# Full production-like stack: database, one-shot migrator, and the app.
+# Full production-like stack: database, one-shot migrator, the AI plane, and
+# the app. Needs AUTH_SECRET and WARDBEAT_AI_SERVICE_TOKEN (the app↔ai shared
+# secret) — `make setup` generates both into .env, or for a one-off:
 #
-#   AUTH_SECRET=$(openssl rand -base64 33) docker compose -f docker-compose.prod.yml up --build
+#   AUTH_SECRET=$(openssl rand -base64 33) \
+#   WARDBEAT_AI_SERVICE_TOKEN=$(openssl rand -hex 32) \
+#     docker compose -f docker-compose.prod.yml up --build
 #
 services:
   db:
-    image: postgres:17-alpine
+    # pgvector image (superset of postgres:17) — migrations run
+    # `CREATE EXTENSION vector` for the policy RAG knowledge base, so a plain
+    # postgres image fails `pnpm db:migrate` on a fresh deploy.
+    image: pgvector/pgvector:pg17
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -119,6 +126,35 @@ services:
       done
       "
 
+  # WardBeat AI plane — internal-only FastAPI service over NVIDIA NIM (or the
+  # deterministic offline mock when NIM_MOCK=true). No published ports: only
+  # `app` may reach it, authenticated by the shared service token. The token is
+  # required here because the plane fails closed without one (503 on every
+  # request), which would silently disable every AI feature.
+  ai:
+    build: ./ai
+    restart: unless-stopped
+    environment:
+      NIM_MOCK: ${NIM_MOCK:-true}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      NIM_BASE_URL: ${NIM_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      NIM_EXTRACT_MODEL: ${NIM_EXTRACT_MODEL:-nvidia/nvidia-nemotron-nano-9b-v2}
+      NIM_EMBED_MODEL: ${NIM_EMBED_MODEL:-nvidia/nv-embedqa-e5-v5}
+      NIM_RERANK_MODEL: ${NIM_RERANK_MODEL:-nvidia/llama-3.2-nv-rerankqa-1b-v2}
+      NIM_EXTRACT_MAX_TOKENS: ${NIM_EXTRACT_MAX_TOKENS:-3072}
+      AI_SERVICE_TOKEN: ${WARDBEAT_AI_SERVICE_TOKEN:?WARDBEAT_AI_SERVICE_TOKEN is required (app<->ai shared secret; `make setup` generates it)}
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   app:
     build:
       context: .
@@ -135,6 +171,13 @@ services:
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
       S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       S3_BUCKET: ${S3_BUCKET:-app-files}
+      WARDBEAT_AI_URL: http://ai:8000
+      WARDBEAT_AI_SERVICE_TOKEN: ${WARDBEAT_AI_SERVICE_TOKEN:?WARDBEAT_AI_SERVICE_TOKEN is required (app<->ai shared secret; `make setup` generates it)}
+      # Ward features default ON in production; FEATURE_* in .env can disable.
+      FEATURE_WARD_BOARD: ${FEATURE_WARD_BOARD:-true}
+      FEATURE_COPILOT: ${FEATURE_COPILOT:-true}
+      FEATURE_ACTIONS: ${FEATURE_ACTIONS:-true}
+      FEATURE_BRIEFING: ${FEATURE_BRIEFING:-true}
     depends_on:
       db:
         condition: service_healthy
@@ -142,6 +185,8 @@ services:
         condition: service_completed_successfully
       minio-init:
         condition: service_completed_successfully
+      ai:
+        condition: service_healthy
 
 volumes:
   pgdata:

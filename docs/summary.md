@@ -13,7 +13,7 @@ A production-grade foundation for full-stack web apps — authentication, databa
 
 ### Quick Stats
 
-- **Version:** WardBeat 0.7.0 (platform baseline v0.19.0)
+- **Version:** WardBeat 0.12.0 (platform baseline v0.19.0)
 - **License:** MIT
 - **Type:** Full-stack Next.js 16 boilerplate
 - **Target:** Single-box production (Docker + Cloudflare Tunnel)
