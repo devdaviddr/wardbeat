@@ -21,3 +21,30 @@ export const test = base.extend({
 })
 
 export { expect }
+
+/** The tabs `/settings` is split into (v0.8.0). */
+export type SettingsTab =
+  'Account' | 'Files & notifications' | 'System' | 'Administration'
+
+/**
+ * Select a tab on `/settings`.
+ *
+ * Since v0.8.0 the settings page is tabbed, so anything below Account —
+ * files, push, build info, the admin panel — is not in the DOM until its tab is
+ * chosen. The tablist is a client component, so a click that lands before
+ * hydration is silently dropped; retry until the tab actually reports itself
+ * selected rather than assuming the first click took.
+ */
+export async function openSettingsTab(
+  page: import('@playwright/test').Page,
+  name: SettingsTab,
+): Promise<void> {
+  const tab = page.getByRole('tab', { name })
+  await expect(tab).toBeVisible()
+  await expect(async () => {
+    await tab.click()
+    await expect(tab).toHaveAttribute('aria-selected', 'true', {
+      timeout: 1000,
+    })
+  }).toPass({ timeout: 15_000 })
+}

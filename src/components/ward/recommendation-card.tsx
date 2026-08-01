@@ -59,7 +59,7 @@ export function RecommendationCard({
           </Badge>
         )}
         <span
-          className={`text-[10px] ${rec.grounded ? 'text-green-600' : 'text-amber-600'}`}
+          className={`text-[10px] ${rec.grounded ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}
         >
           {rec.grounded ? '● policy-grounded' : '○ no policy'}
         </span>

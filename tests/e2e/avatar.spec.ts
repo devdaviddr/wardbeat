@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures'
+import { expect, test, openSettingsTab } from './fixtures'
 
 // Profile photo upload (spec 0018): built on the same storage/ownership
 // machinery as general file uploads (spec 0007), so these tests focus on
@@ -20,6 +20,7 @@ test('upload, replace, and remove a profile photo', async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Account')
   // No photo yet — fallback initials render ("AT" for "Avatar Tester"),
   // "Remove" isn't offered because there's nothing to remove.
   await expect(page.getByText('AT', { exact: true }).first()).toBeVisible()
@@ -81,6 +82,7 @@ test('serves the avatar with cacheable, immutable headers (no flash on refresh)'
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Account')
   await page.getByLabel('Upload profile photo').setInputFiles({
     name: 'avatar.png',
     mimeType: 'image/png',
@@ -116,6 +118,7 @@ test('rejects a non-image file with a clear error (PDF is fine for general uploa
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Account')
   await page.getByLabel('Upload profile photo').setInputFiles({
     name: 'resume.pdf',
     mimeType: 'application/pdf',
@@ -137,6 +140,7 @@ test('deleting a user also removes their profile photo', async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Account')
   await page.getByLabel('Upload profile photo').setInputFiles({
     name: 'avatar.png',
     mimeType: 'image/png',
@@ -156,6 +160,7 @@ test('deleting a user also removes their profile photo', async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Administration')
   const row = page.getByRole('row').filter({ hasText: emailE })
   await row.getByRole('button', { name: 'Open menu' }).click()
   await page.getByRole('menuitem', { name: 'Delete' }).click()

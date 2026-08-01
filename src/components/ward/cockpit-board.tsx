@@ -56,7 +56,7 @@ export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
           <h1 className="text-2xl font-semibold">{cockpit.wardName}</h1>
           <p className="text-muted-foreground text-sm">
             {cockpit.stats.occupied} occupied · {cockpit.stats.free} free ·{' '}
-            <span className="font-medium text-amber-600 dark:text-amber-400">
+            <span className="font-medium text-amber-700 dark:text-amber-400">
               {cockpit.stats.mffdDelayed} fit-but-delayed
             </span>
             {cockpit.stats.overdue > 0 && (
@@ -246,7 +246,7 @@ function BedCard({
               <span
                 className={`ml-auto font-mono text-xs tabular-nums ${
                   bed.pDischarge! >= 0.5
-                    ? 'text-green-600'
+                    ? 'text-green-700 dark:text-green-400'
                     : 'text-muted-foreground'
                 }`}
                 title="P(discharge in 24h)"

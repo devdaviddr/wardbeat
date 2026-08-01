@@ -9,6 +9,11 @@ import { expect, test } from './fixtures'
  * `pnpm db:seed:ward` + an extraction run having produced barriers.
  */
 
+// The suite is `fullyParallel`, but these tests all mutate the same seeded
+// ward — one clears a barrier while another is reading the same bed. Run them
+// in order so they don't contend over shared clinical state.
+test.describe.configure({ mode: 'serial' })
+
 async function signIn(page: import('@playwright/test').Page) {
   await page.goto('/login')
   await page.getByLabel('Email').fill('demo@example.com')
@@ -40,30 +45,31 @@ test('a clinician assigns, comments on, and clears a barrier', async ({
   await signIn(page)
   await openBedWithBarrier(page)
 
-  const dialog = page.getByRole('dialog')
+  // Scope to ONE barrier record — a bed can hold several, and mixing `.first()`
+  // across separate locators can target different rows.
+  const barrier = page.getByRole('dialog').getByRole('listitem').first()
+  const note = `Pharmacy says 4pm ${Date.now()}`
 
   // Assign it to someone — the picker lists registered users.
-  const owner = dialog.locator('select').first()
-  await owner.selectOption({ index: 1 })
-  await expect(dialog.getByText(/Owner:/)).toBeVisible()
+  await barrier.locator('select').selectOption({ index: 1 })
+  await expect(barrier.getByText(/Owner:/)).toBeVisible()
 
   // Record progress. This is the thread that survives re-extraction.
-  await dialog
-    .getByPlaceholder('Add a progress note…')
-    .first()
-    .fill('Pharmacy says 4pm')
-  await dialog.getByRole('button', { name: 'Note' }).first().click()
-  await expect(dialog.getByText(/Pharmacy says 4pm/)).toBeVisible()
+  await barrier.getByPlaceholder('Add a progress note…').fill(note)
+  const noteButton = barrier.getByRole('button', { name: 'Note' })
+  await expect(noteButton).toBeEnabled()
+  await noteButton.click()
+  await expect(barrier.getByText(note)).toBeVisible({ timeout: 10_000 })
 
-  // Clearing demands a reason — the empty case must be refused.
-  await dialog.getByRole('button', { name: 'Mark cleared' }).first().click()
-  const reason = dialog.getByPlaceholder('How was it resolved?')
+  // Clearing demands a reason.
+  await barrier.getByRole('button', { name: 'Mark cleared' }).click()
+  const reason = barrier.getByPlaceholder('How was it resolved?')
   await expect(reason).toBeVisible()
   await reason.fill('TTOs collected')
-  await dialog.getByRole('button', { name: 'Confirm' }).first().click()
+  await barrier.getByRole('button', { name: 'Confirm' }).click()
 
   // The barrier leaves the open board — the count finally goes down.
-  await expect(dialog.getByText('TTOs collected')).toHaveCount(0, {
+  await expect(page.getByRole('dialog').getByText(note)).toHaveCount(0, {
     timeout: 10_000,
   })
 })
@@ -74,18 +80,22 @@ test('a clinician can raise a barrier the extraction missed', async ({
   await signIn(page)
   await openBedWithBarrier(page)
 
+  // Unique per run — the barrier is real data that persists, so a fixed string
+  // would collide with every previous run of this test.
+  const description = `Family meeting needed ${Date.now()}`
+
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: 'Add barrier' }).click()
   await dialog
     .getByPlaceholder('What is holding this discharge up?')
-    .fill('Family meeting needed before discharge')
+    .fill(description)
   await dialog.getByRole('button', { name: 'Add', exact: true }).click()
 
   // The text appears twice by design — once as the barrier, once in its
   // "raised" event — so match the barrier body exactly.
-  await expect(
-    dialog.getByText('Family meeting needed before discharge', { exact: true }),
-  ).toBeVisible({ timeout: 10_000 })
+  await expect(dialog.getByText(description, { exact: true })).toBeVisible({
+    timeout: 10_000,
+  })
   await expect(dialog.getByText('Added by a clinician').first()).toBeVisible()
   // And it must be attributed in the thread.
   await expect(dialog.getByText(/raised:/).first()).toBeVisible()

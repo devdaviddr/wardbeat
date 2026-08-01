@@ -26,7 +26,7 @@ export function FlowBriefing({ data }: { data: FlowBriefingData }) {
           className={`rounded-lg border p-3 ${short ? 'border-amber-400' : 'border-green-400'}`}
         >
           <div
-            className={`font-mono text-2xl font-bold ${short ? 'text-amber-600' : 'text-green-600'}`}
+            className={`font-mono text-2xl font-bold ${short ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}`}
           >
             {netLabel}
           </div>
@@ -66,7 +66,9 @@ export function FlowBriefing({ data }: { data: FlowBriefingData }) {
                   <td className="py-1 pr-4">
                     <span
                       className={
-                        d.p >= 0.5 ? 'text-green-600' : 'text-muted-foreground'
+                        d.p >= 0.5
+                          ? 'text-green-700 dark:text-green-400'
+                          : 'text-muted-foreground'
                       }
                     >
                       {pct(d.p)}

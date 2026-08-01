@@ -64,7 +64,7 @@ export function BriefingStrip() {
     <div className="rounded-lg border p-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <span
-          className={`font-mono font-bold ${short ? 'text-amber-600' : 'text-green-600'}`}
+          className={`font-mono font-bold ${short ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}`}
         >
           Net {netLabel}
         </span>

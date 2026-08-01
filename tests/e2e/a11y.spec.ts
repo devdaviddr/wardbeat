@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test } from './fixtures'
+import { expect, openSettingsTab, test } from './fixtures'
 
 // Automated accessibility regression checks (WCAG 2.0/2.1 A + AA) for the
 // pages most likely to be touched by real visitors and admins. This backs the
@@ -47,6 +47,9 @@ test('settings admin panel has no detectable a11y violations', async ({
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  // Settings is tabbed (v0.8.0) — the admin panel lives behind Administration,
+  // so the tablist itself is part of what gets checked here.
+  await openSettingsTab(page, 'Administration')
   await expect(page.getByRole('button', { name: 'Add User' })).toBeVisible()
 
   // Include the "Add User" dialog — a common source of focus-trap/label bugs.
