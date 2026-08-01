@@ -22,15 +22,40 @@ async function signIn(page: import('@playwright/test').Page) {
   await expect(page).toHaveURL(/\/dashboard/)
 }
 
-/** Opens the first bed that has at least one open barrier. */
-async function openBedWithBarrier(page: import('@playwright/test').Page) {
+/** Opens the first occupied bed. */
+async function openOccupiedBed(page: import('@playwright/test').Page) {
   const card = page
     .getByRole('button')
-    .filter({ hasText: /\d+ barriers?/ })
+    .filter({ hasText: /Inpatient|MFFD/ })
     .first()
   await expect(card).toBeVisible()
   await card.click()
   await expect(page.getByRole('dialog')).toBeVisible()
+}
+
+/**
+ * Raise a barrier with unique text and return a locator scoped to its record.
+ *
+ * These tests mutate real ward data — clearing a barrier removes it for good —
+ * so they must not consume the seeded set. Each test creates the barrier it
+ * works on, which also makes the locators unambiguous when a bed holds several.
+ */
+async function createBarrier(
+  page: import('@playwright/test').Page,
+  description: string,
+) {
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Add barrier' }).click()
+  await dialog
+    .getByPlaceholder('What is holding this discharge up?')
+    .fill(description)
+  await dialog.getByRole('button', { name: 'Add', exact: true }).click()
+
+  // `ul > li` is the barrier record itself. Its event thread is a nested `ol`
+  // of `li`s that repeat the same text, so an unscoped `listitem` matches both.
+  const record = dialog.locator('ul > li').filter({ hasText: description })
+  await expect(record).toBeVisible({ timeout: 10_000 })
+  return record
 }
 
 test('the board says when the notes were last read', async ({ page }) => {
@@ -43,12 +68,11 @@ test('a clinician assigns, comments on, and clears a barrier', async ({
   page,
 }) => {
   await signIn(page)
-  await openBedWithBarrier(page)
+  await openOccupiedBed(page)
 
-  // Scope to ONE barrier record — a bed can hold several, and mixing `.first()`
-  // across separate locators can target different rows.
-  const barrier = page.getByRole('dialog').getByRole('listitem').first()
-  const note = `Pharmacy says 4pm ${Date.now()}`
+  const stamp = Date.now()
+  const barrier = await createBarrier(page, `Chase TTOs ${stamp}`)
+  const note = `Pharmacy says 4pm ${stamp}`
 
   // Assign it to someone — the picker lists registered users.
   await barrier.locator('select').selectOption({ index: 1 })
@@ -78,34 +102,21 @@ test('a clinician can raise a barrier the extraction missed', async ({
   page,
 }) => {
   await signIn(page)
-  await openBedWithBarrier(page)
+  await openOccupiedBed(page)
 
-  // Unique per run — the barrier is real data that persists, so a fixed string
-  // would collide with every previous run of this test.
   const description = `Family meeting needed ${Date.now()}`
+  const record = await createBarrier(page, description)
 
-  const dialog = page.getByRole('dialog')
-  await dialog.getByRole('button', { name: 'Add barrier' }).click()
-  await dialog
-    .getByPlaceholder('What is holding this discharge up?')
-    .fill(description)
-  await dialog.getByRole('button', { name: 'Add', exact: true }).click()
-
-  // The text appears twice by design — once as the barrier, once in its
-  // "raised" event — so match the barrier body exactly.
-  await expect(dialog.getByText(description, { exact: true })).toBeVisible({
-    timeout: 10_000,
-  })
-  await expect(dialog.getByText('Added by a clinician').first()).toBeVisible()
-  // And it must be attributed in the thread.
-  await expect(dialog.getByText(/raised:/).first()).toBeVisible()
+  // It is marked as the clinician's, and attributed in its own event thread.
+  await expect(record.getByText('Added by a clinician')).toBeVisible()
+  await expect(record.getByText(/raised:/)).toBeVisible()
 })
 
 test('the estimated discharge date can be overridden by hand', async ({
   page,
 }) => {
   await signIn(page)
-  await openBedWithBarrier(page)
+  await openOccupiedBed(page)
 
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: /^(Set|Change)$/ }).click()
