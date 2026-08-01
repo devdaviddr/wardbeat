@@ -1,9 +1,6 @@
-import logging
-
-from app.nim import NimError, chat_json
+from app.nim import chat_json
+from app.provenance import ModelResult, call_model, deterministic
 from app.settings import Settings
-
-log = logging.getLogger("wardbeat.ai")
 
 _ACTIONS = {
     "chase_tto",
@@ -60,10 +57,14 @@ def _fmt_policy(policy: list[dict]) -> str:
 
 
 def _mock(barriers: list[dict], policy: list[dict]) -> dict:
+    """Table lookup, not reasoning. It still cites the retrieved policy so the
+    source stays openable, but nothing here read that policy — which is why the
+    caller marks these recommendations ungrounded.
+    """
     recs = []
     for i, b in enumerate(barriers):
         action, title = _BARRIER_ACTION.get(b["type"], _BARRIER_ACTION["other"])
-        grounded = len(policy) > 0
+        has_policy = len(policy) > 0
         recs.append(
             {
                 "barrier_index": i + 1,
@@ -71,10 +72,10 @@ def _mock(barriers: list[dict], policy: list[dict]) -> dict:
                 "title": title,
                 "rationale": (
                     f"{title} so this barrier can clear and the bed free."
-                    + (" See discharge policy." if grounded else "")
+                    + (" See discharge policy." if has_policy else "")
                 ),
                 "priority": 1 if b["type"] in ("tto", "transport") else 2,
-                "citations": [1] if grounded else [],
+                "citations": [1] if has_policy else [],
             }
         )
     return {"recommendations": recs}
@@ -85,16 +86,14 @@ async def recommend_actions(
     patient_label: str,
     barriers: list[dict],
     policy: list[dict],
-) -> list[dict]:
+) -> ModelResult[list[dict]]:
     """Reason over a patient's barriers + retrieved policy → one grounded,
     recommend-only action per barrier. Returns a list mapped back to barrier ids.
     """
     if not barriers:
-        return []
+        return deterministic([])
 
-    if settings.use_mock:
-        raw = _mock(barriers, policy)
-    else:
+    async def live() -> dict:
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {
@@ -105,11 +104,15 @@ async def recommend_actions(
                 ),
             },
         ]
-        try:
-            raw = await chat_json(settings, messages)
-        except (NimError, Exception) as exc:  # noqa: BLE001
-            log.warning("recommend failed (%s); using mock", exc)
-            raw = _mock(barriers, policy)
+        return await chat_json(settings, messages)
+
+    result = await call_model(
+        settings,
+        "recommend",
+        mock=lambda: _mock(barriers, policy),
+        live=live,
+    )
+    raw = result.value
 
     out: list[dict] = []
     for r in raw.get("recommendations", []) or []:
@@ -136,7 +139,8 @@ async def recommend_actions(
                 "rationale": str(r.get("rationale", "")).strip(),
                 "priority": min(3, max(1, int(r.get("priority", 2) or 2))),
                 "citations": cites,
-                "grounded": len(cites) > 0,
+                # Citing a passage only counts as grounding if a model read it.
+                "grounded": len(cites) > 0 and result.provenance == "live",
             }
         )
-    return out
+    return ModelResult(out, result.provenance, result.model_used)

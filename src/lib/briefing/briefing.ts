@@ -5,6 +5,8 @@ import {
   forecastDischarge,
   narrateBriefing,
 } from '@/lib/ai/client'
+import type { Provenance } from '@/lib/ai/provenance'
+import { countRecentAdmissions } from '@/lib/ward/demand'
 import { getWardBoard } from '@/lib/ward/queries'
 
 /**
@@ -30,13 +32,27 @@ export interface FlowBriefing {
     free: number
     mffdDelayed: number
     predictedDischarges24h: number
-    expectedAdmissions: number
-    netBeds: number
+    /**
+     * Projected from the ward's own trailing-7-day admission history, or
+     * `null` when there is not enough of it. **Never** rendered as a number
+     * when null — the briefing says why instead (spec v0.11.0 FR2/FR3). The
+     * previous `0.5/hr` synthetic constant made this always 6.
+     */
+    expectedAdmissions: number | null
+    /** Null whenever `expectedAdmissions` is: a net position needs it. */
+    netBeds: number | null
     windowHours: number
   }
+  /** Plain-English reason the demand figures are absent; null when present. */
+  demandUnavailableReason: string | null
+  /** The basis for the projection, so the UI can show its working. */
+  admissionsLast7d: number | null
   predictedDischarges: PredictedDischarge[]
   atRisk: Array<{ label: string; barriers: string[] }>
   briefing: string
+  /** Applies to the narrated prose only — the figures above it are computed by
+   *  the deterministic forecasts either way. */
+  provenance: Provenance
 }
 
 export async function getFlowBriefing(): Promise<FlowBriefing | null> {
@@ -52,7 +68,9 @@ export async function getFlowBriefing(): Promise<FlowBriefing | null> {
     has_transport: b.barriers.some((x) => x.type === 'transport'),
     has_social_care: b.barriers.some((x) => x.type === 'social_care'),
     has_review: b.barriers.some((x) => x.type === 'review'),
-    days_admitted: 3, // synthetic constant; a real feed would supply LoS
+    // Real length of stay from `encounters.admittedAt`, or null when the
+    // encounter has none — never a constant (spec v0.11.0 FR1).
+    days_admitted: b.daysAdmitted,
     edd_set: Boolean(b.edd),
   }))
 
@@ -75,9 +93,14 @@ export async function getFlowBriefing(): Promise<FlowBriefing | null> {
     (d) => d.p >= DISCHARGE_THRESHOLD,
   ).length
 
+  // Demand is projected from this ward's own admission history. The service
+  // decides whether the history is thick enough; we only count it honestly,
+  // including counting none.
+  const admissionsLast7d = await countRecentAdmissions()
   const demand = await forecastDemand({
     free_beds: board.stats.free,
     predicted_discharges: predicted24h,
+    admissions_last_7d: admissionsLast7d,
     window_hours: WINDOW_HOURS,
   })
 
@@ -98,16 +121,22 @@ export async function getFlowBriefing(): Promise<FlowBriefing | null> {
     windowHours: WINDOW_HOURS,
   }
 
-  const { briefing } = await narrateBriefing({
+  // Omit-not-invent: a figure we could not compute is left out of the payload
+  // entirely rather than sent as 0, so there is nothing for the narrator to
+  // state (spec v0.11.0 FR3). The reason goes with it so it can say why.
+  const narration = await narrateBriefing({
     stats: {
       occupied: stats.occupied,
       free: stats.free,
       mffd_delayed: stats.mffdDelayed,
       predicted_discharges_24h: stats.predictedDischarges24h,
-      expected_admissions: stats.expectedAdmissions,
-      net_beds: stats.netBeds,
+      ...(stats.expectedAdmissions !== null
+        ? { expected_admissions: stats.expectedAdmissions }
+        : {}),
+      ...(stats.netBeds !== null ? { net_beds: stats.netBeds } : {}),
       window_hours: stats.windowHours,
     },
+    demand_unavailable_reason: demand.reason,
     at_risk: atRisk,
     predicted_discharges: predictedDischarges
       .filter((d) => d.p >= DISCHARGE_THRESHOLD)
@@ -121,8 +150,11 @@ export async function getFlowBriefing(): Promise<FlowBriefing | null> {
   return {
     wardName: board.wardName,
     stats,
+    demandUnavailableReason: demand.reason,
+    admissionsLast7d: demand.admissions_last_7d,
     predictedDischarges,
     atRisk,
-    briefing,
+    briefing: narration.briefing,
+    provenance: narration.provenance,
   }
 }

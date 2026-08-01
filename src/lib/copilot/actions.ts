@@ -1,6 +1,7 @@
 'use server'
 
 import { routeQuestion, type CopilotRoute } from '@/lib/ai/client'
+import { combineProvenance, type Provenance } from '@/lib/ai/provenance'
 import { getCurrentSession } from '@/lib/auth/session'
 import { logger } from '@/lib/logger'
 import { answerPolicyQuestion } from './policy'
@@ -19,6 +20,16 @@ export interface CopilotResponse {
   answer: string
   grounded: boolean
   citations: CopilotCitation[]
+  /** How this answer was produced — the UI must not present it as grounded
+   *  unless a model composed it. Weakest link across the calls involved. */
+  provenance: Provenance
+  /**
+   * Set when the stored policy vectors were built by a different embedding
+   * model than the one that embedded this question. Policy retrieval is
+   * meaningless in that state — both vector spaces are 1024-d so pgvector
+   * reports nothing — so the copilot refuses and says why (spec v0.11.0 FR8).
+   */
+  embeddingDrift?: string
   error?: string
 }
 
@@ -40,6 +51,7 @@ export async function askCopilotAction(
       answer: '',
       grounded: false,
       citations: [],
+      provenance: 'mock',
       error: 'Unauthorized',
     }
   }
@@ -51,12 +63,14 @@ export async function askCopilotAction(
       answer: '',
       grounded: false,
       citations: [],
+      provenance: 'mock',
       error: 'Ask a question first.',
     }
   }
 
   try {
-    const path = await routeQuestion(q)
+    const route = await routeQuestion(q)
+    const path = route.path
 
     if (path === 'policy') {
       const r = await answerPolicyQuestion(q)
@@ -70,6 +84,8 @@ export async function askCopilotAction(
           detail: c.text,
           kind: 'policy',
         })),
+        provenance: combineProvenance(route.provenance, r.provenance),
+        embeddingDrift: r.embeddingDrift,
       }
     }
 
@@ -86,6 +102,7 @@ export async function askCopilotAction(
           kind: 'ward',
           href: '/ward',
         })),
+        provenance: combineProvenance(route.provenance, r.provenance),
       }
     }
 
@@ -95,6 +112,8 @@ export async function askCopilotAction(
       answer: OUT_OF_SCOPE,
       grounded: false,
       citations: [],
+      // Canned copy, but the routing decision behind it was a model call.
+      provenance: route.provenance,
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Copilot failed'
@@ -105,6 +124,7 @@ export async function askCopilotAction(
       answer: '',
       grounded: false,
       citations: [],
+      provenance: 'mock',
       error: message,
     }
   }

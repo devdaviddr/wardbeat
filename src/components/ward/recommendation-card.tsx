@@ -11,6 +11,7 @@ import {
 } from '@/lib/actions/decide'
 import type { CockpitRecommendation } from '@/lib/ward/cockpit'
 import { PolicyDialog } from './policy-dialog'
+import { ProvenanceBadge } from './provenance-badge'
 
 const ACTION_LABELS: Record<string, string> = {
   chase_tto: 'Chase TTOs',
@@ -58,11 +59,12 @@ export function RecommendationCard({
             Priority
           </Badge>
         )}
-        <span
-          className={`text-[10px] ${rec.grounded ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}
-        >
-          {rec.grounded ? '● policy-grounded' : '○ no policy'}
-        </span>
+        <ProvenanceBadge
+          provenance={rec.provenance}
+          grounded={rec.grounded}
+          groundedLabel="policy-grounded"
+          ungroundedLabel="no policy"
+        />
       </div>
       <p className="mt-1 text-sm font-medium">{rec.title}</p>
       <p className="text-muted-foreground mt-0.5 text-sm">{rec.rationale}</p>

@@ -9,6 +9,7 @@ import type {
   BedStatus,
   EddSource,
 } from '@/db/schema'
+import { daysAdmitted } from '@/lib/ward/length-of-stay'
 
 export interface BarrierEventEntry {
   id: string
@@ -61,6 +62,14 @@ export interface BoardBed {
   eddSetByName: string | null
   extracted: boolean
   lastExtractedAt: Date | null
+  /** When the current encounter started; null when the bed is free. */
+  admittedAt: Date | null
+  /**
+   * Whole days since admission, or null when it cannot be derived. Every
+   * consumer that feeds the discharge forecast reads this — nothing may
+   * substitute a constant for it (spec v0.11.0 FR1).
+   */
+  daysAdmitted: number | null
   barriers: BoardBarrier[]
 }
 
@@ -171,6 +180,8 @@ export async function getWardBoard(
         encounter?.eddSetBy?.name ?? encounter?.eddSetBy?.email ?? null,
       extracted: Boolean(encounter?.lastExtractedAt),
       lastExtractedAt: encounter?.lastExtractedAt ?? null,
+      admittedAt: encounter?.admittedAt ?? null,
+      daysAdmitted: daysAdmitted(encounter?.admittedAt, now),
       barriers,
     }
   })

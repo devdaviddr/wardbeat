@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.recommend import recommend_actions
+from app.schemas import ProvenanceEnvelope
 from app.security import require_service_token
 from app.settings import get_settings
 
@@ -35,16 +36,20 @@ class RecommendationItem(BaseModel):
     grounded: bool
 
 
-class RecommendResponse(BaseModel):
+class RecommendResponse(ProvenanceEnvelope):
     recommendations: list[RecommendationItem]
 
 
 @router.post("/recommend", response_model=RecommendResponse)
 async def recommend(req: RecommendRequest) -> RecommendResponse:
-    recs = await recommend_actions(
+    result = await recommend_actions(
         get_settings(),
         req.patient_label,
         [b.model_dump() for b in req.barriers],
         [p.model_dump() for p in req.policy],
     )
-    return RecommendResponse(recommendations=[RecommendationItem(**r) for r in recs])
+    return RecommendResponse(
+        recommendations=[RecommendationItem(**r) for r in result.value],
+        provenance=result.provenance,
+        model_used=result.model_used,
+    )

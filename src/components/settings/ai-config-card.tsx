@@ -1,6 +1,10 @@
 import { Cpu } from 'lucide-react'
 
-import type { AiConfiguration } from '@/lib/ai/config'
+import type { AiConfiguration, StoredEmbeddingState } from '@/lib/ai/config'
+import {
+  effectiveEmbeddingModel,
+  UNKNOWN_EMBEDDING_MODEL,
+} from '@/lib/ai/embedding-model'
 import { Badge } from '@/components/ui/badge'
 import {
   Card,
@@ -112,8 +116,21 @@ function ReachableBody({
         <Field label="Extraction model">
           <Mono>{plane.models.extract}</Mono>
         </Field>
-        <Field label="Embedding model">
-          <Mono>{plane.models.embed}</Mono>
+        <Field label="Embedding model (configured)">
+          <Mono>{effectiveEmbeddingModel(plane)}</Mono>
+          {!live && (
+            <p className="text-muted-foreground mt-1 text-xs">
+              Hash-derived mock vectors. Would use{' '}
+              <code className="text-[11px]">{plane.models.embed}</code> when
+              live.
+            </p>
+          )}
+        </Field>
+        <Field label="Embedding model (stored policy vectors)">
+          <StoredEmbeddingField
+            stored={config.storedEmbedding}
+            configured={effectiveEmbeddingModel(plane)}
+          />
         </Field>
         <Field label="Rerank model">
           <Mono>{plane.models.rerank}</Mono>
@@ -132,6 +149,76 @@ function ReachableBody({
         </Field>
       </div>
     </>
+  )
+}
+
+/**
+ * The half of the embedding-drift picture that lives in the database (spec
+ * v0.11.0 FR8): which model built the policy vectors pgvector is searching.
+ *
+ * Worth stating plainly because nothing else exposes it. Seed the KB under
+ * `NIM_MOCK=true`, switch to a live key, and every policy answer is built from
+ * a cosine comparison between two unrelated 1024-d spaces — no error anywhere,
+ * and a green grounded badge on top. This field is where an admin finds out.
+ */
+function StoredEmbeddingField({
+  stored,
+  configured,
+}: {
+  stored: StoredEmbeddingState | null
+  configured: string
+}) {
+  if (!stored) {
+    return (
+      <span className="text-muted-foreground">
+        Could not read the policy knowledge base.
+      </span>
+    )
+  }
+  if (stored.chunkCount === 0) {
+    return (
+      <span className="text-muted-foreground">
+        No policy chunks seeded — run <code>pnpm db:seed:policy</code>.
+      </span>
+    )
+  }
+
+  const labels = stored.models.map((m) => m ?? UNKNOWN_EMBEDDING_MODEL)
+  const matches = labels.length === 1 && labels[0] === configured
+  const hasUnknown = stored.models.some((m) => m == null)
+
+  return (
+    <div className="space-y-1">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {labels.map((m) => (
+          <Mono key={m}>{m}</Mono>
+        ))}
+        <span className="text-muted-foreground text-xs">
+          ({stored.chunkCount} chunks)
+        </span>
+      </div>
+      {matches ? (
+        <p className="text-xs text-emerald-700 dark:text-emerald-400">
+          ● Matches the configured model — policy search is comparing like with
+          like.
+        </p>
+      ) : (
+        <p className="text-xs text-red-700 dark:text-red-400">
+          ▲ Does not match the configured model (
+          <code className="text-[11px]">{configured}</code>). Policy search is
+          comparing unrelated vector spaces and will return plausible nonsense.
+          Re-seed with <code className="text-[11px]">pnpm db:seed:policy</code>.
+        </p>
+      )}
+      {hasUnknown && (
+        <p className="text-muted-foreground text-xs">
+          <code className="text-[11px]">{UNKNOWN_EMBEDDING_MODEL}</code> means
+          the row predates v0.11.0 and carries no record of what embedded it —
+          the migration&apos;s backfill has not run against it. Treat those
+          vectors as unverified; re-seeding is the only way to know.
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -154,6 +241,24 @@ function UnreachableBody({
         </Field>
         <Field label="Service token (app side)">
           <YesNo value={config.serviceTokenConfigured} />
+        </Field>
+        <Field label="Embedding model (stored policy vectors)">
+          {config.storedEmbedding ? (
+            <span className="text-muted-foreground text-sm">
+              {config.storedEmbedding.chunkCount === 0
+                ? 'No policy chunks seeded.'
+                : `${config.storedEmbedding.models
+                    .map((m) => m ?? UNKNOWN_EMBEDDING_MODEL)
+                    .join(
+                      ', ',
+                    )} (${config.storedEmbedding.chunkCount} chunks). ` +
+                  'Cannot be compared while the AI plane is unreachable.'}
+            </span>
+          ) : (
+            <span className="text-muted-foreground text-sm">
+              Could not read the policy knowledge base.
+            </span>
+          )}
         </Field>
       </div>
       <p className="text-muted-foreground text-sm">

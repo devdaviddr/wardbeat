@@ -1,9 +1,6 @@
-import logging
-
-from app.nim import NimError, chat_json
+from app.nim import chat_json
+from app.provenance import ModelResult, call_model, deterministic
 from app.settings import Settings
-
-log = logging.getLogger("wardbeat.ai")
 
 _JSON_SHAPE = """\
 Return a single JSON object, no prose:
@@ -40,6 +37,10 @@ def _format(items: list[dict]) -> str:
 
 
 def _mock_answer(items: list[dict], kind: str) -> dict:
+    """Deterministic string assembly, not comprehension — so it never claims to
+    be grounded. The citations are still real (they point at the items the text
+    was built from) and stay useful for opening the source.
+    """
     if not items:
         return {"answer": _REFUSAL[kind], "citations": [], "grounded": False}
     if kind == "ward":
@@ -47,28 +48,28 @@ def _mock_answer(items: list[dict], kind: str) -> dict:
         return {
             "answer": f"{len(items)} bed(s) match: {labels}.",
             "citations": list(range(1, len(items) + 1)),
-            "grounded": True,
+            "grounded": False,
         }
     top = items[0]["text"]
     sentence = top.split(". ")[0].strip()
     if not sentence.endswith("."):
         sentence += "."
-    return {"answer": sentence, "citations": [1], "grounded": True}
+    return {"answer": sentence, "citations": [1], "grounded": False}
 
 
 async def answer_from_passages(
     settings: Settings, question: str, passages: list[dict], kind: str = "policy"
-) -> dict:
+) -> ModelResult[dict]:
     """Compose a grounded answer from retrieved items (`kind` = policy passages or
     ward records). `passages` is ordered [{id, text, source}]. Citations returned
     are the source ids actually used.
     """
     if not passages:
-        return {"answer": _REFUSAL[kind], "citations": [], "grounded": False}
+        return deterministic(
+            {"answer": _REFUSAL[kind], "citations": [], "grounded": False}
+        )
 
-    if settings.use_mock:
-        raw = _mock_answer(passages, kind)
-    else:
+    async def live() -> dict:
         system = SYSTEM_WARD if kind == "ward" else SYSTEM_POLICY
         label = "WARD RECORDS" if kind == "ward" else "POLICY PASSAGES"
         messages = [
@@ -78,11 +79,15 @@ async def answer_from_passages(
                 "content": f"{label}:\n{_format(passages)}\n\nQUESTION: {question}",
             },
         ]
-        try:
-            raw = await chat_json(settings, messages)
-        except (NimError, Exception) as exc:  # noqa: BLE001
-            log.warning("answer compose failed (%s); using mock", exc)
-            raw = _mock_answer(passages, kind)
+        return await chat_json(settings, messages)
+
+    result = await call_model(
+        settings,
+        "answer compose",
+        mock=lambda: _mock_answer(passages, kind),
+        live=live,
+    )
+    raw = result.value
 
     cited_ids: list[str] = []
     for n in raw.get("citations", []) or []:
@@ -93,8 +98,18 @@ async def answer_from_passages(
         if 0 <= idx < len(passages):
             cited_ids.append(passages[idx]["id"])
 
-    return {
-        "answer": str(raw.get("answer", "")).strip() or _REFUSAL[kind],
-        "citations": cited_ids,
-        "grounded": bool(raw.get("grounded", False)) and len(cited_ids) > 0,
-    }
+    return ModelResult(
+        {
+            "answer": str(raw.get("answer", "")).strip() or _REFUSAL[kind],
+            "citations": cited_ids,
+            # Grounding is a claim about a model having read the passages, so it
+            # cannot survive the mock answering — however the text was assembled.
+            "grounded": (
+                bool(raw.get("grounded", False))
+                and len(cited_ids) > 0
+                and result.provenance == "live"
+            ),
+        },
+        result.provenance,
+        result.model_used,
+    )

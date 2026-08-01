@@ -3,6 +3,7 @@ import 'server-only'
 import { z } from 'zod'
 
 import { answerFromPassages, queryIntent } from '@/lib/ai/client'
+import { combineProvenance, type Provenance } from '@/lib/ai/provenance'
 import { getWardBoard, type BoardBed } from '@/lib/ward/queries'
 
 /**
@@ -30,6 +31,7 @@ export interface WardAnswer {
   citations: string[] // bed labels
   matchedBeds: string[]
   intent: WardQueryIntent
+  provenance: Provenance
 }
 
 function todayIso(): string {
@@ -76,7 +78,8 @@ function bedRecord(bed: BoardBed): string {
 export async function answerWardQuestion(
   question: string,
 ): Promise<WardAnswer> {
-  const parsed = intentSchema.safeParse(await queryIntent(question))
+  const intentResult = await queryIntent(question)
+  const parsed = intentSchema.safeParse(intentResult.intent)
   const intent: WardQueryIntent = parsed.success
     ? parsed.data
     : { aggregation: 'list' }
@@ -92,6 +95,7 @@ export async function answerWardQuestion(
       citations: [],
       matchedBeds: [],
       intent,
+      provenance: intentResult.provenance,
     }
   }
 
@@ -107,5 +111,8 @@ export async function answerWardQuestion(
     citations: result.citations,
     matchedBeds,
     intent,
+    // The filter and the prose are two model calls; either falling back leaves
+    // part of this answer un-modelled.
+    provenance: combineProvenance(intentResult.provenance, result.provenance),
   }
 }

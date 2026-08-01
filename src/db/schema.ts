@@ -15,6 +15,8 @@ import {
 } from 'drizzle-orm/pg-core'
 import type { AdapterAccountType } from 'next-auth/adapters'
 
+import type { Provenance } from '@/lib/ai/provenance'
+
 /**
  * Schema is intentionally compatible with the Auth.js Drizzle adapter table
  * conventions (users / accounts / sessions / verificationTokens) so OAuth
@@ -642,6 +644,18 @@ export const policyChunks = pgTable(
     ordinal: integer('ordinal').notNull(),
     text: text('text').notNull(),
     embedding: vector('embedding', { dimensions: POLICY_EMBED_DIM }),
+    /**
+     * The embedding model that actually produced `embedding` — the `model` the
+     * AI plane's `/embed` stamped on the response, so `'mock'` for a hash-derived
+     * mock vector and the NIM model id for a real one (spec v0.11.0 FR8).
+     *
+     * Nullable, and null means *unknown*, not "same as configured": rows seeded
+     * before v0.11.0 have no record of which model embedded them. Without this
+     * column a KB seeded in mock mode and queried in live mode returns plausible
+     * garbage from pgvector with no error at all, because both vectors are
+     * 1024-d and cosine distance is happy to compare two unrelated spaces.
+     */
+    embeddingModel: text('embedding_model'),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   },
   (table) => [
@@ -717,6 +731,18 @@ export const recommendations = pgTable(
     priority: integer('priority').notNull().default(2), // 1 (high) – 3 (low)
     policyCitation: jsonb('policy_citation'), // [{ text, source }]
     grounded: boolean('grounded').notNull().default(true),
+    /**
+     * How the recommendation was actually produced — `live` (a model composed
+     * it), `mock` (the deterministic offline mock did), or `fallback` (a live
+     * call failed and the mock answered). Mirrors `grounded`, which is already
+     * gated on live provenance service-side (spec v0.11.0 FR4/FR5).
+     *
+     * Nullable on purpose: null means *we do not know*, which is the truth for
+     * every row written before v0.11.0. Defaulting them to a value would invent
+     * exactly the kind of fact this release exists to stop inventing. Every new
+     * row is written with a real value by `generateRecommendationsAction`.
+     */
+    provenance: text('provenance').$type<Provenance>(),
     status: text('status')
       .$type<RecommendationStatus>()
       .notNull()

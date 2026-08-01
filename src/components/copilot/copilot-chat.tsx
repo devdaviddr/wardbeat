@@ -6,7 +6,10 @@ import { useRef, useState, useTransition } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { EmbeddingDriftNotice } from '@/components/ward/embedding-drift-notice'
 import { PolicyDialog } from '@/components/ward/policy-dialog'
+import { ProvenanceBadge } from '@/components/ward/provenance-badge'
+import { isModelGenerated } from '@/lib/ai/provenance'
 import { askCopilotAction, type CopilotResponse } from '@/lib/copilot/actions'
 
 interface Turn {
@@ -97,23 +100,36 @@ export function CopilotChat() {
             </div>
           ) : (
             <div key={i} className="flex flex-col items-start gap-2">
-              <div className="bg-muted/60 max-w-[85%] rounded-lg px-3 py-2 text-sm">
-                {turn.res?.path && turn.res.path !== 'error' && (
-                  <div className="mb-1.5 flex items-center gap-2">
-                    <Badge variant="secondary" className="text-[10px]">
-                      {PATH_LABEL[turn.res.path]}
-                    </Badge>
-                    {turn.res.path !== 'out_of_scope' && (
-                      <span
-                        className={`text-[10px] ${turn.res.grounded ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}
-                      >
-                        {turn.res.grounded ? '● grounded' : '○ no support'}
-                      </span>
-                    )}
-                  </div>
-                )}
-                <p className="leading-relaxed">{turn.text}</p>
-              </div>
+              {turn.res?.embeddingDrift ? (
+                // The retrieval underneath any answer here was meaningless, so
+                // there is no answer to show — only the reason (v0.11.0 FR8).
+                <div className="max-w-[85%]">
+                  <EmbeddingDriftNotice message={turn.res.embeddingDrift} />
+                </div>
+              ) : (
+                <div
+                  className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                    turn.res && !isModelGenerated(turn.res.provenance)
+                      ? 'bg-muted/60 border border-dashed'
+                      : 'bg-muted/60'
+                  }`}
+                >
+                  {turn.res?.path && turn.res.path !== 'error' && (
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <Badge variant="secondary" className="text-[10px]">
+                        {PATH_LABEL[turn.res.path]}
+                      </Badge>
+                      {turn.res.path !== 'out_of_scope' && (
+                        <ProvenanceBadge
+                          provenance={turn.res.provenance}
+                          grounded={turn.res.grounded}
+                        />
+                      )}
+                    </div>
+                  )}
+                  <p className="leading-relaxed">{turn.text}</p>
+                </div>
+              )}
               {turn.res?.citations && turn.res.citations.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pl-1">
                   {turn.res.citations.map((c, j) =>

@@ -40,6 +40,21 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 ### Fixed
 
+- **Policy search now notices when it is comparing nonsense.** Policy chunks are
+  embedded at seed time through the same endpoint used at query time, so seeding
+  with the offline mock and then switching to a live model left the database
+  full of hash-derived vectors while questions were embedded for real. Both are
+  1024-dimensional, so the search returned confident, plausible, meaningless
+  passages — with a green "grounded" badge on the answer built from them, and no
+  error anywhere. Each stored chunk now records the model that embedded it; a
+  mismatch makes the copilot **refuse and say why** instead of answering, and
+  Settings → System shows the stored model beside the configured one. Remedy is
+  a re-seed: `pnpm db:seed:policy`.
+- **One reranker failure no longer degrades retrieval until restart.** A single
+  404 set a process-lifetime flag that was never reset, silently dropping every
+  later copilot answer back to raw cosine ordering. The back-off is now time
+  boxed to 15 minutes and both the disable and the recovery are logged. A
+  transient 5xx or timeout no longer backs off at all.
 - **Re-running extraction no longer destroys the ward's work.** Persistence
   deleted and re-inserted every barrier for a note, so one person clicking "Run
   extraction" silently wiped every triage decision made that morning — approvals
@@ -61,6 +76,12 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
   clinically distinct from `cleared` ("the work is done") and must not be
   collapsed into it.
 - Barrier age is anchored to a new `first_seen_at` that survives re-extraction.
+- `policy_chunks` gains `embedding_model` and `recommendations` gains
+  `provenance`. Both are nullable, and null means **unknown** rather than
+  "assume the current setting" — a recommendation card shows what produced it or
+  says nothing, never a guess. The `embedding_model` backfill stamps existing
+  rows with whatever is configured at migration time and says loudly that this
+  is an assumption; re-seeding is the only way to make it a fact.
 
 ### Added
 

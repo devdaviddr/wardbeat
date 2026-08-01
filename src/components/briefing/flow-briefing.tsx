@@ -5,10 +5,11 @@ const pct = (p: number) => `${Math.round(p * 100)}%`
 
 export function FlowBriefing({ data }: { data: FlowBriefingData }) {
   const { stats } = data
-  const short = stats.netBeds < 0
-  const netLabel = short
-    ? `${Math.abs(stats.netBeds)} short`
-    : `${stats.netBeds} spare`
+  // Both figures depend on the demand projection, and the projection is absent
+  // whenever the ward's admission history is too thin to support one. An
+  // absent number is recoverable; a fabricated one costs the tool its
+  // credibility on the first bed move made against it (spec v0.11.0 FR3).
+  const short = stats.netBeds !== null && stats.netBeds < 0
 
   return (
     <div className="space-y-6">
@@ -22,20 +23,52 @@ export function FlowBriefing({ data }: { data: FlowBriefingData }) {
 
       {/* Net position */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div
-          className={`rounded-lg border p-3 ${short ? 'border-amber-400' : 'border-green-400'}`}
-        >
+        {stats.netBeds === null ? (
+          <Unavailable label="net bed position" />
+        ) : (
           <div
-            className={`font-mono text-2xl font-bold ${short ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}`}
+            className={`rounded-lg border p-3 ${short ? 'border-amber-400' : 'border-green-400'}`}
           >
-            {netLabel}
+            <div
+              className={`font-mono text-2xl font-bold ${short ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}`}
+            >
+              {short
+                ? `${Math.abs(stats.netBeds)} short`
+                : `${stats.netBeds} spare`}
+            </div>
+            <div className="text-muted-foreground text-xs">
+              net bed position
+            </div>
           </div>
-          <div className="text-muted-foreground text-xs">net bed position</div>
-        </div>
+        )}
         <Stat n={stats.predictedDischarges24h} label="likely discharges" />
-        <Stat n={stats.expectedAdmissions} label="expected admissions" />
+        {stats.expectedAdmissions === null ? (
+          <Unavailable label="expected admissions" />
+        ) : (
+          <Stat n={stats.expectedAdmissions} label="expected admissions" />
+        )}
         <Stat n={stats.free} label="free now" />
       </div>
+
+      {data.demandUnavailableReason && (
+        <p className="text-muted-foreground border-l-2 border-dashed pl-3 text-sm">
+          <span className="font-medium">
+            No demand projection for this ward.
+          </span>{' '}
+          {data.demandUnavailableReason} WardBeat shows nothing rather than an
+          assumed admission rate — the figure would look identical whether or
+          not it meant anything.
+        </p>
+      )}
+
+      {stats.expectedAdmissions !== null && data.admissionsLast7d !== null && (
+        <p className="text-muted-foreground text-xs">
+          Demand projected from {data.admissionsLast7d} admissions recorded on
+          this ward in the last 7 days, pro-rated over {stats.windowHours}h. It
+          assumes the coming window looks like the trailing week; it does not
+          know about planned lists, seasonality or the time of day.
+        </p>
+      )}
 
       {/* AI-narrated briefing */}
       <div className="bg-muted/50 rounded-lg border p-4">
@@ -107,6 +140,25 @@ function Stat({ n, label }: { n: number; label: string }) {
   return (
     <div className="rounded-lg border p-3">
       <div className="font-mono text-2xl font-bold tabular-nums">{n}</div>
+      <div className="text-muted-foreground text-xs">{label}</div>
+    </div>
+  )
+}
+
+/**
+ * The same tile shape as `Stat`, with an em dash where the number would be.
+ * Deliberately keeps the slot rather than collapsing it: a missing tile reads
+ * as a layout change, an empty one reads as a fact about the ward.
+ */
+function Unavailable({ label }: { label: string }) {
+  return (
+    <div className="rounded-lg border border-dashed bg-transparent p-3">
+      <div
+        className="text-muted-foreground font-mono text-2xl font-bold"
+        aria-label={`${label} unavailable`}
+      >
+        —
+      </div>
       <div className="text-muted-foreground text-xs">{label}</div>
     </div>
   )

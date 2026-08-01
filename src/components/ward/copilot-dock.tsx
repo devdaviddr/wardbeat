@@ -6,8 +6,11 @@ import { Loader2, RotateCcw } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { isModelGenerated, PROVENANCE_COPY } from '@/lib/ai/provenance'
 import { askCopilotAction, type CopilotResponse } from '@/lib/copilot/actions'
+import { EmbeddingDriftNotice } from './embedding-drift-notice'
 import { PolicyDialog } from './policy-dialog'
+import { ProvenanceBadge } from './provenance-badge'
 
 const SUGGESTIONS = [
   'Which patients are fit but waiting on transport?',
@@ -120,7 +123,12 @@ export function CopilotDock({
             Thinking…
           </div>
         )}
-        {res && !pending && (
+        {res && !pending && res.embeddingDrift && (
+          // Nothing retrieved under this question meant anything, so the dock
+          // shows the reason instead of an answer (v0.11.0 FR8).
+          <EmbeddingDriftNotice message={res.embeddingDrift} />
+        )}
+        {res && !pending && !res.embeddingDrift && (
           <div className="space-y-2">
             {res.path !== 'error' && (
               <div className="flex items-center gap-2">
@@ -128,17 +136,29 @@ export function CopilotDock({
                   {PATH_LABEL[res.path]}
                 </Badge>
                 {res.path !== 'out_of_scope' && (
-                  <span
-                    className={`text-[10px] ${res.grounded ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}
-                  >
-                    {res.grounded ? '● grounded' : '○ no support'}
-                  </span>
+                  <ProvenanceBadge
+                    provenance={res.provenance}
+                    grounded={res.grounded}
+                  />
                 )}
               </div>
             )}
-            <p className="leading-relaxed">
+            <p
+              className={`leading-relaxed ${
+                res.ok && !isModelGenerated(res.provenance)
+                  ? 'border-muted-foreground/40 border-l-2 border-dashed pl-2'
+                  : ''
+              }`}
+            >
               {res.ok ? res.answer : (res.error ?? 'Something went wrong.')}
             </p>
+            {res.ok &&
+              res.path !== 'error' &&
+              !isModelGenerated(res.provenance) && (
+                <p className="text-muted-foreground text-[11px]">
+                  {PROVENANCE_COPY[res.provenance].detail}
+                </p>
+              )}
             {res.citations.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {res.citations.map((c, i) =>

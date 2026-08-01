@@ -65,9 +65,7 @@ interface EventInput {
 async function mutateBarrier(
   barrierId: string,
   actorUserId: string,
-  build: (
-    barrier: typeof barriers.$inferSelect,
-  ) =>
+  build: (barrier: typeof barriers.$inferSelect) =>
     | {
         patch: Partial<typeof barriers.$inferInsert>
         event: Omit<EventInput, 'barrierId' | 'actorUserId'>

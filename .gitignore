@@ -60,3 +60,10 @@ backups/
 # Python virtualenv (AI plane local testing)
 ai/.venv/
 .venv/
+
+# Python (the `ai` FastAPI service)
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/

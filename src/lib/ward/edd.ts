@@ -24,6 +24,29 @@ export type EddResult = { ok: true } | { ok: false; error: string }
 /** `YYYY-MM-DD`, the format the rest of the ward domain stores EDD in. */
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
+/**
+ * True only for a date that actually exists on the calendar.
+ *
+ * `Date.parse` is not good enough here: when its ISO parser rejects a string,
+ * V8 falls back to a lenient parser that **rolls over** rather than failing, so
+ * `Date.parse('2026-02-30')` returns 2 March rather than NaN. `edd` is a text
+ * column, so Postgres accepts the impossible date verbatim and the board ends
+ * up showing "30 Feb" — permanently, because a human-set EDD is never corrected
+ * by extraction. Round-tripping the components is the reliable check.
+ */
+function isRealCalendarDate(iso: string): boolean {
+  // Safe to index: the caller has already matched /^\d{4}-\d{2}-\d{2}$/.
+  const year = Number(iso.slice(0, 4))
+  const month = Number(iso.slice(5, 7))
+  const day = Number(iso.slice(8, 10))
+  const parsed = new Date(Date.UTC(year, month - 1, day))
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  )
+}
+
 export async function setEncounterEddAction(
   encounterId: string,
   edd: string | null,
@@ -36,7 +59,7 @@ export async function setEncounterEddAction(
     if (!ISO_DATE.test(edd)) {
       return { ok: false, error: 'Use a date in YYYY-MM-DD format.' }
     }
-    if (Number.isNaN(Date.parse(edd))) {
+    if (!isRealCalendarDate(edd)) {
       return { ok: false, error: 'That is not a real date.' }
     }
   }

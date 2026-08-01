@@ -1,9 +1,6 @@
-import logging
-
-from app.nim import NimError, chat_json
+from app.nim import chat_json
+from app.provenance import ModelResult, call_model
 from app.settings import Settings
-
-log = logging.getLogger("wardbeat.ai")
 
 _BARRIERS = {"tto", "transport", "social_care", "review", "any"}
 
@@ -48,30 +45,31 @@ def _mock_intent(question: str) -> dict:
     return intent
 
 
-async def build_query_intent(settings: Settings, question: str) -> dict:
-    if settings.use_mock:
-        return _mock_intent(question)
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"QUESTION: {question}"},
-    ]
-    try:
+async def build_query_intent(
+    settings: Settings, question: str
+) -> ModelResult[dict]:
+    async def live() -> dict:
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": f"QUESTION: {question}"},
+        ]
         raw = await chat_json(settings, messages)
-    except (NimError, Exception) as exc:  # noqa: BLE001
-        log.warning("query-intent failed (%s); using mock", exc)
-        return _mock_intent(question)
 
-    # Sanitise to the allow-list — never trust the model's field names.
-    intent: dict = {}
-    agg = str(raw.get("aggregation", "list")).lower()
-    intent["aggregation"] = "count" if agg == "count" else "list"
-    if isinstance(raw.get("mffd"), bool):
-        intent["mffd"] = raw["mffd"]
-    if isinstance(raw.get("free"), bool):
-        intent["free"] = raw["free"]
-    b = str(raw.get("barrier", "")).lower()
-    if b in _BARRIERS:
-        intent["barrier"] = b
-    if raw.get("edd_today") is True:
-        intent["edd_today"] = True
-    return intent
+        # Sanitise to the allow-list — never trust the model's field names.
+        intent: dict = {}
+        agg = str(raw.get("aggregation", "list")).lower()
+        intent["aggregation"] = "count" if agg == "count" else "list"
+        if isinstance(raw.get("mffd"), bool):
+            intent["mffd"] = raw["mffd"]
+        if isinstance(raw.get("free"), bool):
+            intent["free"] = raw["free"]
+        b = str(raw.get("barrier", "")).lower()
+        if b in _BARRIERS:
+            intent["barrier"] = b
+        if raw.get("edd_today") is True:
+            intent["edd_today"] = True
+        return intent
+
+    return await call_model(
+        settings, "query-intent", mock=lambda: _mock_intent(question), live=live
+    )

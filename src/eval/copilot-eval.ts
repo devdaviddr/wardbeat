@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 import { policyChunks, policyDocs } from '../db/schema'
+import { assertLive, recordProvenance } from './provenance-guard'
 
 /**
  * Copilot eval (spec v0.3.0). Policy path: for each labelled question, embed →
@@ -88,7 +89,9 @@ async function post(path: string, body: unknown) {
     body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`${path} ${res.status}: ${await res.text()}`)
-  return res.json()
+  const parsed = await res.json()
+  recordProvenance(path, parsed)
+  return parsed
 }
 
 async function main() {
@@ -163,6 +166,9 @@ async function main() {
   const groundedRate = grounded / n
   const intentAcc = intentOk / WARD_QUESTIONS.length
   const pct = (x: number) => `${(x * 100).toFixed(1)}%`
+  // Gate BEFORE any score is printed, so a mocked run can never emit a
+  // number that reads like a pass.
+  assertLive()
   console.log('\n── Copilot eval ─────────────────────────────────────')
   console.log(`  policy questions   : ${n}`)
   console.log(`  retrieval hit-rate : ${pct(hitRate)}  (gate ${pct(GATE)})`)

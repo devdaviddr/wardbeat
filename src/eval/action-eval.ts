@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 import { policyChunks, policyDocs } from '../db/schema'
+import { assertLive, recordProvenance } from './provenance-guard'
 
 /**
  * Action-recommendation eval (spec v0.4.0). For labelled barriers, retrieve
@@ -68,7 +69,9 @@ async function post(path: string, body: unknown) {
     body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`${path} ${res.status}: ${await res.text()}`)
-  return res.json()
+  const parsed = await res.json()
+  recordProvenance(path, parsed)
+  return parsed
 }
 
 async function main() {
@@ -114,6 +117,9 @@ async function main() {
   const appr = appropriate / n
   const grnd = grounded / n
   const pct = (x: number) => `${(x * 100).toFixed(1)}%`
+  // Gate BEFORE any score is printed, so a mocked run can never emit a
+  // number that reads like a pass.
+  assertLive()
   console.log('\n── Action-recommendation eval ───────────────────────')
   console.log(`  cases              : ${n}`)
   console.log(`  action-appropriate : ${pct(appr)}  (gate ${pct(GATE)})`)

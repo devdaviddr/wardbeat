@@ -3,6 +3,7 @@ import 'server-only'
 import { db } from '@/db'
 import type { ActionType } from '@/db/schema'
 import { forecastDischarge } from '@/lib/ai/client'
+import type { Provenance } from '@/lib/ai/provenance'
 import { logger } from '@/lib/logger'
 import { sweepOverdueBarriers } from '@/lib/ward/barrier-notify'
 import { type Assignee, listAssignees } from '@/lib/ward/people'
@@ -16,6 +17,14 @@ export interface CockpitRecommendation {
   priority: number
   grounded: boolean
   citations: Array<{ text: string; source: string }>
+  /**
+   * How the recommendation was produced, read from `recommendations.provenance`
+   * (v0.11.0 M5). Undefined only for rows written before that column existed —
+   * genuinely unknown, not "assume live". The badge degrades to the
+   * grounded/ungrounded pair in that case rather than claiming something
+   * untrue; re-running generation replaces them with rows that know.
+   */
+  provenance?: Provenance
 }
 
 export interface CockpitBed extends BoardBed {
@@ -66,6 +75,7 @@ export async function getCockpit(): Promise<Cockpit | null> {
       rationale: r.rationale,
       priority: r.priority,
       grounded: r.grounded,
+      provenance: r.provenance ?? undefined,
       citations: Array.isArray(r.policyCitation)
         ? (r.policyCitation as Array<{ text: string; source: string }>)
         : [],
@@ -87,7 +97,9 @@ export async function getCockpit(): Promise<Cockpit | null> {
           has_transport: b.barriers.some((x) => x.type === 'transport'),
           has_social_care: b.barriers.some((x) => x.type === 'social_care'),
           has_review: b.barriers.some((x) => x.type === 'review'),
-          days_admitted: 3,
+          // Real length of stay, or null when the encounter has no admission
+          // timestamp — never a constant (spec v0.11.0 FR1).
+          days_admitted: b.daysAdmitted,
           edd_set: Boolean(b.edd),
         })),
       )

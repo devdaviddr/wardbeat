@@ -82,7 +82,15 @@ function chunk(body: string): string[] {
     .filter((p) => p.length > 0)
 }
 
-async function embedPassages(texts: string[]): Promise<number[][]> {
+/**
+ * Embed a batch and keep the model id the AI plane stamped on the response.
+ * Storing it alongside the vector is what makes seed/query drift detectable
+ * later (spec v0.11.0 FR8) — a mock vector and a live one are both 1024-d, so
+ * nothing else distinguishes them.
+ */
+async function embedPassages(
+  texts: string[],
+): Promise<{ embeddings: number[][]; model: string }> {
   const res = await fetch(`${AI_URL}/embed`, {
     method: 'POST',
     headers: {
@@ -93,7 +101,12 @@ async function embedPassages(texts: string[]): Promise<number[][]> {
   })
   if (!res.ok) throw new Error(`ai /embed ${res.status}: ${await res.text()}`)
   const json = (await res.json()) as { embeddings: number[][]; model: string }
-  return json.embeddings
+  if (!json.model) {
+    throw new Error(
+      'ai /embed returned no model id — cannot record which model built these vectors',
+    )
+  }
+  return json
 }
 
 async function main() {
@@ -105,6 +118,7 @@ async function main() {
   await db.delete(policyDocs)
 
   let totalChunks = 0
+  const modelsUsed = new Set<string>()
   for (const doc of DOCS) {
     const [row] = await db
       .insert(policyDocs)
@@ -113,22 +127,33 @@ async function main() {
     if (!row) throw new Error(`Failed to insert doc ${doc.title}`)
 
     const chunks = chunk(doc.body)
-    const embeddings = await embedPassages(chunks)
+    const { embeddings, model } = await embedPassages(chunks)
+    modelsUsed.add(model)
     await db.insert(policyChunks).values(
       chunks.map((text, i) => ({
         docId: row.id,
         ordinal: i,
         text,
         embedding: embeddings[i],
+        embeddingModel: model,
       })),
     )
     totalChunks += chunks.length
     console.log(`📄 ${doc.title} — ${chunks.length} chunks`)
   }
 
+  const models = [...modelsUsed].join(', ')
   console.log(
-    `✅ Policy KB seeded: ${DOCS.length} docs, ${totalChunks} embedded chunks.`,
+    `✅ Policy KB seeded: ${DOCS.length} docs, ${totalChunks} embedded chunks ` +
+      `(embedding model: ${models}).`,
   )
+  if (modelsUsed.has('mock')) {
+    console.warn(
+      '⚠️  These vectors came from the deterministic mock. Re-run this seed ' +
+        'after switching to a live embedding model — otherwise policy search ' +
+        'compares two unrelated 1024-d spaces and the copilot will say so.',
+    )
+  }
   await client.end()
 }
 

@@ -4,6 +4,7 @@ import { isNotNull } from 'drizzle-orm'
 import postgres from 'postgres'
 
 import { notes } from '../db/schema'
+import { assertLive, recordProvenance } from './provenance-guard'
 
 /**
  * Barrier-extraction eval harness (spec v0.2.0, NFR3). Calls the running `ai`
@@ -46,7 +47,9 @@ async function extract(noteId: string, text: string): Promise<ExtractResponse> {
   if (!res.ok) {
     throw new Error(`ai service ${res.status}: ${await res.text()}`)
   }
-  return (await res.json()) as ExtractResponse
+  const body = (await res.json()) as ExtractResponse
+  recordProvenance('/extract', body)
+  return body
 }
 
 async function main() {
@@ -91,6 +94,9 @@ async function main() {
   const mffdAcc = mffdCorrect / rows.length
 
   const pct = (n: number) => `${(n * 100).toFixed(1)}%`
+  // Gate BEFORE any score is printed, so a mocked run can never emit a
+  // number that reads like a pass.
+  assertLive()
   console.log('\n── Barrier-extraction eval ──────────────────────────')
   console.log(`  notes evaluated : ${rows.length}`)
   console.log(`  precision       : ${pct(precision)}`)

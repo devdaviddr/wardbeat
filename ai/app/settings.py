@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     # barriers while keeping per-call latency (and the hang risk) down. Raise it
     # only if extractions start getting truncated (empty content / finish_reason
     # == "length").
-    nim_extract_max_tokens: int = 1024
+    nim_extract_max_tokens: int = 3072
 
     @property
     def use_mock(self) -> bool:

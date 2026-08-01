@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { generateRecommendationsAction } from '@/lib/actions/generate'
+import { isModelGenerated, PROVENANCE_COPY } from '@/lib/ai/provenance'
 import type { Cockpit } from '@/lib/ward/cockpit'
 
 import { RecommendationCard } from './recommendation-card'
@@ -43,7 +44,12 @@ export function ActionsDrawer({
       const r = await generateRecommendationsAction()
       setStatus(
         r.ok
-          ? `Generated ${r.generated} action(s) for ${r.patients} patient(s).`
+          ? `Generated ${r.generated} action(s) for ${r.patients} patient(s).` +
+              // Stored recommendations carry no provenance column yet, so this
+              // is the only point at which the batch can be labelled honestly.
+              (r.generated > 0 && !isModelGenerated(r.provenance)
+                ? ` ${PROVENANCE_COPY[r.provenance].detail}`
+                : '')
           : `Failed: ${r.error ?? 'unknown error'}`,
       )
       onChanged()

@@ -1,9 +1,6 @@
-import logging
-
 from app.nim import NimError, chat_json
+from app.provenance import ModelResult, call_model
 from app.settings import Settings
-
-log = logging.getLogger("wardbeat.ai")
 
 _PATHS = {"ward_state", "policy", "out_of_scope"}
 
@@ -70,17 +67,20 @@ def _mock_route(question: str) -> str:
     return "out_of_scope"
 
 
-async def classify(settings: Settings, question: str) -> str:
-    if settings.use_mock:
-        return _mock_route(question)
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"QUESTION: {question}"},
-    ]
-    try:
+async def classify(settings: Settings, question: str) -> ModelResult[str]:
+    async def live() -> str:
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": f"QUESTION: {question}"},
+        ]
         raw = await chat_json(settings, messages)
         path = str(raw.get("path", "")).lower().strip()
-        return path if path in _PATHS else _mock_route(question)
-    except (NimError, Exception) as exc:  # noqa: BLE001
-        log.warning("route classify failed (%s); using mock", exc)
-        return _mock_route(question)
+        # An unrecognised path means keyword matching would decide the route, so
+        # raise and let that be recorded as a fallback rather than as a live call.
+        if path not in _PATHS:
+            raise NimError(f"Model returned an unknown route: {path!r}")
+        return path
+
+    return await call_model(
+        settings, "route classify", mock=lambda: _mock_route(question), live=live
+    )

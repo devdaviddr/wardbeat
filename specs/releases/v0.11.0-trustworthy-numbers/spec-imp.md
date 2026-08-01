@@ -216,7 +216,20 @@ docs/evals.md           # honesty pass: dataset sizes, what each gate detects
 - [ ] Briefing omits uncomputable figures with an explanation.
 - [ ] `--allow-mock` + provenance assertion across all four evals.
 - [ ] Forecast eval ground-truth rework; restate the gate.
-- [ ] `policy_chunks.embedding_model` + migration + mismatch warning + Settings card.
-- [ ] Time-box the rerank disable.
+- [x] `policy_chunks.embedding_model` + migration + mismatch warning + Settings card.
+      Migration `0014_organic_xavin.sql` adds the column; the backfill lives in
+      `src/db/migrate.ts` (plain SQL cannot read the AI plane's configuration)
+      and logs that it is an assumption. On drift the copilot **refuses** rather
+      than answering — every passage was matched across two unrelated vector
+      spaces, so an answer built on them would be a fabrication wearing
+      citations.
+- [x] Time-box the rerank disable. 15-minute cooldown
+      (`RERANK_COOLDOWN_SECONDS`); only a 404 backs off, a 5xx/timeout stays
+      per-call, and both transitions are logged.
+- [x] `recommendations.provenance` (same migration) — persisted by
+      `generateRecommendationsAction` and `pnpm db:recommend`, surfaced through
+      `getCockpit()` so the recommendation card's provenance indicator has real
+      data instead of degrading. Not backfilled: rows written before the column
+      existed genuinely do not know.
 - [ ] Board "last read" stamp.
 - [ ] `docs/evals.md` + `docs/DEMO.md` + changelog.

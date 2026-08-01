@@ -70,6 +70,7 @@ services:
       NIM_EXTRACT_MODEL: ${NIM_EXTRACT_MODEL:-nvidia/nvidia-nemotron-nano-9b-v2}
       NIM_EMBED_MODEL: ${NIM_EMBED_MODEL:-nvidia/nv-embedqa-e5-v5}
       NIM_RERANK_MODEL: ${NIM_RERANK_MODEL:-nvidia/llama-3.2-nv-rerankqa-1b-v2}
+      NIM_EXTRACT_MAX_TOKENS: ${NIM_EXTRACT_MAX_TOKENS:-3072}
       AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-}
     ports:
       - '8000:8000' # dev convenience; keep internal-only (off the tunnel) in prod

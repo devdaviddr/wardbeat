@@ -1,7 +1,10 @@
 import 'server-only'
 
+import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 
+import { db } from '@/db'
+import { policyChunks } from '@/db/schema'
 import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 
@@ -30,12 +33,32 @@ const aiPlaneConfigSchema = z.object({
 
 export type AiPlaneConfig = z.infer<typeof aiPlaneConfigSchema>
 
+/**
+ * What the stored policy vectors were actually built with, read from the
+ * database rather than assumed (spec v0.11.0 FR8). This is the half of the
+ * comparison the AI plane cannot answer: `/config` reports what is configured
+ * now, and only `policy_chunks.embedding_model` records what embedded the
+ * vectors that are already sitting in pgvector.
+ */
+export interface StoredEmbeddingState {
+  /** Distinct model ids across stored chunks. `null` entry = pre-v0.11.0 row. */
+  models: Array<string | null>
+  /** Total policy chunks in the knowledge base. */
+  chunkCount: number
+}
+
 /** What the app knows on its own side, independent of reaching the AI plane. */
 interface AppSide {
   /** Host of `WARDBEAT_AI_URL` (no scheme/path). */
   aiUrlHost: string
   /** Whether the app is configured to send a service token. */
   serviceTokenConfigured: boolean
+  /**
+   * The embedding models behind the stored policy KB, or null if the query
+   * failed. Shown beside the configured model so a seed/query mismatch is
+   * visible before someone trusts an answer built on it.
+   */
+  storedEmbedding: StoredEmbeddingState | null
 }
 
 export type AiConfiguration = AppSide &
@@ -54,10 +77,37 @@ function hostOf(url: string): string {
   }
 }
 
+/**
+ * Which models built the policy vectors currently in the database. Never
+ * throws: the Settings card degrades to "couldn't read" rather than failing the
+ * whole page, but it must not silently report agreement it did not check.
+ */
+async function readStoredEmbeddingState(): Promise<StoredEmbeddingState | null> {
+  try {
+    const rows = await db
+      .select({
+        model: policyChunks.embeddingModel,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(policyChunks)
+      .groupBy(policyChunks.embeddingModel)
+    return {
+      models: rows.map((r) => r.model),
+      chunkCount: rows.reduce((sum, r) => sum + Number(r.count), 0),
+    }
+  } catch (err) {
+    logger.warn('stored embedding model read failed', {
+      error: err instanceof Error ? err.message : String(err),
+    })
+    return null
+  }
+}
+
 export async function getAiConfiguration(): Promise<AiConfiguration> {
   const appSide: AppSide = {
     aiUrlHost: hostOf(env.WARDBEAT_AI_URL),
     serviceTokenConfigured: Boolean(env.WARDBEAT_AI_SERVICE_TOKEN),
+    storedEmbedding: await readStoredEmbeddingState(),
   }
 
   try {

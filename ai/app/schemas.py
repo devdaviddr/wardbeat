@@ -2,8 +2,21 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from app.provenance import Provenance
+
 BarrierType = Literal["tto", "transport", "social_care", "review", "other"]
 BarrierStatus = Literal["pending", "in_progress", "cleared"]
+
+
+class ProvenanceEnvelope(BaseModel):
+    """Mixed into every response that can carry model output, so a caller can
+    always tell a real answer from a mocked one. See `app/provenance.py`.
+    """
+
+    provenance: Provenance = "mock"
+    # The model id that was actually called — set on `fallback` too, where the
+    # call reached the endpoint before failing. None means nothing was called.
+    model_used: Optional[str] = None
 
 
 class ExtractRequest(BaseModel):
@@ -27,7 +40,7 @@ class BarrierOut(BaseModel):
     confidence: int = Field(ge=0, le=100, default=80)
 
 
-class ExtractionResult(BaseModel):
+class ExtractionResult(ProvenanceEnvelope):
     note_id: str
     model: str
     edd: Optional[str] = None  # ISO date (YYYY-MM-DD)

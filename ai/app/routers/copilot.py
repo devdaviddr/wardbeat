@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -7,6 +7,7 @@ from app.answer import answer_from_passages
 from app.classify import classify
 from app.query_intent import build_query_intent
 from app.rerank import rerank
+from app.schemas import ProvenanceEnvelope
 from app.security import require_service_token
 from app.settings import get_settings
 
@@ -17,18 +18,38 @@ class RouteRequest(BaseModel):
     question: str
 
 
-@router.post("/route")
-async def route(req: RouteRequest) -> dict:
-    return {"path": await classify(get_settings(), req.question)}
+class RouteResponse(ProvenanceEnvelope):
+    path: str
+
+
+@router.post("/route", response_model=RouteResponse)
+async def route(req: RouteRequest) -> RouteResponse:
+    result = await classify(get_settings(), req.question)
+    return RouteResponse(
+        path=result.value,
+        provenance=result.provenance,
+        model_used=result.model_used,
+    )
 
 
 class QueryIntentRequest(BaseModel):
     question: str
 
 
-@router.post("/query-intent")
-async def query_intent(req: QueryIntentRequest) -> dict:
-    return await build_query_intent(get_settings(), req.question)
+class QueryIntentResponse(ProvenanceEnvelope):
+    # The filter itself is nested so the envelope can never be mistaken for part
+    # of it — the caller validates `intent` against its own allow-list.
+    intent: dict[str, Any] = Field(default_factory=dict)
+
+
+@router.post("/query-intent", response_model=QueryIntentResponse)
+async def query_intent(req: QueryIntentRequest) -> QueryIntentResponse:
+    result = await build_query_intent(get_settings(), req.question)
+    return QueryIntentResponse(
+        intent=result.value,
+        provenance=result.provenance,
+        model_used=result.model_used,
+    )
 
 
 class RerankRequest(BaseModel):
@@ -62,7 +83,7 @@ class AnswerRequest(BaseModel):
     kind: Literal["policy", "ward"] = "policy"
 
 
-class AnswerResponse(BaseModel):
+class AnswerResponse(ProvenanceEnvelope):
     answer: str
     citations: list[str]
     grounded: bool
@@ -76,4 +97,8 @@ async def answer(req: AnswerRequest) -> AnswerResponse:
         [p.model_dump() for p in req.passages],
         kind=req.kind,
     )
-    return AnswerResponse(**result)
+    return AnswerResponse(
+        **result.value,
+        provenance=result.provenance,
+        model_used=result.model_used,
+    )

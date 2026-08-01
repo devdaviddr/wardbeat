@@ -3,6 +3,11 @@ import { and, cosineDistance, eq, isNull } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
+import {
+  describeEmbeddingDrift,
+  detectEmbeddingDrift,
+} from '../lib/ai/embedding-model'
+import type { Provenance } from '../lib/ai/provenance'
 import * as schema from './schema'
 import {
   encounters,
@@ -71,13 +76,29 @@ async function main() {
     const emb = (await post('/embed', {
       texts: [query],
       input_type: 'query',
-    })) as { embeddings: number[][] }
+    })) as { embeddings: number[][]; model: string }
     const passages = await db
-      .select({ text: policyChunks.text, source: policyDocs.title })
+      .select({
+        text: policyChunks.text,
+        source: policyDocs.title,
+        embeddingModel: policyChunks.embeddingModel,
+      })
       .from(policyChunks)
       .innerJoin(policyDocs, eq(policyChunks.docId, policyDocs.id))
       .orderBy(cosineDistance(policyChunks.embedding, emb.embeddings[0]!))
       .limit(6)
+
+    // This script does its own retrieval rather than going through
+    // `retrievePolicy`, so it needs its own drift check — otherwise the CLI is
+    // the one hole in FR8. Fail rather than write recommendations "grounded" in
+    // passages matched across two unrelated 1024-d vector spaces.
+    const drift = detectEmbeddingDrift(
+      emb.model,
+      passages.map((p) => p.embeddingModel),
+    )
+    if (drift) {
+      throw new Error(describeEmbeddingDrift(drift))
+    }
 
     const rec = (await post('/agent/recommend', {
       patient_label: label,
@@ -97,6 +118,7 @@ async function main() {
         citations: number[]
         grounded: boolean
       }>
+      provenance?: Provenance
     }
 
     await db
@@ -119,6 +141,9 @@ async function main() {
         rationale: r.rationale,
         priority: r.priority,
         grounded: r.grounded,
+        // Same rule as the server action: a stored recommendation records how
+        // it was produced, or nothing at all (v0.11.0 M5).
+        provenance: rec.provenance ?? null,
         policyCitation: r.citations
           .map((n) => passages[n - 1])
           .filter(Boolean)

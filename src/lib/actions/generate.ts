@@ -6,6 +6,8 @@ import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
 import { recommendations, type ActionType } from '@/db/schema'
 import { recommendActions } from '@/lib/ai/client'
+import { describeEmbeddingDrift } from '@/lib/ai/embedding-model'
+import { combineProvenance, type Provenance } from '@/lib/ai/provenance'
 import { getCurrentSession } from '@/lib/auth/session'
 import { retrievePolicy } from '@/lib/copilot/policy'
 import { logger } from '@/lib/logger'
@@ -15,6 +17,15 @@ export interface GenerateSummary {
   ok: boolean
   generated: number
   patients: number
+  /** Weakest provenance across the batch, also persisted per row on
+   *  `recommendations.provenance` (v0.11.0 M5). */
+  provenance: Provenance
+  /**
+   * Set when the policy vectors these recommendations were retrieved against
+   * were built by a different embedding model than the query. The retrieval is
+   * meaningless in that state, so it must be said out loud (v0.11.0 FR8).
+   */
+  embeddingDrift?: string
   error?: string
 }
 
@@ -35,26 +46,53 @@ const ACTION_TYPES = new Set<ActionType>([
 export async function generateRecommendationsAction(): Promise<GenerateSummary> {
   const session = await getCurrentSession()
   if (!session?.user) {
-    return { ok: false, generated: 0, patients: 0, error: 'Unauthorized' }
+    return {
+      ok: false,
+      generated: 0,
+      patients: 0,
+      provenance: 'mock',
+      error: 'Unauthorized',
+    }
   }
 
   try {
     const board = await getWardBoard()
-    if (!board) return { ok: true, generated: 0, patients: 0 }
+    if (!board)
+      return { ok: true, generated: 0, patients: 0, provenance: 'mock' }
 
     const targets = board.beds.filter(
       (b) => b.occupied && b.mffd && b.encounterId && b.barriers.length > 0,
     )
 
     let generated = 0
+    // null until a call is actually made, so an empty ward is not reported as
+    // a successful live run.
+    let batched: Provenance | null = null
+    let embeddingDrift: string | undefined
     for (const bed of targets) {
       const query = `${bed.barriers.map((b) => b.type).join(' ')} discharge barrier policy`
-      const passages = await retrievePolicy(query, 6)
-      const recs = await recommendActions(
-        `Bed ${bed.label}`,
-        bed.barriers.map((b) => ({ id: b.id, type: b.type, quote: b.quote })),
-        passages.map((p) => ({ text: p.text, source: p.source })),
-      )
+      const { passages, drift } = await retrievePolicy(query, 6)
+      if (drift) {
+        // Stop rather than generate. Every "policy-grounded" recommendation
+        // from here would cite passages matched across two unrelated vector
+        // spaces — worse than generating nothing (v0.11.0 FR8).
+        embeddingDrift = describeEmbeddingDrift(drift)
+        return {
+          ok: false,
+          generated,
+          patients: targets.length,
+          provenance: batched ?? 'mock',
+          embeddingDrift,
+          error: embeddingDrift,
+        }
+      }
+      const { recommendations: recs, provenance: batchProvenance } =
+        await recommendActions(
+          `Bed ${bed.label}`,
+          bed.barriers.map((b) => ({ id: b.id, type: b.type, quote: b.quote })),
+          passages.map((p) => ({ text: p.text, source: p.source })),
+        )
+      batched = combineProvenance(batched ?? 'live', batchProvenance)
 
       // Idempotent: drop this encounter's still-proposed recs, keep decided ones.
       await db
@@ -78,6 +116,10 @@ export async function generateRecommendationsAction(): Promise<GenerateSummary> 
           rationale: r.rationale,
           priority: r.priority,
           grounded: r.grounded,
+          // Persisted per row, not just reported for the run: a recommendation
+          // outlives the batch that made it, and the card that renders it a
+          // week later has no other way to know a mock wrote it.
+          provenance: batchProvenance,
           policyCitation: r.citations
             .map((n) => passages[n - 1])
             .filter(Boolean)
@@ -87,16 +129,24 @@ export async function generateRecommendationsAction(): Promise<GenerateSummary> 
       generated += recs.length
     }
 
+    const provenance: Provenance = batched ?? 'mock'
     revalidatePath('/actions')
     revalidatePath('/ward')
     logger.info('recommendations generated', {
       patients: targets.length,
       generated,
+      provenance,
     })
-    return { ok: true, generated, patients: targets.length }
+    return { ok: true, generated, patients: targets.length, provenance }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Generation failed'
     logger.error('recommendation generation failed', { error: message })
-    return { ok: false, generated: 0, patients: 0, error: message }
+    return {
+      ok: false,
+      generated: 0,
+      patients: 0,
+      provenance: 'mock',
+      error: message,
+    }
   }
 }
