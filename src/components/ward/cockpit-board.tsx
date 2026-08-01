@@ -56,9 +56,24 @@ export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
           <h1 className="text-2xl font-semibold">{cockpit.wardName}</h1>
           <p className="text-muted-foreground text-sm">
             {cockpit.stats.occupied} occupied · {cockpit.stats.free} free ·{' '}
-            <span className="font-medium text-amber-600 dark:text-amber-400">
+            <span className="font-medium text-amber-700 dark:text-amber-400">
               {cockpit.stats.mffdDelayed} fit-but-delayed
             </span>
+            {cockpit.stats.overdue > 0 && (
+              <>
+                {' '}
+                ·{' '}
+                <span className="text-destructive font-medium">
+                  {cockpit.stats.overdue} overdue
+                </span>
+              </>
+            )}
+          </p>
+          {/* How current is this? The board is only as fresh as the last run. */}
+          <p className="text-muted-foreground text-xs">
+            {cockpit.lastExtractedAt
+              ? `Notes last read ${new Date(cockpit.lastExtractedAt).toLocaleString()}`
+              : 'Notes not yet read — run extraction'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -120,6 +135,7 @@ export function CockpitBoard({ cockpit }: { cockpit: Cockpit }) {
       <BedDrawer
         key={selectedId ?? 'none'}
         bed={selected}
+        people={cockpit.people}
         onClose={() => setSelectedId(null)}
         onChanged={() => router.refresh()}
       />
@@ -152,6 +168,12 @@ function BedCard({
   const empty = !bed.occupied
   const pct =
     bed.pDischarge != null ? `${Math.round(bed.pDischarge * 100)}%` : null
+  const oldestBarrierDays = bed.barriers.reduce(
+    (max, b) => Math.max(max, b.ageDays),
+    0,
+  )
+  const overdueCount = bed.barriers.filter((b) => b.overdue).length
+  const ownedCount = bed.barriers.filter((b) => b.ownerUserId).length
 
   return (
     <button
@@ -184,13 +206,30 @@ function BedCard({
 
           <div className="flex flex-wrap items-center gap-1.5">
             {bed.barriers.length > 0 ? (
-              <Badge
-                variant="outline"
-                className="border-amber-400 text-amber-700 dark:text-amber-300"
-              >
-                {bed.barriers.length} barrier
-                {bed.barriers.length === 1 ? '' : 's'}
-              </Badge>
+              <>
+                <Badge
+                  variant="outline"
+                  className="border-amber-400 text-amber-700 dark:text-amber-300"
+                >
+                  {bed.barriers.length} barrier
+                  {bed.barriers.length === 1 ? '' : 's'}
+                </Badge>
+                {/* Oldest open barrier — how long this bed has been stuck is
+                    the signal a flow coordinator actually escalates on. */}
+                {oldestBarrierDays > 0 && (
+                  <Badge variant="outline" title="Oldest open barrier">
+                    {oldestBarrierDays}d
+                  </Badge>
+                )}
+                {overdueCount > 0 && (
+                  <Badge variant="destructive">{overdueCount} overdue</Badge>
+                )}
+                {ownedCount > 0 && (
+                  <Badge variant="secondary" title="Barriers with an owner">
+                    {ownedCount} owned
+                  </Badge>
+                )}
+              </>
             ) : bed.extracted ? (
               <span className="text-muted-foreground text-xs">No barriers</span>
             ) : (
@@ -207,7 +246,7 @@ function BedCard({
               <span
                 className={`ml-auto font-mono text-xs tabular-nums ${
                   bed.pDischarge! >= 0.5
-                    ? 'text-green-600'
+                    ? 'text-green-700 dark:text-green-400'
                     : 'text-muted-foreground'
                 }`}
                 title="P(discharge in 24h)"

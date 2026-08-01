@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures'
+import { expect, test, openSettingsTab } from './fixtures'
 
 // File uploads (spec 0007): a fresh user uploads, lists, downloads, and
 // deletes a file, and can't reach another user's file by guessing its id.
@@ -15,6 +15,7 @@ test('upload, list, download, and delete a file', async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Files & notifications')
   await expect(page.getByText('My Files')).toBeVisible()
   await expect(page.getByText('No files uploaded yet.')).toBeVisible()
 
@@ -72,6 +73,7 @@ test('downloads a file whose name contains non-Latin-1 characters', async ({
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Files & notifications')
   // Mimic a real macOS screenshot name: "... 12.01.47<U+202F>pm.png".
   const nbsp = String.fromCharCode(0x202f)
   const fileName = `Screenshot 2026-06-20 at 12.01.47${nbsp}pm.png`
@@ -108,6 +110,7 @@ test('rejects a disallowed file type with a clear error', async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Files & notifications')
   await page.getByLabel('Upload a file').setInputFiles({
     name: 'not-allowed.exe',
     mimeType: 'application/x-msdownload',
@@ -133,6 +136,7 @@ test("a user cannot download another user's file", async ({
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Files & notifications')
   const fileName = `private-${Date.now()}.png`
   await page.getByLabel('Upload a file').setInputFiles({
     name: fileName,
@@ -182,6 +186,7 @@ test("deleting a user removes their uploaded files' download access", async ({
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Files & notifications')
   const fileName = `to-be-cascaded-${Date.now()}.png`
   await page.getByLabel('Upload a file').setInputFiles({
     name: fileName,
@@ -206,6 +211,7 @@ test("deleting a user removes their uploaded files' download access", async ({
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Administration')
   const row = page.getByRole('row').filter({ hasText: emailD })
   await row.getByRole('button', { name: 'Open menu' }).click()
   await page.getByRole('menuitem', { name: 'Delete' }).click()

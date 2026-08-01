@@ -105,7 +105,7 @@ export function CopilotChat() {
                     </Badge>
                     {turn.res.path !== 'out_of_scope' && (
                       <span
-                        className={`text-[10px] ${turn.res.grounded ? 'text-green-600' : 'text-amber-600'}`}
+                        className={`text-[10px] ${turn.res.grounded ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}
                       >
                         {turn.res.grounded ? '● grounded' : '○ no support'}
                       </span>

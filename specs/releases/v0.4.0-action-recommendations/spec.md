@@ -88,12 +88,23 @@ The board reflects the updated barrier status.
 
 ## Acceptance criteria
 
-- [ ] Recommendations generated per open barrier with action + rationale + policy
+- [x] Recommendations generated per open barrier with action + rationale + policy
       citation; ungrounded flagged.
-- [ ] Action queue lists them by bed with Approve / Dismiss.
-- [ ] Approve/Dismiss update status + barrier + write audit; board reflects it.
-- [ ] Regeneration preserves decided history.
-- [ ] Eval: action-appropriateness + grounded-rate gates met; offline mock works.
+- [x] Action queue lists them by bed with Approve / Dismiss.
+- [x] Approve/Dismiss update status + barrier + write audit; board reflects it.
+- [x] Regeneration preserves decided history.
+- [x] Eval: action-appropriateness + grounded-rate gates met; offline mock works.
+
+> **Post-release verification (2026-08-01).** All criteria met as written. Three
+> issues found later that these criteria did not cover: the approve path's three
+> writes are **not transactional** and its status check is a TOCTOU, so concurrent
+> approvals can write two audit rows (fixed in
+> [v0.10.0 NFR1](../v0.10.0-close-the-loop/spec.md)); approving a barrier sets it
+> `in_progress` but a **re-extraction wipes that state** (v0.10.0 FR1); and the
+> grounded-rate gate is unfalsifiable — `grounded` is set from citation count
+> alone, never checked against the rationale, and the mock always emits a citation
+> (owned by [v0.11.0](../v0.11.0-trustworthy-numbers/spec.md)). The standalone
+> action queue was later folded into the board in v0.7.0.
 
 ## Security & privacy
 

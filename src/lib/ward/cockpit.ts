@@ -4,6 +4,8 @@ import { db } from '@/db'
 import type { ActionType } from '@/db/schema'
 import { forecastDischarge } from '@/lib/ai/client'
 import { logger } from '@/lib/logger'
+import { sweepOverdueBarriers } from '@/lib/ward/barrier-notify'
+import { type Assignee, listAssignees } from '@/lib/ward/people'
 import { getWardBoard, type BoardBed, type WardBoard } from '@/lib/ward/queries'
 
 export interface CockpitRecommendation {
@@ -28,6 +30,10 @@ export interface Cockpit {
   wardName: string
   stats: WardBoard['stats']
   beds: CockpitBed[]
+  /** When extraction last ran, so staff can judge how current this is. */
+  lastExtractedAt: Date | null
+  /** People a barrier can be assigned to. */
+  people: Assignee[]
 }
 
 /**
@@ -39,6 +45,11 @@ export interface Cockpit {
 export async function getCockpit(): Promise<Cockpit | null> {
   const board = await getWardBoard()
   if (!board) return null
+
+  // No job runner in this deployment, so overdue barriers are swept when
+  // someone reads the board. Fire-and-forget: an alert must never delay or
+  // fail the board render. Stated as a limitation in the release docs.
+  void sweepOverdueBarriers()
 
   // Proposed recommendations, grouped by encounter.
   const recRows = await db.query.recommendations.findMany({
@@ -112,5 +123,7 @@ export async function getCockpit(): Promise<Cockpit | null> {
     wardName: board.wardName,
     stats: board.stats,
     beds,
+    lastExtractedAt: board.lastExtractedAt,
+    people: await listAssignees(),
   }
 }

@@ -18,8 +18,11 @@ test('register → dashboard → sign out → sign in', async ({ page }) => {
   await page.getByRole('button', { name: 'Create account' }).click()
 
   await expect(page).toHaveURL(/\/dashboard/)
-  // Email appears in both the topbar and the card — scope to the main content.
-  await expect(page.getByRole('main').getByText(email)).toBeVisible()
+  // `/dashboard` has been the ward board since v0.6.0, so the signed-in email
+  // lives only in the app-shell topbar, not in `main`. Assert both: the right
+  // identity, and that the board itself actually rendered.
+  await expect(page.getByRole('banner').getByText(email)).toBeVisible()
+  await expect(page.getByRole('main')).toContainText(/occupied/i)
 
   // Sign out
   await page.getByRole('button', { name: 'Sign out' }).click()

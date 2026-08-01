@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures'
+import { expect, test, openSettingsTab } from './fixtures'
 
 // RBAC: relies on the seeded admin (demo@example.com / Password123).
 
@@ -16,7 +16,10 @@ test('a non-admin user does not see the admin panel', async ({ page }) => {
 
   await page.goto('/settings')
   await expect(page.getByText('Current User')).toBeVisible()
-  // The admin panel and its "Add User" control must not render.
+  // Settings is tabbed (v0.8.0), so the gate is now the tab itself: a
+  // non-admin must not be offered Administration at all, and its contents must
+  // be unreachable.
+  await expect(page.getByRole('tab', { name: 'Administration' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Add User' })).toHaveCount(0)
 })
 
@@ -31,6 +34,7 @@ test('an admin invites a user who then claims the account', async ({
   await expect(page).toHaveURL(/\/dashboard/)
 
   await page.goto('/settings')
+  await openSettingsTab(page, 'Administration')
   await expect(page.getByRole('button', { name: 'Add User' })).toBeVisible()
 
   const email = `invited+${Date.now()}@example.com`

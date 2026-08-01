@@ -92,15 +92,24 @@ only answer about this ward's state and discharge policy."
 
 ## Acceptance criteria
 
-- [ ] pgvector enabled; policy KB seeded, chunked, and embedded via the embedding NIM.
-- [ ] `/copilot` routes questions; ward-state path returns grounded answers citing live
+- [x] pgvector enabled; policy KB seeded, chunked, and embedded via the embedding NIM.
+- [x] `/copilot` routes questions; ward-state path returns grounded answers citing live
       beds/patients/barriers via a validated read-only query.
-- [ ] Policy path retrieves → reranks → answers with passage citations; degrades to
+- [x] Policy path retrieves → reranks → answers with passage citations; degrades to
       embedding-only if the hosted reranker is unavailable (logged, not silent).
 - [ ] Copilot chat UI streams answers and shows citations; out-of-scope is refused.
 - [ ] Eval harness: retrieval hit-rate, faithfulness, and query-intent accuracy reported
       with gates.
-- [ ] Offline mock path works with zero external calls; live NIM path verified.
+- [x] Offline mock path works with zero external calls; live NIM path verified.
+
+> **Post-release verification (2026-08-01).** Citations and out-of-scope refusal
+> shipped; **streaming did not** — the copilot is one-shot request/response, and
+> both [v0.6.0](../v0.6.0-flow-cockpit/spec.md) and `docs/roadmap.md` subsequently
+> list streaming as future work. The eval harness reports retrieval hit-rate,
+> groundedness and intent accuracy with gates, but **not faithfulness** in the
+> RAGAS sense (no LLM-judge); `docs/evals.md` is honest about this. The gates also
+> cannot detect that the models are absent — every harness passes against the mock.
+> Now owned by [v0.11.0 FR7](../v0.11.0-trustworthy-numbers/spec.md).
 
 ## Security & privacy
 

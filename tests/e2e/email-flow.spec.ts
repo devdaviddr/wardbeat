@@ -16,8 +16,12 @@ async function waitForEmailLink(
   address: string,
   linkRe: RegExp,
 ): Promise<string> {
-  for (let i = 0; i < 30; i++) {
-    const list = await request.get(`${MAILPIT}/api/v1/messages`)
+  // 60 × 500ms = 30s. The previous 9s deadline was tight enough to flake when
+  // the suite runs in parallel and SMTP delivery queues behind other tests.
+  // `limit` keeps the target message in the page once a dev Mailpit has
+  // accumulated mail from earlier runs.
+  for (let i = 0; i < 60; i++) {
+    const list = await request.get(`${MAILPIT}/api/v1/messages?limit=200`)
     const { messages = [] } = (await list.json()) as {
       messages?: Array<{ ID: string; To?: Array<{ Address?: string }> }>
     }
@@ -32,7 +36,7 @@ async function waitForEmailLink(
       const match = Text.match(linkRe)
       if (match) return match[0]
     }
-    await new Promise((r) => setTimeout(r, 300))
+    await new Promise((r) => setTimeout(r, 500))
   }
   throw new Error(`No email link matching ${linkRe} for ${address}`)
 }

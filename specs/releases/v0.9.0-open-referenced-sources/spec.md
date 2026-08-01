@@ -1,7 +1,7 @@
 ---
 release: v0.9.0
 title: Open the referenced policy source
-status: Proposed # Proposed | Accepted | Shipped | Superseded | Rejected
+status: Accepted # Proposed | Accepted | Shipped | Superseded | Rejected
 phase: Barrier/action intelligence — traceability slice
 created: 2026-07-28
 updated: 2026-07-28
@@ -71,11 +71,14 @@ shows just the cited passage.
 
 ## Acceptance criteria
 
-- [ ] Clicking a recommendation's policy citation opens the full policy doc with
+- [x] Clicking a recommendation's policy citation opens the full policy doc with
       the cited passage highlighted.
-- [ ] Clicking a copilot policy citation does the same.
-- [ ] An unresolvable citation shows the passage-only fallback, not an error.
-- [ ] `pnpm lint && typecheck && test && build` pass.
+- [x] Clicking a copilot policy citation does the same.
+- [x] An unresolvable citation shows the passage-only fallback, not an error.
+- [x] `pnpm lint && typecheck && test && build` pass.
+
+> **Post-release verification (2026-08-01).** All criteria met; merged to `main`
+> and awaiting a release tag.
 
 ## Security & privacy
 

@@ -173,7 +173,7 @@
         <p>Today’s WardBeat makes ward flow <em>visible</em> and barriers <em>actionable</em> — on synthetic data, behind a human gate. That is deliberate: everything shippable is grounded, cited, and recommend-only. This page is the other side of that discipline: the things left out on purpose, grouped by what they unlock. Each item states <b>what</b> it is, <b>why</b> it matters, and <b>what it unlocks</b> — so the roadmap reads as a set of reasoned decisions, not a wishlist.</p>
         <div class="timeline">
           <div class="tstep"><div class="surface">Phase 1 · today</div><h3>Visible &amp; actionable</h3><p>The live slice: read notes into a board, surface barriers, recommend next steps behind a human gate. Synthetic data, gated evals, single-instance.</p></div>
-          <div class="tstep"><div class="surface">Phase 2 · next</div><h3>Close the loop &amp; harden AI</h3><p>Admit/discharge so beds turn over, guardrails and editable config, streaming answers — the product and AI items below.</p></div>
+          <div class="tstep"><div class="surface">Phase 2 · next</div><h3>Close the loop &amp; harden AI</h3><p>Give a barrier an owner and a way to be cleared, make every number honest, then authorize ward data properly — released as v0.10.0 → v0.12.0, detailed below.</p></div>
           <div class="tstep"><div class="surface">Phase 3 · production</div><h3>Real data &amp; real operations</h3><p>FHIR/EHR reads under information-governance review, eval gates in CI, tracing and cost metrics, a shared rate-limit store, and the Azure deploy shipped.</p></div>
         </div>
       </div>
@@ -187,7 +187,37 @@
         <p>Today WardBeat stops at the edge of action: it reads, structures, and recommends, but a human still admits, discharges, and picks up the phone. Closing that loop — safely — is the product frontier.</p>
 
         <div class="tech">
-          <div class="tech-head"><h3>Close the bed-lifecycle loop</h3><span class="tag">Next product slice</span></div>
+          <div class="tech-head"><h3>Give a barrier a life</h3><span class="tag">v0.10.0 · next release</span></div>
+          <p class="what"><b>What.</b> A barrier can be extracted and approved, but it can never be <b>cleared</b> — the status exists in the schema and nothing in the application sets it. It also has no owner, no due time, and no progress log. This release adds all four, and makes re-extraction <b>non-destructive</b> so human work survives it.</p>
+          <ul class="why">
+            <li><b>Why it matters.</b> Today the ward's open-barrier count only ever rises, and re-running extraction silently wipes every triage decision made that morning — the delete-and-reinsert write path does not know about human state. A tool that forgets what you did is worse than a whiteboard.</li>
+            <li><b>What it unlocks.</b> The chase-and-escalate workflow that is the actual job: assign it, chase it, record what pharmacy said, close it. Plus barrier <em>age</em> — "waiting two days on transport" is the entire escalation signal, and nothing captures it today.</li>
+          </ul>
+          <p class="instead"><b>Today</b> approving a recommendation flips a status and writes an audit row. Nobody is told, nobody owns it, and nothing can be marked done.</p>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Let clinicians contradict the AI</h3><span class="tag">v0.10.0</span></div>
+          <p class="what"><b>What.</b> A write path for humans: add a barrier the extraction missed, dismiss one it invented, and override the estimated discharge date — each recorded with its author, and each surviving the next extraction run.</p>
+          <ul class="why">
+            <li><b>Why it matters.</b> Clinicians do not trust a system they cannot correct. Grounding and citations make the AI <em>auditable</em>; a write path makes it <em>answerable</em>. Without one, a wrong barrier is permanent and the only recourse is to ignore the board.</li>
+            <li><b>What it unlocks.</b> Disagreement becomes signal — the record of what humans added, dismissed and overrode is the labelled data that improves extraction later.</li>
+          </ul>
+          <p class="instead"><b>Today</b> every barrier on the board is AI-authored and read-only; there is no way to add, correct, or reject one.</p>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Authorize ward data properly</h3><span class="tag">v0.12.0 · gate before real data</span></div>
+          <p class="what"><b>What.</b> A clinical role model — bed manager, charge nurse, clinician, allied health, viewer — enforced on every ward action and route, plus ward membership and an access audit that covers <b>reads</b>, not just approvals.</p>
+          <ul class="why">
+            <li><b>Why it matters.</b> Right now any authenticated user reads every patient name, MRN and clinical note and can approve clinical actions: the role helper is used in the admin screens and nowhere in the ward domain. Nothing records who viewed a patient — the first question an information-governance review asks.</li>
+            <li><b>What it unlocks.</b> The gate between "synthetic demo" and "could hold real data". It is a prerequisite for the FHIR work below, and for multi-ward, where membership becomes a genuine data boundary.</li>
+          </ul>
+          <p class="instead"><b>Today</b> the ward routes require a session and nothing more, and the audit trail covers approve/dismiss only.</p>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Close the bed-lifecycle loop</h3><span class="tag">v0.13.0</span></div>
           <p class="what"><b>What.</b> Add <code>admit</code> and <code>discharge</code> so a bed turns over inside the system, not just on the board. Today an encounter opens and collects notes, but the closing move — the freed bed — happens outside WardBeat.</p>
           <ul class="why">
             <li><b>Why it matters.</b> A freed bed is the whole point. Until the lifecycle closes in-system, WardBeat can show that a patient is fit and cleared but cannot reflect the turnover, so the net bed position stays a partial picture.</li>
@@ -237,6 +267,14 @@
 
         <div class="grid2">
           <div class="card">
+            <h3>Make degradation visible <span class="tag">v0.11.0</span></h3>
+            <p><b>What.</b> Every AI response carries its <b>provenance</b> — live model, deterministic mock, or a fallback after a failed call — and the UI shows it. "Grounded" comes to mean a model actually grounded it.<br><br><b>Why.</b> Today a failed live call falls back to the mock and still returns <code>grounded: true</code> with citations, so the interface shows a green grounded badge on an answer no model composed. Nothing in the response, the UI or the logs distinguishes the two. That is the one failure a trust-and-verify product cannot have.<br><br><b>Unlocks.</b> An honest badge, a warning log on every fallback, and the ability to tell after the fact whether note text reached a hosted model or stayed local.</p>
+          </div>
+          <div class="card">
+            <h3>Honest numbers, or none <span class="tag">v0.11.0</span></h3>
+            <p><b>What.</b> Feed the forecast real inputs — length of stay from the actual admission time rather than a hardcoded constant — and project demand from real admission history. Where a figure cannot be computed honestly, show why instead of a number.<br><br><b>Why.</b> The bold net-bed figure is currently arithmetic on a constant: expected admissions is a fixed rate, and every patient's length of stay is the same hardcoded value. On a ward, one wrong bed-position number burns the tool's credibility permanently.<br><br><b>Unlocks.</b> A briefing a bed manager can act on — and a forecast that can be evaluated, because its inputs finally vary.</p>
+          </div>
+          <div class="card">
             <h3>NeMo Guardrails as an explicit safety rail</h3>
             <p><b>What.</b> Grounding plus allow-lists are the current defences. A dedicated NeMo Guardrails layer would gather input/output policy in one place.<br><br><b>Why.</b> The safety behaviour exists, but it is spread across prompt design and validation code. A guardrails layer makes it a declared, testable policy.<br><br><b>Unlocks.</b> A single auditable boundary for what the models may accept and emit — easier to review with a clinical-safety lens.</p>
           </div>
@@ -269,7 +307,27 @@
       <div class="wrap">
         <span class="sec-num">03</span>
         <h2>Evaluation &amp; quality</h2>
-        <p>AI quality here is already a number, not a feeling: four harnesses exit non-zero when they fall below their gate. The gap is turning those gates into an automatic, always-on guarantee, and enriching the metrics with methods that catch subtler failures.</p>
+        <p>AI quality here is a number rather than a feeling: four harnesses exit non-zero when they fall below their gate. A 2026-08-01 review found the gates weaker than that framing suggested — the first two items below are the corrections, and the rest enrich the metrics with methods that catch subtler failures.</p>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Gates that can actually fail</h3><span class="tag">v0.11.0 · correction</span></div>
+          <p class="what"><b>What.</b> Every harness asserts it ran against a live model, and fails loudly otherwise. The forecast gate's ground truth is replaced with a target that is not derived from the model's own inputs.</p>
+          <ul class="why">
+            <li><b>Why it matters.</b> All four harnesses currently pass with the models switched off, so an expired API key would leave every gate green — a passing run does not presently prove the models were involved. And the forecast gate scores against <code>mffd − 0.1 × open_barriers</code>, a re-encoding of the same features the model weights, so it cannot fail unless someone flips a weight's sign.</li>
+            <li><b>What it unlocks.</b> Gates worth trusting. A gate that cannot fail is not a quality control; it is a reassuring number.</li>
+          </ul>
+          <p class="instead"><b>Today</b> the harnesses report scores that are real but unfalsifiable in these two specific ways.</p>
+        </div>
+
+        <div class="tech">
+          <div class="tech-head"><h3>Test the domain, not just the platform</h3><span class="tag">Starts in v0.10.0</span></div>
+          <p class="what"><b>What.</b> A test suite for WardBeat's own logic — extraction orchestration and persistence, the barrier lifecycle, recommendations, the copilot's routing and filtering, the briefing.</p>
+          <ul class="why">
+            <li><b>Why it matters.</b> The repository has a healthy-looking 158 test cases, and every one of them is inherited platform scaffolding: authentication, roles, storage, push, email. None touch the ward domain. The inference side has a handful of Python tests; the write paths that mutate clinical state have none — which is the inverse of where the risk sits.</li>
+            <li><b>What it unlocks.</b> The ability to change the domain confidently. v0.10.0 starts the suite alongside the lifecycle work rather than deferring it; every release after it extends it.</li>
+          </ul>
+          <p class="instead"><b>Today</b> domain correctness is verified by running the app and looking at it.</p>
+        </div>
 
         <div class="tech">
           <div class="tech-head"><h3>Run the eval gates in CI</h3><span class="tag">Automation</span></div>

@@ -83,12 +83,24 @@ Each claim ties back to specific beds/forecasts.
 
 ## Acceptance criteria
 
-- [ ] `/forecast/discharge` + `/forecast/demand` return deterministic outputs
+- [x] `/forecast/discharge` + `/forecast/demand` return deterministic outputs
       from features (no NIM).
-- [ ] Briefing page shows net bed position + predicted discharges + narrated
+- [x] Briefing page shows net bed position + predicted discharges + narrated
       paragraph grounded in those numbers.
-- [ ] Eval: discharge-model ranking + narration numeric-consistency gates met.
-- [ ] Offline mock narration works; live NIM verified.
+- [x] Eval: discharge-model ranking + narration numeric-consistency gates met.
+- [x] Offline mock narration works; live NIM verified.
+
+> **Post-release verification (2026-08-01).** Met as written, but the _inputs_ were
+> later found to be dishonest and the _gate_ circular:
+> `days_admitted` is hardcoded to `3` for every patient despite
+> `encounters.admittedAt` existing, so the length-of-stay term is permanently
+> constant; `demand_forecast` is `0.5 × window_hours`, so "expected admissions" is
+> always 6 and the bold "net beds" figure is arithmetic on a constant; and the
+> ranking gate defines ground truth as `mffd − 0.1 × open_barriers`, a monotone
+> re-encoding of the model's own features, so ρ = 0.92 cannot fail unless a weight
+> sign is flipped. All three are owned by
+> [v0.11.0](../v0.11.0-trustworthy-numbers/spec.md), which retires this gate rather
+> than carrying its number forward.
 
 ## Security & privacy
 

@@ -86,14 +86,23 @@ barrier clears.
 
 ## Acceptance criteria
 
-- [ ] Synthetic dataset (patients, ADT, notes) with a labelled barrier ground-truth set.
-- [ ] FastAPI `ai` service runs in Compose, internal-only, reachable from Next.js via
+- [x] Synthetic dataset (patients, ADT, notes) with a labelled barrier ground-truth set.
+- [x] FastAPI `ai` service runs in Compose, internal-only, reachable from Next.js via
       service token; OpenAPI contract published.
-- [ ] Notes are extracted to structured `barriers/edd/mffd/escalations` with source spans.
-- [ ] Ward board renders per-bed state; every barrier chip opens its cited source sentence.
+- [x] Notes are extracted to structured `barriers/edd/mffd/escalations` with source spans.
+- [x] Ward board renders per-bed state; every barrier chip opens its cited source sentence.
 - [ ] MFFD-but-delayed filter works; Web Push fires on MFFD/barrier-clear.
-- [ ] Extraction F1 ≥ 0.85 in the eval harness; ungrounded extractions are suppressed.
-- [ ] Harness respects ~40 RPM (queue/backoff/batch) under a full-ward ingest.
+- [x] Extraction F1 ≥ 0.85 in the eval harness; ungrounded extractions are suppressed.
+- [x] Harness respects ~40 RPM (queue/backoff/batch) under a full-ward ingest.
+
+> **Post-release verification (2026-08-01).** The MFFD-but-delayed filter shipped;
+> **Web Push on MFFD/barrier-clear did not** — `notifyRole`/`sendPushNotification`
+> are called only from user registration, so the push plumbing exists but is wired
+> to no ward event. Now owned by
+> [v0.10.0 FR11](../v0.10.0-close-the-loop/spec.md). The rate-limit criterion holds
+> for extraction specifically; the limiter is not applied to the copilot, briefing
+> or recommendation paths added in later releases (owned by
+> [v0.12.0](../v0.12.0-ward-rbac-audit/spec.md)).
 
 ## Security & privacy
 

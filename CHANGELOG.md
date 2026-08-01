@@ -15,6 +15,55 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 
 ### Added
 
+- **Barriers now have a life.** A barrier can be **assigned** to someone with a
+  due time, carry a **progress thread** ("pharmacy says 4pm"), and — for the
+  first time — be **marked cleared** with a reason. Clearing removes it from the
+  ward's open count, so the number finally goes down as well as up. Every
+  transition is recorded in an append-only `barrier_events` log with its actor,
+  shown in the bed drawer. See `specs/releases/v0.10.0-close-the-loop/`.
+- **Barrier age and ownership on the board.** Each bed card shows the age of its
+  oldest open barrier, how many are owned, and how many are overdue — "waiting
+  two days on transport" is the escalation signal, and it was previously
+  uncapturable because re-extraction reset every barrier's age.
+- **Clinicians can contradict the AI.** Add a barrier the extraction missed
+  (stored as clinician-authored, and invisible to re-extraction), dismiss one it
+  invented (**durably** — a suppression stops the next run resurrecting it), and
+  **override the estimated discharge date**. The board shows whether an EDD came
+  from a clinician or from the notes.
+- **Approval can delegate.** Approving a recommendation optionally assigns the
+  underlying barrier and sets a due time in the same step.
+- **Web Push reaches its first real ward events** — being assigned a barrier,
+  and a barrier going overdue. The push plumbing has existed since the platform
+  baseline and was wired only to user registration.
+- **The board says when the notes were last read**, so staff can judge how
+  current it is.
+
+### Fixed
+
+- **Re-running extraction no longer destroys the ward's work.** Persistence
+  deleted and re-inserted every barrier for a note, so one person clicking "Run
+  extraction" silently wiped every triage decision made that morning — approvals
+  reverted to `pending`, owners and progress notes vanished. Extraction now
+  **reconciles**: AI-derived fields are refreshed in place, human state is
+  untouched, and a barrier the notes no longer support is flagged rather than
+  deleted. Verified against live extraction runs.
+- **Concurrent extraction runs.** A second "Run extraction" is now rejected with
+  a clear message instead of racing the first — previously both ran, doubling
+  the model spend and interleaving writes to the same barriers.
+- **Double-approving a recommendation could write two audit rows.** The status
+  check and its three writes were separate statements; they are now one
+  transaction with the row locked, so the second approval gets "Already
+  approved" instead of corrupting the audit trail.
+
+### Changed
+
+- `BARRIER_STATUSES` gains `dismissed` — "the AI got this wrong", which is
+  clinically distinct from `cleared` ("the work is done") and must not be
+  collapsed into it.
+- Barrier age is anchored to a new `first_seen_at` that survives re-extraction.
+
+### Added
+
 - **Open the referenced policy.** A policy citation on an action recommendation
   or a copilot answer is now clickable — it opens the full referenced discharge
   policy document in a dialog, with the cited passage highlighted (resolved
