@@ -8,7 +8,8 @@ import { persistExtraction } from '@/db/persist-extraction'
 import { notes } from '@/db/schema'
 import { extractNote } from '@/lib/ai/client'
 import { mapPool } from '@/lib/async/pool'
-import { getCurrentSession } from '@/lib/auth/session'
+import { recordAccess } from '@/lib/audit/record'
+import { requireWardAccess } from '@/lib/auth/ward-access'
 import { logger } from '@/lib/logger'
 import { withExtractionLock } from '@/lib/ward/extraction-lock'
 
@@ -59,10 +60,19 @@ const EXTRACTION_CONCURRENCY = 4
  * payload) is isolated and counted — it never aborts the batch.
  */
 export async function runWardExtractionAction(): Promise<ExtractionSummary> {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return { ok: false, ...EMPTY_SUMMARY, error: 'Unauthorized' }
+  // Ward-wide and expensive — bed-manager-level only (spec v0.12.0 M3).
+  // `{ any: true }` until multi-ward lands (v0.13.0).
+  const access = await requireWardAccess('run_extraction', { any: true })
+  if (!access.ok) {
+    return { ok: false, ...EMPTY_SUMMARY, error: access.error }
   }
+
+  // Fire-and-forget access audit — must never delay or fail the run (NFR3).
+  void recordAccess({
+    actorUserId: access.userId,
+    subjectType: 'ward',
+    surface: 'extraction',
+  })
 
   const summary = await withExtractionLock(() => runExtraction())
 

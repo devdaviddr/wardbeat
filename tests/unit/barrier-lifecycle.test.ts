@@ -17,7 +17,9 @@ const tx = {
   delete: vi.fn(),
 }
 
-const session = { value: null as { user: { id: string } } | null }
+const session = {
+  value: null as { user: { id: string; roles?: string[] } } | null,
+}
 
 vi.mock('@/lib/auth/session', () => ({
   getCurrentSession: async () => session.value,
@@ -30,9 +32,24 @@ vi.mock('@/lib/ward/barrier-notify', () => ({
   sweepOverdueBarriers: vi.fn(async () => 0),
 }))
 
+// Authorization context read by `requireWardAccess` (v0.12.0): the barrier
+// resolves to encounter e1 on ward w1, and the caller is a member of w1.
+// Individual tests override these to exercise denials.
+const authz = {
+  barrier: { encounterId: 'e1' } as { encounterId: string } | undefined,
+  encounter: { id: 'e1', bed: { wardId: 'w1' } } as unknown,
+  memberships: [{ wardId: 'w1' }] as Array<{ wardId: string }>,
+}
+
 vi.mock('@/db', () => ({
   db: {
     transaction: vi.fn(async (fn: (t: typeof tx) => unknown) => fn(tx)),
+    query: {
+      barriers: { findFirst: async () => authz.barrier },
+      encounters: { findFirst: async () => authz.encounter },
+      userWards: { findMany: async () => authz.memberships },
+      wards: { findFirst: async () => ({ id: 'w1' }) },
+    },
   },
   sqlClient: {},
 }))
@@ -88,7 +105,10 @@ const OPEN_BARRIER = {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  session.value = { user: { id: 'user-1' } }
+  session.value = { user: { id: 'user-1', roles: ['bed_manager'] } }
+  authz.barrier = { encounterId: 'e1' }
+  authz.encounter = { id: 'e1', bed: { wardId: 'w1' } }
+  authz.memberships = [{ wardId: 'w1' }]
   stubWrites()
   stubSelect([OPEN_BARRIER])
 })
@@ -115,7 +135,7 @@ describe('authorization', () => {
   ])('refuses %s when signed out, and writes nothing', async (_name, call) => {
     const res = await call()
 
-    expect(res).toEqual({ ok: false, error: 'Unauthorized' })
+    expect(res).toEqual({ ok: false, error: 'Not signed in.' })
     expect(tx.update).not.toHaveBeenCalled()
     expect(tx.insert).not.toHaveBeenCalled()
     expect(tx.delete).not.toHaveBeenCalled()

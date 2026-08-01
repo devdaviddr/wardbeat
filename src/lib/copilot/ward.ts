@@ -80,9 +80,24 @@ export async function answerWardQuestion(
 ): Promise<WardAnswer> {
   const intentResult = await queryIntent(question)
   const parsed = intentSchema.safeParse(intentResult.intent)
-  const intent: WardQueryIntent = parsed.success
-    ? parsed.data
-    : { aggregation: 'list' }
+
+  // A malformed intent REFUSES rather than falling back to `list` — the old
+  // fallback matched every bed and shipped the whole ward to the model
+  // (spec v0.12.0 FR9). No board data is read on this path.
+  if (!parsed.success) {
+    return {
+      answer:
+        "I couldn't understand that as a ward question. Try asking about " +
+        'free beds, patients who are fit for discharge, barriers, or ' +
+        "today's expected discharges.",
+      grounded: false,
+      citations: [],
+      matchedBeds: [],
+      intent: { aggregation: 'list' },
+      provenance: intentResult.provenance,
+    }
+  }
+  const intent: WardQueryIntent = parsed.data
 
   const board = await getWardBoard()
   const beds = board ? applyIntent(board.beds, intent) : []

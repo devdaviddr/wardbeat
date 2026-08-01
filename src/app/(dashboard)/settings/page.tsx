@@ -4,6 +4,7 @@ import { getCurrentSession } from '@/lib/auth/session'
 import {
   getAllUsersWithRoles,
   getAllRoles,
+  getAllWards,
   type UserWithRoles,
 } from '@/lib/auth/admin-actions'
 import { getLinkedAccounts } from '@/lib/auth/account-actions'
@@ -25,19 +26,27 @@ export default async function SettingsPage() {
 
   // Fetch data in parallel. The AI configuration is admin-only and read over the
   // internal service token (never from the browser).
-  const [users, roles, files, linkedAccounts, aiConfig] = await Promise.all([
-    isAdmin ? getAllUsersWithRoles() : Promise.resolve([] as UserWithRoles[]),
-    isAdmin
-      ? getAllRoles()
-      : Promise.resolve(
-          [] as Array<{ id: string; name: string; description: string | null }>,
-        ),
-    listMyFiles(),
-    getLinkedAccounts(),
-    isAdmin
-      ? getAiConfiguration()
-      : Promise.resolve(null as AiConfiguration | null),
-  ])
+  const [users, roles, wards, files, linkedAccounts, aiConfig] =
+    await Promise.all([
+      isAdmin ? getAllUsersWithRoles() : Promise.resolve([] as UserWithRoles[]),
+      isAdmin
+        ? getAllRoles()
+        : Promise.resolve(
+            [] as Array<{
+              id: string
+              name: string
+              description: string | null
+            }>,
+          ),
+      isAdmin
+        ? getAllWards()
+        : Promise.resolve([] as Array<{ id: string; name: string }>),
+      listMyFiles(),
+      getLinkedAccounts(),
+      isAdmin
+        ? getAiConfiguration()
+        : Promise.resolve(null as AiConfiguration | null),
+    ])
 
   // Ensure user properties are never undefined (they're required by auth)
   const sessionWithId = {
@@ -57,6 +66,7 @@ export default async function SettingsPage() {
       session={sessionWithId}
       users={users ?? []}
       roles={roles ?? []}
+      wards={wards ?? []}
       files={files ?? []}
       linkedAccounts={linkedAccounts}
       pushPublicKey={getVapidPublicKey()}

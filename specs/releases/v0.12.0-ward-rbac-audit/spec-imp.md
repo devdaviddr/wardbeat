@@ -1,7 +1,7 @@
 ---
 release: v0.12.0
 title: Ward authorization & access audit — implementation plan
-status: Draft # Draft | In Progress | Ready | Shipped
+status: Shipped # Draft | In Progress | Ready | Shipped
 spec: ./spec.md
 branch: feature/ward-rbac-audit
 created: 2026-08-01
@@ -236,10 +236,21 @@ tests/e2e/
 - [ ] Populate `ROLE_REQUIRED` in `proxy.ts`.
 - [ ] Copilot ward-scoping + refuse-on-malformed-intent.
 - [ ] Hide write affordances by role in the UI (convenience, not control).
-- [ ] `access_audit` table + `recordAccess()` + read instrumentation.
-- [ ] Admin audit view with actor/patient/date filters.
-- [ ] `raw_json` retention purge + env var.
-- [ ] Rate limit copilot / briefing / recommendation generation.
-- [ ] `ai/app/security.py` empty-token fix.
+- [x] `access_audit` table + `recordAccess()` + read instrumentation. (Board
+      reads: one ward-granularity event per render, coalesced per user over
+      60s in-process — same single-instance caveat as the rate limiter. Bed
+      drawer: fire-and-forget `logBedViewAction` records who viewed which
+      patient. Failed audit writes are logged at `error`, never propagated —
+      NFR3.)
+- [x] Admin audit view with actor/patient/date filters. (`/settings/audit`,
+      gated server-side via `view_access_audit`; 50/page limit/offset. The
+      only write path to `access_audit` is the INSERT in
+      `src/lib/audit/record.ts` — no UPDATE/DELETE anywhere in app code.)
+- [x] `raw_json` retention purge + env var. (Opportunistic from
+      `persistExtraction`, throttled hourly; `AI_RAW_RETENTION_DAYS` default 30.)
+- [x] Rate limit copilot / briefing / recommendation generation. (Per-user
+      `AI_LIMITS` in `src/lib/rate-limit.ts`; `/briefing` page gated too.)
+- [x] `ai/app/security.py` empty-token fix. (Fails closed with 503; explicit
+      `AI_ALLOW_INSECURE_NO_TOKEN=true` opt-out for tokenless local dev.)
 - [ ] Per-role negative tests; E2E viewer test.
 - [ ] Docs, `SECURITY.md`, changelog.

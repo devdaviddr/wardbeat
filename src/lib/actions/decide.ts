@@ -10,7 +10,7 @@ import {
   barriers,
   recommendations,
 } from '@/db/schema'
-import { getCurrentSession } from '@/lib/auth/session'
+import { requireWardAccess } from '@/lib/auth/ward-access'
 import { logger } from '@/lib/logger'
 import { notifyBarrierAssigned } from '@/lib/ward/barrier-notify'
 
@@ -44,9 +44,19 @@ async function decide(
   note?: string,
   delegation?: Delegation,
 ): Promise<DecisionResult> {
-  const session = await getCurrentSession()
-  const actor = session?.user?.id
-  if (!actor) return { ok: false, error: 'Unauthorized' }
+  // Resolve the recommendation to its encounter and authorize BEFORE opening
+  // the write transaction (spec v0.12.0 M3). The row is re-read FOR UPDATE
+  // inside the transaction, so this lookup is authorization only.
+  const target = await db.query.recommendations.findFirst({
+    where: eq(recommendations.id, recommendationId),
+    columns: { encounterId: true },
+  })
+  if (!target) return { ok: false, error: 'Recommendation not found' }
+  const access = await requireWardAccess('approve_recommendation', {
+    encounterId: target.encounterId,
+  })
+  if (!access.ok) return access
+  const actor = access.userId
 
   try {
     const result = await db.transaction(async (tx) => {

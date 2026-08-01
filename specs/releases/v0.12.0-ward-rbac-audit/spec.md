@@ -1,7 +1,7 @@
 ---
 release: v0.12.0
 title: Ward authorization & access audit
-status: Proposed # Proposed | Accepted | Shipped | Superseded | Rejected
+status: Shipped # Proposed | Accepted | Shipped | Superseded | Rejected
 phase: Phase 3 — fit for real data
 created: 2026-08-01
 updated: 2026-08-01
@@ -141,21 +141,48 @@ through which surface. Every copilot question is recorded with its asker.
 
 ## Acceptance criteria
 
-- [ ] A `viewer` cannot clear a barrier, approve a recommendation, override an
+- [x] A `viewer` cannot clear a barrier, approve a recommendation, override an
       EDD or run extraction — each refused server-side with a clear message.
-- [ ] A user with no ward assignment sees no patient data on any surface.
-- [ ] A user assigned to ward A cannot read or act on a patient in ward B,
+- [x] A user with no ward assignment sees no patient data on any surface.
+- [x] A user assigned to ward A cannot read or act on a patient in ward B,
       including via the copilot.
-- [ ] A malformed copilot intent results in a refusal, not a ward-wide listing.
-- [ ] Viewing a patient writes an access-audit record naming the actor and
+- [x] A malformed copilot intent results in a refusal, not a ward-wide listing.
+- [x] Viewing a patient writes an access-audit record naming the actor and
       subject.
-- [ ] Every copilot question is recorded with its asker.
-- [ ] The admin audit view lists and filters access records; no application path
+- [x] Every copilot question is recorded with its asker.
+- [x] The admin audit view lists and filters access records; no application path
       can edit or delete them.
-- [ ] `ai_extractions.rawJson` older than the retention period is purged, and
+- [x] `ai_extractions.rawJson` older than the retention period is purged, and
       the structured extraction survives.
-- [ ] Per-role negative tests exist for every WardBeat server action.
-- [ ] `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass.
+- [x] Per-role negative tests exist for every WardBeat server action.
+- [x] `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass.
+
+> **Verification status (2026-08-01).** Checked against the real local Postgres
+> and the full e2e suite run **twice — once against `next dev`, once against a
+> production `next start`** (42/42 both), which is what proves the denial
+> messages survive production error redaction. 439 unit tests pass, 95 of them
+> per-role negatives asserting refusal AND zero writes. The privilege-granting
+> migration was observed live: 282 `bed_manager` grants + 283 ward memberships,
+> counts printed at migration time. A real `access_audit` row was written and
+> inspected through the production code path. The purge was run against real
+> rows (41-day-old `raw_json` nulled, structured columns intact, idempotent).
+>
+> Two ticks carry qualifications:
+>
+> - **Ward A vs ward B**: the action path is unit-tested against a genuine
+>   second ward. The copilot half is currently structural — the single-ward
+>   read model cannot reach a second ward's patients — and the explicit
+>   membership intersection lands with v0.13.0's ward scoping.
+> - **The admin audit view** is verified at the query level (filter SQL,
+>   pagination, admin-only) and by typecheck; it has not been rendered in a
+>   browser.
+>
+> Also honestly noted: the capability matrix is **provisional** and needs
+> review by someone who runs a ward; `ROLE_REQUIRED` in `proxy.ts` gates the
+> ward routes from the JWT role claim, which can be stale — the server-side
+> check is the boundary, as specced. The edge gate deliberately excludes
+> `/dashboard` so a role-less user gets the friendly no-ward screen instead of
+> a 403 bounce.
 
 ## Security & privacy
 

@@ -18,48 +18,54 @@ const DEMO = {
   password: 'Password123',
 }
 
+/**
+ * Full role vocabulary. `admin`/`member`/`viewer` are the inherited platform
+ * roles; the clinical set was added by spec v0.12.0 (FR1) and must match the
+ * capability matrix in `src/lib/auth/ward-access.ts` and the inserts in
+ * migration 0015.
+ */
+const ROLE_SEED = [
+  { name: 'admin', description: 'Full administrative access' },
+  { name: 'member', description: 'Standard member access' },
+  { name: 'viewer', description: 'Read-only access' },
+  {
+    name: 'bed_manager',
+    description:
+      'Bed manager — full ward flow control, including extraction and recommendation runs',
+  },
+  {
+    name: 'charge_nurse',
+    description:
+      'Charge nurse — acts on barriers and approvals within assigned wards',
+  },
+  {
+    name: 'clinician',
+    description:
+      'Clinician — acts on barriers and approvals within assigned wards',
+  },
+  {
+    name: 'allied_health',
+    description:
+      'Allied health — works barriers within assigned wards; no EDD override or approvals',
+  },
+] as const
+
 async function main() {
   const client = postgres(databaseUrl!, { max: 1 })
   const db = drizzle(client, { schema: { users, roles, userRoles } })
 
   // Ensure roles exist
-  let adminRole = await db.query.roles.findFirst({
-    where: eq(roles.name, 'admin'),
-  })
-
-  if (!adminRole) {
-    const [created] = await db
-      .insert(roles)
-      .values({ name: 'admin', description: 'Full administrative access' })
-      .returning()
-    adminRole = created
-    console.log(`✅ Created role: admin`)
-  }
-
-  let memberRole = await db.query.roles.findFirst({
-    where: eq(roles.name, 'member'),
-  })
-
-  if (!memberRole) {
-    const [created] = await db
-      .insert(roles)
-      .values({ name: 'member', description: 'Standard member access' })
-      .returning()
-    memberRole = created
-    console.log(`✅ Created role: member`)
-  }
-
-  let viewerRole = await db.query.roles.findFirst({
-    where: eq(roles.name, 'viewer'),
-  })
-
-  if (!viewerRole) {
-    const [created] = await db
-      .insert(roles)
-      .values({ name: 'viewer', description: 'Read-only access' })
-      .returning()
-    viewerRole = created
-    console.log(`✅ Created role: viewer`)
+  let adminRole: typeof roles.$inferSelect | undefined
+  for (const roleDef of ROLE_SEED) {
+    let role = await db.query.roles.findFirst({
+      where: eq(roles.name, roleDef.name),
+    })
+    if (!role) {
+      const [created] = await db.insert(roles).values(roleDef).returning()
+      role = created
+      console.log(`✅ Created role: ${roleDef.name}`)
+    }
+    if (roleDef.name === 'admin') adminRole = role
   }
 
   // Seed demo user

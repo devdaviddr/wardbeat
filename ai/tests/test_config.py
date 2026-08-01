@@ -16,6 +16,8 @@ def test_config_shape_and_mock_mode(monkeypatch):
     monkeypatch.setenv("NIM_MOCK", "true")
     monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
     monkeypatch.delenv("AI_SERVICE_TOKEN", raising=False)
+    # No token now fails closed (spec v0.12.0); tokenless dev must opt in.
+    monkeypatch.setenv("AI_ALLOW_INSECURE_NO_TOKEN", "true")
     _reset_settings()
 
     res = client.get("/config")
@@ -47,6 +49,8 @@ def test_config_shape_and_mock_mode(monkeypatch):
 def test_config_live_mode_when_key_present(monkeypatch):
     monkeypatch.setenv("NIM_MOCK", "false")
     monkeypatch.setenv("NVIDIA_API_KEY", "super-secret-key-value")
+    monkeypatch.delenv("AI_SERVICE_TOKEN", raising=False)
+    monkeypatch.setenv("AI_ALLOW_INSECURE_NO_TOKEN", "true")
     _reset_settings()
 
     body = client.get("/config").json()
@@ -63,7 +67,14 @@ def test_config_never_leaks_secrets(monkeypatch):
     monkeypatch.setenv("AI_SERVICE_TOKEN", "leak-canary-service-token")
     _reset_settings()
 
-    raw = json.dumps(client.get("/config").json())
+    # Send the token so the request passes auth and the serialised config
+    # body itself is what gets checked (unauthenticated it would only ever
+    # assert on the 401/503 error body).
+    raw = json.dumps(
+        client.get(
+            "/config", headers={"x-service-token": "leak-canary-service-token"}
+        ).json()
+    )
     assert "leak-canary-api-key" not in raw
     assert "leak-canary-service-token" not in raw
     assert "nvidia_api_key" not in raw

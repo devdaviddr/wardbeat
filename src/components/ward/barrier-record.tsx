@@ -70,10 +70,16 @@ function EventThread({ events }: { events: BarrierEventEntry[] }) {
 export function BarrierRecord({
   barrier,
   people,
+  canAssignComment,
+  canClear,
   onChanged,
 }: {
   barrier: BoardBarrier
   people: Assignee[]
+  /** Hides the assign/comment controls; the server actions re-check. */
+  canAssignComment: boolean
+  /** Hides the clear/dismiss controls; the server actions re-check. */
+  canClear: boolean
   onChanged: () => void
 }) {
   const [pending, startTransition] = useTransition()
@@ -153,50 +159,56 @@ export function BarrierRecord({
       </p>
 
       {/* Assign */}
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <label className="sr-only" htmlFor={`owner-${barrier.id}`}>
-          Assign this barrier
-        </label>
-        <select
-          id={`owner-${barrier.id}`}
-          className="border-input bg-background h-8 rounded-md border px-2 text-xs"
-          defaultValue={barrier.ownerUserId ?? ''}
-          disabled={pending}
-          onChange={(e) => {
-            const value = e.target.value
-            if (value) run(() => assignBarrierAction(barrier.id, value))
-          }}
-        >
-          <option value="">Assign to…</option>
-          {people.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {canAssignComment && (
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor={`owner-${barrier.id}`}>
+            Assign this barrier
+          </label>
+          <select
+            id={`owner-${barrier.id}`}
+            className="border-input bg-background h-8 rounded-md border px-2 text-xs"
+            defaultValue={barrier.ownerUserId ?? ''}
+            disabled={pending}
+            onChange={(e) => {
+              const value = e.target.value
+              if (value) run(() => assignBarrierAction(barrier.id, value))
+            }}
+          >
+            <option value="">Assign to…</option>
+            {people.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Progress note */}
-      <div className="mb-2 flex gap-2">
-        <Input
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Add a progress note…"
-          className="h-8 text-xs"
-          disabled={pending}
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={pending || !comment.trim()}
-          onClick={() => run(() => commentOnBarrierAction(barrier.id, comment))}
-        >
-          Note
-        </Button>
-      </div>
+      {canAssignComment && (
+        <div className="mb-2 flex gap-2">
+          <Input
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Add a progress note…"
+            className="h-8 text-xs"
+            disabled={pending}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={pending || !comment.trim()}
+            onClick={() =>
+              run(() => commentOnBarrierAction(barrier.id, comment))
+            }
+          >
+            Note
+          </Button>
+        </div>
+      )}
 
-      {/* Resolve */}
-      {mode === 'none' ? (
+      {/* Resolve — hidden entirely when the role cannot clear/dismiss. */}
+      {!canClear ? null : mode === 'none' ? (
         <div className="flex gap-2">
           <Button size="sm" disabled={pending} onClick={() => setMode('clear')}>
             Mark cleared

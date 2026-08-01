@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { CockpitBoard } from '@/components/ward/cockpit-board'
 import { getCurrentSession } from '@/lib/auth/session'
+import { requireWardAccess } from '@/lib/auth/ward-access'
 import { env } from '@/lib/env'
 import { getCockpit } from '@/lib/ward/cockpit'
 
@@ -21,6 +22,23 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-semibold">WardBeat</h1>
         <p className="text-muted-foreground text-sm">
           The ward board is disabled (set <code>FEATURE_WARD_BOARD=true</code>).
+        </p>
+      </div>
+    )
+  }
+
+  // Read-side gate (spec v0.12.0 M3): the board is patient data. A user with
+  // no ward role or no ward membership gets a friendly empty state — never
+  // the board. `getCockpit` runs the same check, so this page copy is UX,
+  // not the enforcement.
+  const access = await requireWardAccess('view_board', { any: true })
+  if (!access.ok) {
+    return (
+      <div className="space-y-3">
+        <h1 className="text-2xl font-semibold">Ward board</h1>
+        <p className="text-muted-foreground text-sm">
+          You have not been assigned to a ward yet. Ask an administrator to
+          assign you a clinical role and ward in Settings.
         </p>
       </div>
     )

@@ -4,7 +4,7 @@ import { asc, eq, or } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { policyChunks, policyDocs } from '@/db/schema'
-import { getCurrentSession } from '@/lib/auth/session'
+import { requireWardAccess } from '@/lib/auth/ward-access'
 
 export interface PolicyDocView {
   title: string
@@ -26,8 +26,11 @@ export async function getPolicySource(input: {
   text?: string
   source?: string
 }): Promise<PolicyDocView | null> {
-  const session = await getCurrentSession()
-  if (!session?.user) return null
+  // Citations are only reachable from ward surfaces, so this is gated like
+  // the board: any ward role with a membership (spec v0.12.0 M3). Returns
+  // null on denial, matching the "can't be found" contract.
+  const access = await requireWardAccess('view_board', { any: true })
+  if (!access.ok) return null
 
   let docId: string | undefined
   let citedChunkId: string | undefined

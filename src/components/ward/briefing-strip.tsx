@@ -18,20 +18,26 @@ export function BriefingStrip() {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>(
     'idle',
   )
+  const [error, setError] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
 
   function generate() {
     setState('loading')
     getBriefingSummaryAction()
-      .then((d) => {
-        if (d) {
-          setData(d)
+      .then((r) => {
+        if (r.ok && r.briefing) {
+          setData(r.briefing)
+          setError(null)
           setState('done')
         } else {
+          setError(r.ok ? null : r.error)
           setState('error')
         }
       })
-      .catch(() => setState('error'))
+      .catch(() => {
+        setError(null)
+        setState('error')
+      })
   }
 
   if (state === 'loading') {
@@ -47,7 +53,7 @@ export function BriefingStrip() {
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed p-3 text-sm">
         <span className="text-muted-foreground">
           {state === 'error'
-            ? "Couldn't generate the briefing."
+            ? (error ?? "Couldn't generate the briefing.")
             : 'Flow briefing — net bed position + a narrated shift summary.'}
         </span>
         <Button size="sm" variant="outline" onClick={generate}>

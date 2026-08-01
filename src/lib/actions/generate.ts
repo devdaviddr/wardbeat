@@ -8,9 +8,10 @@ import { recommendations, type ActionType } from '@/db/schema'
 import { recommendActions } from '@/lib/ai/client'
 import { describeEmbeddingDrift } from '@/lib/ai/embedding-model'
 import { combineProvenance, type Provenance } from '@/lib/ai/provenance'
-import { getCurrentSession } from '@/lib/auth/session'
+import { requireWardAccess } from '@/lib/auth/ward-access'
 import { retrievePolicy } from '@/lib/copilot/policy'
 import { logger } from '@/lib/logger'
+import { AI_LIMITS, AI_RATE_LIMIT_MESSAGE, rateLimit } from '@/lib/rate-limit'
 import { getWardBoard } from '@/lib/ward/queries'
 
 export interface GenerateSummary {
@@ -44,14 +45,39 @@ const ACTION_TYPES = new Set<ActionType>([
  * replaces still-`proposed` recommendations, preserving approved/dismissed history.
  */
 export async function generateRecommendationsAction(): Promise<GenerateSummary> {
-  const session = await getCurrentSession()
-  if (!session?.user) {
+  // Authorization FIRST — a denied caller must not consume rate budget
+  // (spec v0.12.0 M3). `{ any: true }` until multi-ward lands (v0.13.0).
+  const access = await requireWardAccess('generate_recommendations', {
+    any: true,
+  })
+  if (!access.ok) {
     return {
       ok: false,
       generated: 0,
       patients: 0,
       provenance: 'mock',
-      error: 'Unauthorized',
+      error: access.error,
+    }
+  }
+
+  // Per-user cap: a run costs ~2 NIM calls per delayed patient — the single
+  // most expensive AI action (see AI_LIMITS for the arithmetic).
+  const rl = rateLimit(
+    `ai:generate:${access.userId}`,
+    AI_LIMITS.generate.limit,
+    AI_LIMITS.generate.windowMs,
+  )
+  if (!rl.success) {
+    logger.warn('recommendation generation rate limited', {
+      userId: access.userId,
+      resetAt: rl.resetAt,
+    })
+    return {
+      ok: false,
+      generated: 0,
+      patients: 0,
+      provenance: 'mock',
+      error: AI_RATE_LIMIT_MESSAGE,
     }
   }
 

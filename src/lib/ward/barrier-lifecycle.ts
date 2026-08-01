@@ -12,7 +12,7 @@ import {
   barrierSuppressions,
   notes,
 } from '@/db/schema'
-import { getCurrentSession } from '@/lib/auth/session'
+import { requireWardAccess, type WardCapability } from '@/lib/auth/ward-access'
 import { logger } from '@/lib/logger'
 import { notifyBarrierAssigned } from '@/lib/ward/barrier-notify'
 import { barrierFingerprint } from '@/lib/ward/reconcile'
@@ -44,9 +44,27 @@ function isOpen(status: string): boolean {
   return status === 'pending' || status === 'in_progress'
 }
 
-async function currentUserId(): Promise<string | null> {
-  const session = await getCurrentSession()
-  return session?.user?.id ?? null
+/**
+ * Authorization for a barrier-scoped action (spec v0.12.0 M3). The barrier is
+ * resolved to its encounter, and `requireWardAccess` checks role + ward
+ * membership BEFORE any write. Denials return `{ ok: false, error }` and no
+ * write is performed. The barrier row itself is still re-read `FOR UPDATE`
+ * inside the mutation transaction — this lookup is authorization only.
+ */
+async function authorizeBarrier(
+  barrierId: string,
+  capability: WardCapability,
+): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
+  const barrier = await db.query.barriers.findFirst({
+    where: eq(barriers.id, barrierId),
+    columns: { encounterId: true },
+  })
+  if (!barrier) return { ok: false, error: 'Barrier not found' }
+  const access = await requireWardAccess(capability, {
+    encounterId: barrier.encounterId,
+  })
+  if (!access.ok) return access
+  return { ok: true, userId: access.userId }
 }
 
 interface EventInput {
@@ -115,8 +133,9 @@ export async function assignBarrierAction(
   ownerUserId: string,
   dueAt?: Date | null,
 ): Promise<LifecycleResult> {
-  const actor = await currentUserId()
-  if (!actor) return { ok: false, error: 'Unauthorized' }
+  const access = await authorizeBarrier(barrierId, 'assign_comment')
+  if (!access.ok) return access
+  const actor = access.userId
   if (!ownerUserId)
     return { ok: false, error: 'Choose someone to assign this to.' }
 
@@ -146,8 +165,9 @@ export async function commentOnBarrierAction(
   barrierId: string,
   body: string,
 ): Promise<LifecycleResult> {
-  const actor = await currentUserId()
-  if (!actor) return { ok: false, error: 'Unauthorized' }
+  const access = await authorizeBarrier(barrierId, 'assign_comment')
+  if (!access.ok) return access
+  const actor = access.userId
 
   const text = body.trim()
   if (!text) return { ok: false, error: 'Write something first.' }
@@ -175,8 +195,9 @@ export async function clearBarrierAction(
   barrierId: string,
   reason: string,
 ): Promise<LifecycleResult> {
-  const actor = await currentUserId()
-  if (!actor) return { ok: false, error: 'Unauthorized' }
+  const access = await authorizeBarrier(barrierId, 'clear_dismiss_barrier')
+  if (!access.ok) return access
+  const actor = access.userId
 
   const text = reason.trim()
   if (!text) return { ok: false, error: 'Say how it was resolved.' }
@@ -217,8 +238,9 @@ export async function dismissBarrierAction(
   barrierId: string,
   reason: string,
 ): Promise<LifecycleResult> {
-  const actor = await currentUserId()
-  if (!actor) return { ok: false, error: 'Unauthorized' }
+  const access = await authorizeBarrier(barrierId, 'clear_dismiss_barrier')
+  if (!access.ok) return access
+  const actor = access.userId
 
   const text = reason.trim()
   if (!text) return { ok: false, error: 'Say why this is wrong.' }
@@ -287,8 +309,9 @@ export async function reopenBarrierAction(
   barrierId: string,
   reason: string,
 ): Promise<LifecycleResult> {
-  const actor = await currentUserId()
-  if (!actor) return { ok: false, error: 'Unauthorized' }
+  const access = await authorizeBarrier(barrierId, 'clear_dismiss_barrier')
+  if (!access.ok) return access
+  const actor = access.userId
 
   const text = reason.trim()
   if (!text) return { ok: false, error: 'Say why you are reopening it.' }
@@ -359,8 +382,12 @@ export async function createBarrierAction(input: {
   ownerUserId?: string | null
   dueAt?: Date | null
 }): Promise<LifecycleResult> {
-  const actor = await currentUserId()
-  if (!actor) return { ok: false, error: 'Unauthorized' }
+  // Scoped directly by the target encounter — no barrier exists yet.
+  const access = await requireWardAccess('create_manual_barrier', {
+    encounterId: input.encounterId,
+  })
+  if (!access.ok) return access
+  const actor = access.userId
 
   const description = input.description.trim()
   if (!description) return { ok: false, error: 'Describe the barrier.' }

@@ -3,6 +3,7 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 
 import { reconcileBarriers } from '@/lib/ward/reconcile'
 
+import { maybePurgeRawExtractions } from './purge-raw-extractions'
 import {
   aiExtractions,
   barrierEvents,
@@ -76,7 +77,7 @@ export async function persistExtraction(
   result: PersistableExtraction,
   now: Date = new Date(),
 ): Promise<PersistResult> {
-  return db.transaction(async (tx) => {
+  const persisted = await db.transaction(async (tx) => {
     // Prior AI output for this note is superseded; the barriers it produced are
     // reconciled below rather than dropped with it.
     await tx.delete(aiExtractions).where(eq(aiExtractions.noteId, note.id))
@@ -184,4 +185,11 @@ export async function persistExtraction(
       suppressed: plan.suppressed.length,
     }
   })
+
+  // Retention (spec v0.12.0 FR8): opportunistically null expired raw_json.
+  // Fire-and-forget AFTER the transaction commits — it can neither block nor
+  // fail this persist, and it is throttled to one attempt/hour per process.
+  maybePurgeRawExtractions(db)
+
+  return persisted
 }

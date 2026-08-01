@@ -82,16 +82,18 @@ export function ActionsDrawer({
           </Button>
         </header>
 
-        <div className="flex items-center gap-3 border-b p-4">
-          <Button size="sm" onClick={generate} disabled={pending}>
-            {pending ? 'Working…' : 'Generate recommendations'}
-          </Button>
-          {status && (
-            <span className="text-muted-foreground text-xs" role="status">
-              {status}
-            </span>
-          )}
-        </div>
+        {cockpit.capabilities.canGenerate && (
+          <div className="flex items-center gap-3 border-b p-4">
+            <Button size="sm" onClick={generate} disabled={pending}>
+              {pending ? 'Working…' : 'Generate recommendations'}
+            </Button>
+            {status && (
+              <span className="text-muted-foreground text-xs" role="status">
+                {status}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="flex-1 space-y-5 p-4">
           {total === 0 ? (
@@ -110,6 +112,7 @@ export function ActionsDrawer({
                   <RecommendationCard
                     key={r.id}
                     rec={r}
+                    canDecide={cockpit.capabilities.canApprove}
                     onChanged={onChanged}
                   />
                 ))}

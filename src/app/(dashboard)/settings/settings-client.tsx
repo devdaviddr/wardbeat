@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 
 import { CurrentUserCard } from '@/components/auth/current-user-card'
@@ -30,9 +31,11 @@ interface SettingsClientProps {
     email: string
     createdAt: Date
     roles: Array<{ id: string; name: string; description: string | null }>
+    wardIds: string[]
     hasPassword: boolean
   }>
   roles: Array<{ id: string; name: string; description: string | null }>
+  wards: Array<{ id: string; name: string }>
   files: FileSummary[]
   linkedAccounts: LinkedAccountsState
   pushPublicKey: string | null
@@ -53,6 +56,7 @@ export function SettingsClient({
   session,
   users,
   roles,
+  wards,
   files,
   linkedAccounts,
   pushPublicKey,
@@ -105,13 +109,22 @@ export function SettingsClient({
     tabs.push({
       id: 'administration',
       label: 'Administration',
-      description: 'Manage users and their roles.',
+      description: 'Manage users, their roles and their ward memberships.',
       content: (
-        <AdminPanel
-          initialUsers={users}
-          allRoles={formattedRoles}
-          currentUserId={session.user.id}
-        />
+        <>
+          <AdminPanel
+            initialUsers={users}
+            allRoles={formattedRoles}
+            allWards={wards}
+            currentUserId={session.user.id}
+          />
+          <p className="text-muted-foreground text-sm">
+            <Link href="/settings/audit" className="underline">
+              Access audit
+            </Link>{' '}
+            — who accessed which patient, when, and through which surface.
+          </p>
+        </>
       ),
     })
   }

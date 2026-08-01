@@ -2,8 +2,10 @@
 
 import { routeQuestion, type CopilotRoute } from '@/lib/ai/client'
 import { combineProvenance, type Provenance } from '@/lib/ai/provenance'
-import { getCurrentSession } from '@/lib/auth/session'
+import { recordAccess } from '@/lib/audit/record'
+import { requireWardAccess } from '@/lib/auth/ward-access'
 import { logger } from '@/lib/logger'
+import { AI_LIMITS, AI_RATE_LIMIT_MESSAGE, rateLimit } from '@/lib/rate-limit'
 import { answerPolicyQuestion } from './policy'
 import { answerWardQuestion } from './ward'
 
@@ -43,8 +45,10 @@ const OUT_OF_SCOPE =
 export async function askCopilotAction(
   question: string,
 ): Promise<CopilotResponse> {
-  const session = await getCurrentSession()
-  if (!session?.user) {
+  // Authorization FIRST — a denied caller must not consume rate budget
+  // (spec v0.12.0 M3). `{ any: true }` until multi-ward lands (v0.13.0).
+  const access = await requireWardAccess('ask_copilot', { any: true })
+  if (!access.ok) {
     return {
       ok: false,
       path: 'error',
@@ -52,7 +56,7 @@ export async function askCopilotAction(
       grounded: false,
       citations: [],
       provenance: 'mock',
-      error: 'Unauthorized',
+      error: access.error,
     }
   }
   const q = question.trim()
@@ -67,6 +71,39 @@ export async function askCopilotAction(
       error: 'Ask a question first.',
     }
   }
+
+  // Per-user cap: each question fans out into ~3 NIM calls, and the model
+  // budget is shared across the ward (see AI_LIMITS for the arithmetic).
+  // Checked after the free validations so a blank submit costs no budget.
+  const rl = rateLimit(
+    `ai:copilot:${access.userId}`,
+    AI_LIMITS.copilot.limit,
+    AI_LIMITS.copilot.windowMs,
+  )
+  if (!rl.success) {
+    logger.warn('copilot rate limited', {
+      userId: access.userId,
+      resetAt: rl.resetAt,
+    })
+    return {
+      ok: false,
+      path: 'error',
+      answer: '',
+      grounded: false,
+      citations: [],
+      provenance: 'mock',
+      error: AI_RATE_LIMIT_MESSAGE,
+    }
+  }
+
+  // The ask is authorized and about to be processed — record who asked what
+  // (spec v0.12.0 FR5). Fire-and-forget: never blocks or fails the answer.
+  void recordAccess({
+    actorUserId: access.userId,
+    subjectType: 'copilot_query',
+    surface: 'copilot',
+    detail: { question: q },
+  })
 
   try {
     const route = await routeQuestion(q)

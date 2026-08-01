@@ -55,7 +55,10 @@ Standalone (needs Python 3.12):
 ```bash
 cd ai
 pip install -e '.[dev]'      # or: uv venv && uv pip install -e '.[dev]'
-uvicorn app.main:app --reload --port 8000
+# Auth fails closed: set a token (match WARDBEAT_AI_SERVICE_TOKEN in .env), or
+# opt out explicitly for tokenless local dev:
+AI_SERVICE_TOKEN=dev-service-token-change-me uvicorn app.main:app --reload --port 8000
+# ...or: AI_ALLOW_INSECURE_NO_TOKEN=true uvicorn app.main:app --reload --port 8000
 pytest                        # unit tests incl. the /config secret-redaction test
 ```
 
@@ -65,19 +68,20 @@ pytest                        # unit tests incl. the /config secret-redaction te
 
 ## Config (env)
 
-| Var                      | Default                               | Meaning                                                                |
-| ------------------------ | ------------------------------------- | ---------------------------------------------------------------------- |
-| `NIM_MOCK`               | `true`                                | Offline deterministic mode (no key/network needed)                     |
-| `NVIDIA_API_KEY`         | —                                     | Free key from build.nvidia.com; enables live NIM when `NIM_MOCK=false` |
-| `NIM_BASE_URL`           | `https://integrate.api.nvidia.com/v1` | OpenAI-compatible endpoint                                             |
-| `NIM_EXTRACT_MODEL`      | `nvidia/nvidia-nemotron-nano-9b-v2`   | Small reasoning model — extraction, routing, recommendation, narration |
-| `NIM_EMBED_MODEL`        | `nvidia/nv-embedqa-e5-v5`             | Embedding model for policy retrieval (asymmetric query/passage)        |
-| `NIM_RERANK_MODEL`       | `nvidia/llama-3.2-nv-rerankqa-1b-v2`  | Cross-encoder reranker for retrieved passages                          |
-| `EMBED_DIM`              | `1024`                                | Embedding dimensions (must match the `policy_chunks.embedding` column) |
-| `NIM_EXTRACT_MAX_TOKENS` | `1024`                                | Completion budget/call (reasoning + JSON); lower = faster              |
-| `NIM_TIMEOUT`            | `30.0`                                | Per-call model timeout (seconds)                                       |
-| `NIM_RPM`                | `30`                                  | Rate-limit budget (headroom under the free tier's ~40 RPM)             |
-| `AI_SERVICE_TOKEN`       | —                                     | Shared secret; must match Next.js `WARDBEAT_AI_SERVICE_TOKEN`          |
+| Var                          | Default                               | Meaning                                                                                                                  |
+| ---------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `NIM_MOCK`                   | `true`                                | Offline deterministic mode (no key/network needed)                                                                       |
+| `NVIDIA_API_KEY`             | —                                     | Free key from build.nvidia.com; enables live NIM when `NIM_MOCK=false`                                                   |
+| `NIM_BASE_URL`               | `https://integrate.api.nvidia.com/v1` | OpenAI-compatible endpoint                                                                                               |
+| `NIM_EXTRACT_MODEL`          | `nvidia/nvidia-nemotron-nano-9b-v2`   | Small reasoning model — extraction, routing, recommendation, narration                                                   |
+| `NIM_EMBED_MODEL`            | `nvidia/nv-embedqa-e5-v5`             | Embedding model for policy retrieval (asymmetric query/passage)                                                          |
+| `NIM_RERANK_MODEL`           | `nvidia/llama-3.2-nv-rerankqa-1b-v2`  | Cross-encoder reranker for retrieved passages                                                                            |
+| `EMBED_DIM`                  | `1024`                                | Embedding dimensions (must match the `policy_chunks.embedding` column)                                                   |
+| `NIM_EXTRACT_MAX_TOKENS`     | `1024`                                | Completion budget/call (reasoning + JSON); lower = faster                                                                |
+| `NIM_TIMEOUT`                | `30.0`                                | Per-call model timeout (seconds)                                                                                         |
+| `NIM_RPM`                    | `30`                                  | Rate-limit budget (headroom under the free tier's ~40 RPM)                                                               |
+| `AI_SERVICE_TOKEN`           | —                                     | Shared secret; must match Next.js `WARDBEAT_AI_SERVICE_TOKEN`. **Unset = every request refused (503, fail-closed)**      |
+| `AI_ALLOW_INSECURE_NO_TOKEN` | `false`                               | Explicit local-dev opt-out of service auth when no token is set. Logs a loud startup warning; never use beyond localhost |
 
 **Mock vs live:** with `NIM_MOCK=true` (or no key) the service uses deterministic,
 prompt-injection-safe mocks — zero dependencies, and the evals still run. Set

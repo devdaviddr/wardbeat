@@ -7,6 +7,7 @@ const { mockEnv, dbMock } = vi.hoisted(() => ({
     query: {
       users: { findFirst: vi.fn(), findMany: vi.fn() },
       roles: { findFirst: vi.fn(), findMany: vi.fn() },
+      wards: { findMany: vi.fn() },
     },
     insert: vi.fn(),
     update: vi.fn(),
@@ -57,12 +58,14 @@ import { ForbiddenError } from '@/lib/auth/rbac'
 import { resetRateLimit } from '@/lib/rate-limit'
 import {
   assignRoles,
+  assignWards,
   canCompleteRegistration,
   completeRegistration,
   createUser,
   deleteUser,
   getAllRoles,
   getAllUsersWithRoles,
+  getAllWards,
   updateUser,
 } from '@/lib/auth/admin-actions'
 
@@ -128,6 +131,7 @@ beforeEach(() => {
   dbMock.query.users.findMany.mockReset()
   dbMock.query.roles.findFirst.mockReset()
   dbMock.query.roles.findMany.mockReset()
+  dbMock.query.wards.findMany.mockReset()
   dbMock.insert.mockReset()
   dbMock.update.mockReset().mockReturnValue(updateChain())
   dbMock.delete.mockReset().mockReturnValue(deleteChain())
@@ -409,6 +413,81 @@ describe('assignRoles', () => {
     await expect(assignRoles(input)).resolves.toBeUndefined()
     expect(dbMock.delete).toHaveBeenCalled()
     expect(dbMock.insert).toHaveBeenCalled()
+  })
+})
+
+// --- getAllWards / assignWards (spec v0.12.0 FR2) ----------------------------
+
+const WARD_A_ID = '66666666-6666-4666-8666-666666666666'
+const WARD_B_ID = '77777777-7777-4777-8777-777777777777'
+
+describe('getAllWards', () => {
+  it('rejects non-admins', async () => {
+    mockGetSession.mockResolvedValue(memberSession)
+    await expect(getAllWards()).rejects.toBeInstanceOf(ForbiddenError)
+  })
+
+  it('returns id and name for every ward', async () => {
+    mockGetSession.mockResolvedValue(adminSession)
+    dbMock.query.wards.findMany.mockResolvedValue([
+      { id: WARD_A_ID, name: 'Ward A', createdAt: new Date() },
+    ])
+    await expect(getAllWards()).resolves.toEqual([
+      { id: WARD_A_ID, name: 'Ward A' },
+    ])
+  })
+})
+
+describe('assignWards', () => {
+  const input = { userId: MEMBER_USER_ID, wardIds: [WARD_A_ID] }
+
+  it('rejects non-admins', async () => {
+    mockGetSession.mockResolvedValue(memberSession)
+    await expect(assignWards(input)).rejects.toBeInstanceOf(ForbiddenError)
+  })
+
+  it('errors when the target user does not exist', async () => {
+    mockGetSession.mockResolvedValue(adminSession)
+    dbMock.query.users.findFirst.mockResolvedValueOnce(null)
+    await expect(assignWards(input)).rejects.toThrow('User not found.')
+  })
+
+  it('rejects unknown ward ids', async () => {
+    mockGetSession.mockResolvedValue(adminSession)
+    dbMock.query.users.findFirst.mockResolvedValueOnce({ id: MEMBER_USER_ID })
+    dbMock.query.wards.findMany.mockResolvedValueOnce([])
+    await expect(assignWards(input)).rejects.toThrow(
+      'One or more wards do not exist.',
+    )
+  })
+
+  it('replaces memberships for a user', async () => {
+    mockGetSession.mockResolvedValue(adminSession)
+    dbMock.query.users.findFirst.mockResolvedValueOnce({ id: MEMBER_USER_ID })
+    dbMock.query.wards.findMany.mockResolvedValueOnce([
+      { id: WARD_A_ID },
+      { id: WARD_B_ID },
+    ])
+    dbMock.insert.mockReturnValueOnce(insertChain())
+
+    await expect(
+      assignWards({ userId: MEMBER_USER_ID, wardIds: [WARD_A_ID, WARD_B_ID] }),
+    ).resolves.toBeUndefined()
+    expect(dbMock.delete).toHaveBeenCalled()
+    expect(dbMock.insert).toHaveBeenCalled()
+  })
+
+  it('accepts an empty ward list (removes the user from every ward)', async () => {
+    mockGetSession.mockResolvedValue(adminSession)
+    dbMock.query.users.findFirst.mockResolvedValueOnce({ id: MEMBER_USER_ID })
+
+    await expect(
+      assignWards({ userId: MEMBER_USER_ID, wardIds: [] }),
+    ).resolves.toBeUndefined()
+    expect(dbMock.delete).toHaveBeenCalled()
+    expect(dbMock.insert).not.toHaveBeenCalled()
+    // No existence check needed when clearing memberships.
+    expect(dbMock.query.wards.findMany).not.toHaveBeenCalled()
   })
 })
 
