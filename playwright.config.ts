@@ -7,6 +7,9 @@ export default defineConfig({
   testDir: './tests/e2e',
   // Seed the demo admin + roles before the suite (idempotent, self-healing).
   globalSetup: './tests/e2e/global-setup.ts',
+  // Delete the accounts the suite registers, so they don't accumulate in the
+  // dev DB and flood the app's user pickers.
+  globalTeardown: './tests/e2e/global-teardown.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

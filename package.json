@@ -35,6 +35,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:seed:ward": "tsx src/db/seed-ward.ts",
     "db:seed:policy": "tsx src/db/seed-policy.ts",
+    "db:prune:e2e": "tsx src/db/prune-e2e-users.ts",
     "db:extract": "tsx src/db/run-extraction.ts",
     "db:recommend": "tsx src/db/run-recommend.ts",
     "eval:extraction": "tsx src/eval/extraction-eval.ts",
