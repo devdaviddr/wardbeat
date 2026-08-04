@@ -10,6 +10,12 @@ As this project is pre-1.0, minor versions may introduce breaking changes.
 > platform. The changelog for the inherited platform (releases up to v0.19.0)
 > lives in that upstream repository; this file starts WardBeat's own history at
 > v0.1.0.
+>
+> **On the tag gap between v0.7.0 and v0.11.0.** 0.8.0, 0.9.0 and 0.10.0 are
+> recorded here as separate versions but were never cut as their own releases —
+> the version went straight from 0.7.0 to 0.11.0, and all three shipped inside
+> the **`v0.11.0`** tag. Their entries are kept separate because they were
+> distinct pieces of work; there is no missing tag to look for.
 
 ## [Unreleased]
 
