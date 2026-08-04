@@ -4,7 +4,7 @@
 [Architecture](architecture.md) · [Evals](evals.md) · [Demo runbook](DEMO.md)
 
 A talk track for explaining WardBeat to a technical audience — engineers,
-architects, ML folks, security/governance, or a technical interviewer. It gives
+architects, ML folks, or security/governance reviewers. It gives
 you a spine you can stretch from 30 seconds to 20 minutes, the points that land
 with each kind of listener, and answers to the questions they will actually ask.
 

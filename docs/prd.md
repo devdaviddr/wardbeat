@@ -65,7 +65,7 @@ WardBeat is **not** an EHR and **not** an autonomous agent. It is a thin, intell
 layer _on top of_ existing systems that (a) makes ward state legible in real time and
 (b) uses generative reasoning to compress the cognitive load of running flow.
 
-**Portfolio intent.** This project is deliberately scoped to show interviewers that I can:
+**Design intent.** The scope is deliberately chosen to demonstrate five things:
 
 1. Choose the **right GenAI pattern for each job** (and say where an LLM is the _wrong_
    tool).
@@ -127,7 +127,7 @@ layer _on top of_ existing systems that (a) makes ward state legible in real tim
 
 ## 5. Where generative AI earns its place
 
-The single most important design decision — and the thing an interviewer will test — is
+The single most important design decision — and the one most worth scrutinising — is
 **not using an LLM for everything**. WardBeat splits the work by tool-fit:
 
 | Task                                             | Right tool                                | Why                                                                       |
@@ -141,7 +141,7 @@ The single most important design decision — and the thing an interviewer will 
 | Optimise bed allocation                          | **Operations research (MILP/heuristics)** | Constraint optimisation, not text generation                              |
 | Generate realistic test data                     | **GenAI + Synthea**                       | Synthetic notes/scenarios without PHI                                     |
 
-> **The headline for interviews:** _GenAI is the reasoning, language, and glue layer;
+> **The headline:** _GenAI is the reasoning, language, and glue layer;
 > deterministic ML/OR does the forecasting and optimisation; the LLM explains and
 > orchestrates them._ Using an LLM to "predict a number" or "optimise" is an
 > anti-pattern I'm explicitly avoiding.
@@ -349,8 +349,8 @@ queue is the human-in-the-loop UI.
 | Speech (optional)                               | **Riva / Parakeet ASR NIM**    | Bedside voice notes → text                 |
 
 > **Route by difficulty, not by habit.** ~80% of calls (extraction/routing) hit the small
-> model; the expensive reasoning model is reserved for genuine multi-step work. This is
-> the cost/latency story interviewers look for.
+> model; the expensive reasoning model is reserved for genuine multi-step work. That
+> split is what keeps cost and latency predictable.
 
 ### 7.10 Service architecture — polyglot (Next.js BFF + FastAPI AI plane)
 
@@ -445,9 +445,9 @@ The whole project can be **built and demoed for £0**, which is the point for a 
   up to 16 GPUs** under the Developer Program, so the on-prem data-sovereignty story doesn't
   require a licence spend to prototype — only GPUs.
 
-> **Interview line:** _"I built it on NVIDIA's free hosted NIM tier, engineered the harness
+> **In one sentence:** _Built on NVIDIA's free hosted NIM tier, with the harness engineered
 > around a 40 RPM ceiling, and the exact same OpenAI-compatible code redeploys to on-prem
-> NIM containers — free for dev up to 16 GPUs — for the data-residency story."_
+> NIM containers — free for dev up to 16 GPUs — for the data-residency story._
 
 ---
 
@@ -525,7 +525,7 @@ Safety: red-team pass-rate gate. System: p95 latency, cost/1k notes. All wired i
 
 ---
 
-## 14. Interview defense — anticipated questions & crisp answers
+## 14. Design decisions — anticipated questions & crisp answers
 
 **Q: Isn't bed management just a forecasting/optimisation problem? Why GenAI at all?**
 A: The _numbers_ are — and I use deterministic ML/OR for them. The **bottleneck is

@@ -12,8 +12,9 @@ Please include steps to reproduce, affected versions, and any relevant logs.
 
 ## Supported versions
 
-This is a boilerplate/template. Security fixes are applied to `main`; consumers
-should track it and update their fork.
+WardBeat is pre-1.0 and ships from `main`. Security fixes are applied to `main`
+and released in the next `vX.Y.Z` tag; only the latest release is supported.
+Self-hosters should track `main` (or the `stable` image tag) and update.
 
 ## Security posture
 

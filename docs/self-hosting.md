@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-Take this boilerplate from a fresh clone to a live app on **your own domain** —
+Take WardBeat from a fresh clone to a live app on **your own domain** —
 served over HTTPS through a **Cloudflare Tunnel**, with no open ports, no reverse
 proxy, and no certificate management. One command does the whole thing:
 

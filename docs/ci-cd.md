@@ -10,7 +10,10 @@
 > plus the [`eval:*` harnesses](evals.md) and the `ai/` pytest suite), and deploys
 > are manual (`make deploy`). See [Feature → Production](workflow.md).
 
-This documentation covers the CI/CD pipeline and testing workflow for the Next.js Fullstack Boilerplate. Deployment is covered separately in [deployment.md](deployment.md). For the full path from a feature branch to a deploy on your box, see [Feature → Production](workflow.md).
+This document covers WardBeat's CI/CD pipeline and the quality gates that run
+in it. Local development and scripts are in [Usage & Development](usage.md),
+deployment in [deployment.md](deployment.md), and the full path from a feature
+branch to a deploy on your box in [Feature → Production](workflow.md).
 
 ### Pipeline Overview
 
@@ -285,107 +288,6 @@ migrating, and restarting.
 Full design and the recommended pull-based alternative:
 [self-hosting.md → Continuous deployment](self-hosting.md#continuous-deployment).
 
-### Local Development Testing
-
-#### Quick Start
-
-```bash
-# Start local dependencies
-pnpm docker:db
-pnpm docker:minio
-pnpm docker:mail
-
-# Apply schema
-pnpm db:migrate
-pnpm db:seed
-
-# Run full test suite
-pnpm test:e2e
-```
-
-#### Running Tests Interactively
-
-```bash
-# Watch mode for units
-pnpm test:watch
-
-# Playwright UI runner
-pnpm test:e2e:ui
-```
-
-#### Test Isolation
-
-Each E2E test uses a unique client IP (from `CF-Connecting-IP`) to isolate rate-limit buckets:
-
-- Prevents test interference
-- Ensures accurate rate-limit testing
-
-**Implementation:** `tests/e2e/fixtures.ts`
-
-### Docker Testing
-
-#### Multi-Stage Production Image
-
-Dockerfile builds:
-
-1. **Build stage** - dependencies + Next.js build
-2. **Runtime stage** - non-root user, healthcheck
-
-**Healthcheck endpoint:** `/api/health`
-
-#### Docker Compose
-
-- [`docker-compose.yml`](../docker-compose.yml) — local dev dependencies:
-  `db`, `minio`, `minio-init` (creates the bucket), and `mailpit`.
-- [`docker-compose.prod.yml`](../docker-compose.prod.yml) — the full
-  production-like stack, with these services:
-
-  | Service        | Role                                                    |
-  | -------------- | ------------------------------------------------------- |
-  | `db`           | Postgres 17 (named volume `pgdata`)                     |
-  | `migrate`      | Runs `db:migrate` once, then exits                      |
-  | `minio`        | S3-compatible object storage (named volume `miniodata`) |
-  | `minio-init`   | Creates the bucket on first boot                        |
-  | `db-backup`    | Nightly `pg_dump` sidecar                               |
-  | `minio-backup` | Nightly object-store backup sidecar                     |
-  | `app`          | The Next.js app, health-checked at `/api/health`        |
-
-The two `*-backup` sidecars are covered in [backups.md](backups.md). Cloudflare
-Tunnel variants live in `docker-compose.tunnel.yml` and
-`docker-compose.quick-tunnel.yml` (see [deployment.md](deployment.md)).
-
-### Deployment Pipeline
-
-#### Pre-deployment Checklist
-
-- [ ] Unique, strong `AUTH_SECRET`
-- [ ] `DATABASE_URL` on managed Postgres with TLS (`sslmode=require`)
-- [ ] Migrate schema (`pnpm db:migrate`)
-- [ ] Seed initial `admin` user
-- [ ] Check environment variables
-
-#### Cloudflare Tunnel Deployment
-
-See [deployment.md](deployment.md) for complete Cloudflare Tunnel setup:
-
-- **Quick tunnel:** `make tunnel-quick` (no account)
-- **Guided:** Cloudflare dashboard (requires account)
-- **Automated:** Terraform (`make tunnel-provision`, set `AUTH_URL`, then `make tunnel-up`)
-
-### Test Scripts
-
-#### Manual Testing
-
-- **Auth flow:** `/login`, `/register`, `/settings`
-- **File operations:** Upload → list → download → delete
-- **PWA features:** offline page, install prompt
-- **RBAC:** admin panel, role-based access
-
-#### Performance Testing
-
-- **Unit tests:** coverage on validation, hashing, rate limiting
-- **E2E tests:** full user journey times
-
 ### How a merge becomes a live deploy
 
 Putting the pieces above into one ordered walkthrough, from `git push` to a
@@ -425,74 +327,14 @@ box running the new code:
    `README.md`, and `CONTRIBUTING.md` if the new check should be part of that
    gate.
 
-### Troubleshooting
+### See also
 
-#### Common Issues
+Topics deliberately kept out of this doc so they live in one place only:
 
-1. **502 Bad Gateway**
-   - App not ready yet or wrong ingress service
-   - Fix: Ensure `http://app:3000` in Ingress
-
-2. **Login loop**
-   - Wrong `AUTH_URL` or `AUTH_TRUST_HOST=false`
-   - Fix: Set correct public URL in `.env`
-
-3. **Test isolation issues**
-   - Rate limiting leaks between tests
-   - Fix: Check unique client IP generation
-
-4. **Docker compose health checks**
-   - Services not ready
-   - Fix: Increase wait time or check logs
-
-#### Debugging Commands
-
-```bash
-# Container logs
-docker compose logs
-
-# Follow logs
-docker compose logs -f
-
-# Apply pending database migrations
-pnpm db:migrate
-
-# MinIO status (uses the minio/mc Docker image, not an npm package)
-docker run --rm --network host --entrypoint /bin/sh minio/mc \
-  -c "mc alias set local http://localhost:9000 minioadmin minioadmin && mc admin info local"
-```
-
-### Best Practices
-
-1. **Test coverage:** Keep unit test coverage >80%
-2. **Isolation:** Each test should be self-contained
-3. **Environment:** Use `.env.example` as reference
-4. **Versioning:** CI runs on a single pinned Node version (22); bump it in the workflow when upgrading
-5. **Backups:** Always verify restore procedures before production deployment
-
-### Maintenance
-
-#### Database Migration
-
-Always follow the workflow:
-
-```bash
-1. Edit src/db/schema.ts
-2. pnpm db:generate
-3. Review SQL migration
-4. Commit migration file
-5. pnpm db:migrate
-```
-
-#### Script Updates
-
-Build scripts (`gen:icons`, `gen:og`) need regeneration:
-
-```bash
-pnpm gen:icons
-pnpm gen:og
-```
-
-#### Environment Changes
-
-Update `.env.example` whenever adding new environment variables.
+| Topic                                         | Where it lives                  |
+| --------------------------------------------- | ------------------------------- |
+| Running tests locally, watch/UI mode, scripts | [Usage & Development](usage.md) |
+| Compose stacks and the production image       | [Deployment](deployment.md)     |
+| Backup sidecars and restore                   | [Backups](backups.md)           |
+| Migration workflow                            | [Database](database.md)         |
+| AI eval harnesses and their gates             | [Evals](evals.md)               |
