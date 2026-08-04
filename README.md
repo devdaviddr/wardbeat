@@ -43,6 +43,10 @@ self-hostable containers (Next.js BFF + internal FastAPI AI plane over
 [NVIDIA NIM](docs/ai-design.md)), so the same system can run on a trust's own
 infrastructure and patient data never has to leave the network.
 
+![The WardBeat ward board — every bed with status, estimated discharge date, fitness flag and barrier chips](docs/images/ward-board.png)
+
+<div align="center"><sub>The ward board — synthetic patients, AI-extracted barriers, discharge probability per bed.</sub></div>
+
 ## The problems it solves
 
 Hospitals lose bed capacity not because beds are physically full, but because
@@ -99,6 +103,15 @@ Hospitals lose bed capacity not because beds are physically full, but because
 
 Full inventory: [Features](docs/features.md) · release history:
 [CHANGELOG](CHANGELOG.md).
+
+### What that looks like
+
+|                                                                                                                                                              |                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| ![Grounded copilot answer with policy citations](docs/images/copilot.png)                                                                                    | ![Action queue awaiting human approval](docs/images/actions.png)                                                   |
+| **Grounded copilot.** Every answer is labelled `grounded` and cites the trust policy section it came from — or refuses.                                      | **Recommend-only actions.** A policy-grounded agent proposes; _nothing happens until a human approves_.            |
+| ![Flow briefing with deterministic forecast and AI narration](docs/images/briefing.png)                                                                      | ![Append-only access audit](docs/images/audit.png)                                                                 |
+| **Honest numbers.** The forecast is deterministic and the LLM only narrates it. Figures that can't be computed honestly are omitted _with the reason shown_. | **Access audit.** Append-only record of who read which patient and who asked what, browsable at `/settings/audit`. |
 
 ## How it works
 
