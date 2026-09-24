@@ -1,0 +1,33 @@
+name: Spike
+description: Time-boxed research that ends in a decision
+title: "[Spike] "
+labels: ["spike"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What needs deciding?
+    validations:
+      required: true
+  - type: input
+    id: timebox
+    attributes:
+      label: Time box
+      description: For example, 2 hours. Stop when it runs out and write up what you have.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      value: |
+        - [ ] Decision written up in a comment (or a spec), with the options considered
+        - [ ] Follow-up issues filed
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Leads, constraints, links. Optional.

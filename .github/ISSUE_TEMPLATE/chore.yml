@@ -1,0 +1,26 @@
+name: Chore
+description: Internal work such as refactors, dependencies, tooling, tests or docs
+title: "[Chore] "
+labels: ["chore"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What needs doing
+      description: One or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      value: |
+        - [ ] 
+      description: Things you can check once it's finished.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Files, links. Optional.

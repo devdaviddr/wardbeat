@@ -1,0 +1,51 @@
+name: Bug
+description: Something that exists and is broken
+title: "[Bug] "
+labels: ["bug", "user-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please don't include secrets, tokens or real personal or patient data. Use screenshots or made-up examples instead.
+  - type: input
+    id: summary
+    attributes:
+      label: What went wrong?
+      description: One line.
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened?
+      value: |
+        Expected:
+        Actual:
+      description: Include the exact error text if there was one.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1. Go to …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Blocker (can't work)
+        - Annoying (workaround exists)
+        - Cosmetic
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Page or URL, version or commit, browser. Likely cause and files if you know them.
