@@ -1,0 +1,44 @@
+name: Change request
+description: Ask for new or different behaviour
+title: "[Change] "
+labels: ["enhancement", "user-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please don't include secrets, tokens or real personal or patient data. Use screenshots or made-up examples instead.
+  - type: input
+    id: summary
+    attributes:
+      label: What would you like?
+      description: One line.
+    validations:
+      required: true
+  - type: textarea
+    id: detail
+    attributes:
+      label: Describe it in more detail
+      description: What should it do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does it matter?
+      description: How it would help the people using it.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Must have
+        - Nice to have
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Page or URL, version.

@@ -1,3 +1,8 @@
+Closes #
+<!-- Or "Part of #N" if this PR doesn't finish the feature. -->
+
+Tasks: <!-- task IDs from spec-imp.md, e.g. T-2, T-3 -->
+
 ## Summary
 
 <!-- What does this PR do and why? -->
