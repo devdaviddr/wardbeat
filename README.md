@@ -204,6 +204,10 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 Full workflow: [CONTRIBUTING.md](CONTRIBUTING.md) ·
 [Feature → Production](docs/workflow.md).
 
+## Related
+
+- **[ai-patient-flow-orchestrator](https://github.com/devdaviddr/ai-patient-flow-orchestrator)**: a multi-agent take on the same problem, running a perceive → reason → plan → act loop over a simulated hospital with a human approving every action.
+
 ## License
 
 Released under the [MIT License](LICENSE).
