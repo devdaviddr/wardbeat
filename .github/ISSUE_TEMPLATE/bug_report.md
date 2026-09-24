@@ -20,6 +20,10 @@ A clear description of the bug.
 - **Expected:**
 - **Actual:**
 
+## Done when
+
+- [ ] Fixed, with a test that would have caught it
+
 ## Environment
 
 - OS:
